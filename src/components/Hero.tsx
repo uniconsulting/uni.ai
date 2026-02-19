@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
 
@@ -25,7 +25,7 @@ function RotatingWord() {
           initial={{ opacity: 0, filter: "blur(10px)", y: 2 }}
           animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
           exit={{ opacity: 0, filter: "blur(10px)", y: -2 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
         >
           {word}
         </motion.span>
@@ -38,16 +38,16 @@ export function Hero() {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
 
+  const [endScale, setEndScale] = useState(1);
+  const [templeVisible, setTempleVisible] = useState(true);
+
   const { scrollYProgress } = useScroll({
     target: stageRef,
     offset: ["start start", "end start"],
   });
 
-  // Базовый (маленький) размер как в макете
-  const BASE_W = 520; // px
-
-  // Считаем конечный scale от ширины контейнера (как у only.digital: рост через transform)
-  const [endScale, setEndScale] = useState(1);
+  // маленькая карточка как в макете
+  const BASE_W = 520;
 
   useLayoutEffect(() => {
     const el = measureRef.current;
@@ -55,8 +55,8 @@ export function Hero() {
 
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-      // чуть больше воздуха по краям, чтобы не "в упор" к контейнеру
-      const target = (cw * 0.92) / BASE_W;
+      // почти во всю ширину контейнера (без “в упор”)
+      const target = (cw * 0.96) / BASE_W;
       setEndScale(Math.max(1, Math.min(3, target)));
     };
 
@@ -66,28 +66,27 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
-  // Рост + лёгкий подъём (перекрытие низа)
-  const scale = useTransform(scrollYProgress, [0, 1], [1, endScale]);
-  const y = useTransform(scrollYProgress, [0, 1], [0, -64]); // кратно 4
+  // ВАЖНО: рост начинается не сразу. До ~18% скролла — карточка статична (как в макете).
+  const scale = useTransform(scrollYProgress, [0, 0.18, 1], [1, 1, endScale]);
+  const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, -64]);
 
-  // Радиусы: аккуратно уменьшаем на росте
-  const rOuter = useTransform(scrollYProgress, [0, 1], [28, 20]);
-  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4)); // inset = 4 (p-1)
+  const rOuter = useTransform(scrollYProgress, [0, 0.65, 1], [28, 24, 20]);
+  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
+
+  // чтобы нижняя часть была видна на первом экране
+  const topPad = useMemo(() => "pt-6 md:pt-8 lg:pt-10", []);
 
   return (
     <section id="hero" className="relative">
-      {/* Верх: заголовок и иероглифы */}
-      <Container className="relative pt-6 md:pt-8 lg:pt-10">
-        {/* внутренний "рейл" 4px для точного выравнивания */}
+      {/* TOP: заголовок + японский вертикальный текст */}
+      <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
-          {/* Японская фраза справа (чуть выше, как в макете) */}
-          <div className="pointer-events-none absolute right-0 top-10 hidden lg:block">
+          <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
             <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
               精益生產
             </div>
           </div>
 
-          {/* Заголовок: строго 2 строки */}
           <h1 className="text-focus-in max-w-[1200px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
             <span className="block">Кабинет твоей</span>
             <span className="block whitespace-nowrap">
@@ -100,20 +99,21 @@ export function Hero() {
         </div>
       </Container>
 
-      {/* stage: sticky media + нижний контент (будет “заезжать” под вставку за счёт scale) */}
-      <div ref={stageRef} className="relative mt-6">
+      {/* STAGE: 16:9 карточка (sticky + scale) + divider + нижняя композиция */}
+      <div ref={stageRef} className="relative mt-12">
+        {/* карточка 16:9 */}
         <div className="sticky top-24 z-40">
           <Container>
-            {/* тот же внутренний "рейл" 4px */}
             <div className="px-1">
               <div ref={measureRef} className="flex justify-center">
                 <motion.div
-                  className="border border-text/10 bg-accent-3/80 p-1 shadow-[0_16px_48px_rgba(38,41,46,0.10)] will-change-transform"
+                  className="border border-text/10 bg-accent-3/70 p-1 will-change-transform shadow-[0_14px_44px_rgba(38,41,46,0.10)]"
                   style={{
                     width: BASE_W,
                     borderRadius: rOuter,
                     scale,
                     y,
+                    transformOrigin: "center top",
                   }}
                 >
                   <motion.div
@@ -126,41 +126,52 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* Горизонтальный разделитель (между 16:9 и нижней частью) */}
+        {/* divider между 16:9 и нижней частью */}
         <div className="mt-10 border-t border-text/10" />
 
-        {/* Нижняя часть */}
+        {/* нижняя часть как в макете */}
         <div className="relative z-10">
           <Container className="py-10 md:py-12">
-            {/* внутренний "рейл" 4px */}
             <div className="relative px-1">
-              <div className="relative md:grid md:grid-cols-2 md:gap-0">
-                {/* вертикальный разделитель строго по центру */}
-                <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
+              {/* вертикальный разделитель ровно по центру */}
+              <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
-                {/* LEFT */}
-                <div className="md:pr-10">
+              <div className="grid gap-10 md:grid-cols-2 md:gap-0">
+                {/* LEFT HALF: храм + контакты */}
+                <div className="relative md:pr-10">
                   <div className="grid grid-cols-12 gap-6">
-                    {/* зона под SVG/PNG */}
+                    {/* храм */}
                     <div className="col-span-12 md:col-span-7">
-                      <div className="h-40 md:h-56 lg:h-64 rounded-lg border border-text/10 bg-accent-3/40" />
+                      <div className="relative h-48 md:h-56 lg:h-64">
+                        {templeVisible ? (
+                          <img
+                            src="/hero/temple.svg"
+                            alt=""
+                            className="pointer-events-none select-none absolute left-0 bottom-0 h-auto w-full max-w-[520px]"
+                            onError={() => setTempleVisible(false)}
+                          />
+                        ) : (
+                          // если картинки нет — просто не показываем, но место сохранено
+                          <div className="h-full w-full" />
+                        )}
+                      </div>
                     </div>
 
-                    {/* контакты */}
+                    {/* контакты (отдельной колонкой, не липнут к левому краю) */}
                     <div className="col-span-12 md:col-span-5">
-                      <div className="text-base opacity-40">наш telegram</div>
-                      <div className="mt-2 text-base">@uni_smb</div>
+                      <div className="text-base opacity-40 font-normal">наш telegram</div>
+                      <div className="mt-2 text-base font-normal">@uni_smb</div>
 
                       <div className="my-6 h-px w-full bg-text/10" />
 
-                      <div className="text-base opacity-40">email для связи</div>
-                      <div className="mt-2 text-base">uni.kit@mail.ru</div>
+                      <div className="text-base opacity-40 font-normal">email для связи</div>
+                      <div className="mt-2 text-base font-normal">uni.kit@mail.ru</div>
                     </div>
                   </div>
                 </div>
 
-                {/* RIGHT */}
-                <div className="mt-10 md:mt-0 md:pl-10">
+                {/* RIGHT HALF */}
+                <div className="md:pl-10">
                   <div className="text-base leading-relaxed">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
@@ -171,12 +182,13 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
+                  {/* chips + подпись слева, CTA справа, на одной линии */}
                   <div className="mt-8 flex items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                      <span className="rounded-md border border-text/10 bg-accent-3/80 px-3 py-2 text-sm font-normal">
+                      <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-normal">
                         道
                       </span>
-                      <span className="rounded-md border border-text/10 bg-accent-3/80 px-3 py-2 text-sm font-normal">
+                      <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-normal">
                         改善
                       </span>
 
@@ -197,8 +209,8 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* запас по высоте, чтобы рост реально “проигрался” и перекрытие было заметным */}
-              <div className="h-[120vh]" />
+              {/* пространство, чтобы рост 16:9 “проигрался” и перекрыл нижний блок при скролле */}
+              <div className="h-[110vh]" />
             </div>
           </Container>
         </div>
