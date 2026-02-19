@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* Tailwind v4 theme tokens (жёстко по нашему ТЗ) */
+@theme {
+  /* colors: строго 5 */
+  --color-*: initial;
+  --color-bg: #f4f8f7;
+  --color-text: #26292e;
+  --color-accent-1: #c73f40;
+  --color-accent-2: #5e88bf;
+  --color-accent-3: #ffffff;
+
+  /* breakpoints: 360 / 768 / 1440 */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 22.5rem; /* 360px */
+  --breakpoint-md: 48rem;   /* 768px */
+  --breakpoint-lg: 90rem;   /* 1440px */
+
+  /* spacing: сетка 4px */
+  --spacing-*: initial;
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-9: 36px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-14: 56px;
+  --spacing-16: 64px;
+  --spacing-18: 72px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+  --spacing-28: 112px;
+  --spacing-32: 128px;
+  --spacing-36: 144px;
+  --spacing-40: 160px;
+
+  /* radius */
+  --radius-*: initial;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;   /* базовый bento tile */
+  --radius-full: 9999px;
+
+  /* typography */
+  --font-sans: "Garet", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+
+/* BasePath-aware URLs (важно для GitHub Pages, где есть /<repo>) */
+:root {
+  --font-garet-book: "/fonts/Garet-Book.woff2";
+  --font-garet-heavy: "/fonts/Garet-Heavy.woff2";
+}
+
+@font-face {
+  font-family: "Garet";
+  src: url(var(--font-garet-book)) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Garet";
+  src: url(var(--font-garet-heavy)) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent-2) 20%, transparent);
+}
+
+/* Bento surface helper */
+.bento-tile {
+  background: color-mix(in oklab, var(--color-accent-3) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-text) 12%, transparent);
+  border-radius: var(--radius-lg);
+}
