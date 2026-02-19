@@ -13,7 +13,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur">
       <Container>
-        <div className="flex h-16 items-center px-4">
+        <div className="flex h-16 items-center px-6">
           <Link href="#hero" className="flex items-center">
             <img
               src={withBasePath("/brand/logo.svg")}
