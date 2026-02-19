@@ -95,3 +95,23 @@ body {
   border: 1px solid color-mix(in oklab, var(--color-text) 12%, transparent);
   border-radius: var(--radius-lg);
 }
+
+@keyframes text-focus-in {
+  0% {
+    filter: blur(12px);
+    opacity: 0;
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+.text-focus-in {
+  animation: text-focus-in 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
+}
+
+.jp-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
