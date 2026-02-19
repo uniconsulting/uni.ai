@@ -1,4 +1,5 @@
 import { Header } from '@/components/Header';
+import { Hero } from "@/components/Hero";
 import { Container } from '@/components/Container';
 import { BentoTile } from '@/components/BentoTile';
 import { SectionTitle } from '@/components/SectionTitle';
@@ -10,6 +11,7 @@ export default function Page() {
 
       <main className="py-12 md:py-20">
         <Container className="space-y-20">
+          <Hero />
           {/* 2. Главная страница-композиция */}
           <section id="hero" className="space-y-6">
             <BentoTile className="p-8 md:p-12">
