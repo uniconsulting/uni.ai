@@ -76,7 +76,7 @@ export function Hero() {
 
   return (
     <section id="hero" className="relative">
-      <Container className="relative pt-20 md:pt-24">
+      <Container className="relative pt-10 md:pt-12 lg:pt-14">
         {/* Японская фраза справа */}
         <div className="pointer-events-none absolute right-0 top-20 hidden lg:block">
           <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
