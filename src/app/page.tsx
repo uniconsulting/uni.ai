@@ -9,11 +9,11 @@ export default function Page() {
     <div>
       <Header />
 
-      <main className="py-12 md:py-20">
+      <main className="pb-12 md:pb-20">
         <Container className="space-y-20">
           <Hero />
           {/* 2. Главная страница-композиция */}
-          <section id="hero" className="space-y-6">
+          <section id="composition" className="space-y-6">
             <BentoTile className="p-8 md:p-12">
               <div className="space-y-4">
                 <div className="text-xs font-semibold tracking-[0.18em] opacity-70">
