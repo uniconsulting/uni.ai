@@ -1,86 +1,173 @@
-import { Container } from "@/components/Container";
-import { BentoTile } from "@/components/BentoTile";
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
+import { Container } from '@/components/Container';
+import { innerRadiusPx } from '@/lib/radius';
+
+const WORDS = [
+  'ИИ-агентов',
+  'отдела продаж',
+  'тех-поддержки',
+  'администраторов',
+  'мечты'
+] as const;
+
+function RotatingWord() {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), 2500);
+    return () => clearInterval(t);
+  }, []);
+
+  const word = WORDS[i];
+
+  return (
+    <span className="relative inline-block align-baseline">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={word}
+          className="inline-block"
+          initial={{ opacity: 0, filter: 'blur(10px)', clipPath: 'inset(0 100% 0 0)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)', clipPath: 'inset(0 0% 0 0)' }}
+          exit={{ opacity: 0, filter: 'blur(10px)', clipPath: 'inset(0 0% 0 100%)' }}
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
+        >
+          {word}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
 export function Hero() {
+  const growRef = useRef<HTMLDivElement | null>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: growRef,
+    offset: ['start start', 'end start']
+  });
+
+  // 16:9 вставка: растёт по скроллу как у only.digital (маленькая -> большая)
+  const maxW = useTransform(scrollYProgress, [0, 1], ['520px', '1240px']);
+  const radius = useTransform(scrollYProgress, [0, 1], [28, 20]); // внешняя
+  const inset = 4; // p-1 = 4px (по сетке)
+  const bgOpacity = useTransform(scrollYProgress, [0, 1], [0.85, 0.95]);
+
+  const cardStyle = useMemo(
+    () => ({
+      maxWidth: maxW
+    }),
+    [maxW]
+  );
+
   return (
-    <section id="hero" className="relative overflow-hidden">
-      {/* верхняя часть hero */}
-      <Container className="relative">
-        <div className="relative flex min-h-[calc(100svh-64px)] flex-col pt-20">
-          <h1 className="max-w-[920px] text-5xl font-extrabold leading-[1.02] md:text-6xl">
-            Кабинет твоей
-            <br />
-            <span className="text-accent-1">команды</span> ИИ-агентов
-          </h1>
-
-          {/* декоративные иероглифы справа (пока текстом, потом заменим на SVG) */}
-          <div className="pointer-events-none absolute right-0 top-24 hidden lg:block pr-2">
-            <div className="select-none text-[110px] font-extrabold leading-[0.86] opacity-90">
-              {"精益生产".split("").map((ch) => (
-                <div key={ch}>{ch}</div>
-              ))}
-            </div>
+    <section id="hero" className="relative">
+      {/* верхняя часть */}
+      <Container className="relative pt-20 md:pt-24">
+        {/* Японская фраза справа */}
+        <div className="pointer-events-none absolute right-1 top-20 hidden lg:block">
+          <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
+            精益生產
           </div>
-
-          {/* центральное окно 16:9 */}
-          <div className="mx-auto mt-14 w-full max-w-[760px]">
-            <BentoTile className="p-0">
-              <div className="aspect-video w-full rounded-lg bg-accent-3/70" />
-            </BentoTile>
-          </div>
-
-          <div className="mt-auto" />
         </div>
+
+        <h1 className="text-focus-in max-w-[980px] text-[56px] font-extrabold leading-[0.98] md:text-[72px] lg:text-[80px]">
+          Кабинет твоей
+          <br />
+          <span className="text-accent-1">команды</span>{' '}
+          <RotatingWord />
+        </h1>
       </Container>
 
-      {/* нижняя bento-полоса */}
+      {/* зона роста 16:9 (внутри hero, но превращается в секцию при скролле) */}
+      <div ref={growRef} className="relative mt-10 h-[160vh]">
+        <div className="sticky top-24 md:top-28 lg:top-32">
+          <Container className="flex justify-center">
+            <motion.div
+              className="bento-tile p-1 w-full"
+              style={{
+                ...cardStyle,
+                borderRadius: radius,
+                background: `color-mix(in oklab, var(--color-accent-3) ${Math.round(
+                  (bgOpacity.get?.() ?? 0.9) * 100
+                )}%, transparent)`
+              }}
+            >
+              <motion.div
+                className="aspect-video w-full bg-accent-3"
+                style={{
+                  borderRadius: innerRadiusPx(Math.round((radius as any).get?.() ?? 28), inset)
+                }}
+              />
+            </motion.div>
+          </Container>
+        </div>
+      </div>
+
+      {/* нижняя часть */}
       <div className="border-t border-text/10">
-        <Container>
-          <div className="grid gap-0 py-8 lg:grid-cols-12">
-            {/* левый блок с храмом (пока заглушка) */}
-            <div className="relative lg:col-span-5">
-              <div className="h-48 w-full rounded-lg border border-text/10 bg-accent-3/40 md:h-56" />
+        <Container className="relative py-10 md:py-12">
+          {/* вертикальный разделитель строго по центру */}
+          <div className="relative md:grid md:grid-cols-2 md:gap-0">
+            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
+
+            {/* LEFT */}
+            <div className="md:pr-10">
+              <div className="text-base opacity-40">наш telegram</div>
+              <div className="mt-2 text-base">@uni_smb</div>
+
+              <div className="my-6 h-px w-full bg-text/10" />
+
+              <div className="text-base opacity-40">email для связи</div>
+              <div className="mt-2 text-base">uni.kit@mail.ru</div>
+
+              {/* место под SVG рисунок */}
+              <div className="mt-10">
+                {/* положишь SVG в public/hero/temple.svg */}
+                <img
+                  src="/hero/temple.svg"
+                  alt=""
+                  className="h-auto w-full max-w-[520px] opacity-95"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
             </div>
 
-            {/* контакты */}
-            <div className="mt-6 border-text/10 lg:col-span-3 lg:mt-0 lg:border-l lg:pl-8">
-              <div className="text-xs font-semibold opacity-50">наш telegram</div>
-              <div className="mt-2 text-2xl font-extrabold">@uni_smb</div>
-
-              <div className="mt-6 h-px w-full bg-text/10" />
-
-              <div className="mt-6 text-xs font-semibold opacity-50">email для связи</div>
-              <div className="mt-2 text-2xl font-extrabold">uni.kit@mail.ru</div>
-            </div>
-
-            {/* описание + кнопка */}
-            <div className="mt-6 border-text/10 lg:col-span-4 lg:mt-0 lg:border-l lg:pl-8">
-              <div className="text-sm leading-relaxed opacity-85">
-                ЮНИ.ai - интегратор ИИ-решений
+            {/* RIGHT */}
+            <div className="mt-10 md:mt-0 md:pl-10">
+              <div className="text-base leading-relaxed">
+                ЮНИ.ai – интегратор ИИ-решений
                 <br />
-                в бизнесе полного цикла. Строим решения,
+                в бизнес полного цикла. Строим решения,
+                <br />
                 основанные на ответственности перед
+                <br />
                 бизнесом и его клиентами.
               </div>
 
-              <div className="mt-5 flex items-center gap-3">
-                <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-extrabold">
-                  道
-                </span>
-                <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-extrabold">
-                  改善
-                </span>
-                <span className="text-xs font-semibold opacity-50">
-                  наши продукты
-                  <br />
-                  японского качества
-                </span>
-              </div>
+              <div className="mt-8 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md border border-text/10 bg-accent-3/80 px-3 py-2 text-sm font-normal">
+                    道
+                  </span>
+                  <span className="rounded-md border border-text/10 bg-accent-3/80 px-3 py-2 text-sm font-normal">
+                    改善
+                  </span>
 
-              <div className="mt-6">
+                  <span className="text-sm opacity-50 leading-tight">
+                    наши продукты
+                    <br />
+                    японского качества
+                  </span>
+                </div>
+
                 <a
                   href="#cta"
-                  className="inline-flex rounded-full bg-accent-1 px-6 py-3 text-sm font-semibold text-bg hover:bg-accent-1/90"
+                  className="rounded-full bg-accent-1 px-8 py-3 text-sm font-semibold text-bg hover:bg-accent-1/90"
                 >
                   приступим
                 </a>
