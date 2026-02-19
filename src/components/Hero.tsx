@@ -47,7 +47,7 @@ export function Hero() {
   });
 
   // маленькая карточка как в макете
-  const BASE_W = 440;
+  const BASE_W = 420;
 
   useLayoutEffect(() => {
     const el = measureRef.current;
@@ -107,7 +107,7 @@ export function Hero() {
             <div className="px-1">
               <div ref={measureRef} className="flex justify-center">
                 <motion.div
-                  className="border border-text/10 bg-accent-3/70 p-1 will-change-transform shadow-[0_14px_44px_rgba(38,41,46,0.10)]"
+                  className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
                   style={{
                     width: BASE_W,
                     borderRadius: rOuter,
