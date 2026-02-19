@@ -74,7 +74,7 @@ export function Hero() {
   const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
 
   // чтобы нижняя часть была видна на первом экране
-  const topPad = useMemo(() => "pt-6 md:pt-8 lg:pt-10", []);
+  const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
     <section id="hero" className="relative">
