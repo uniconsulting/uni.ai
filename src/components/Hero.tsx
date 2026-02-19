@@ -1,29 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
 
-const WORDS = ["ИИ-агентов","отдела продаж","тех-поддержки","администраторов","мечты"] as const;
+const WORDS = ["ИИ-агентов", "отдела продаж", "тех-поддержки", "администраторов", "мечты"] as const;
 
 function RotatingWord() {
   const [i, setI] = useState(0);
+
   useEffect(() => {
     const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), 4000);
     return () => clearInterval(t);
   }, []);
+
   const word = WORDS[i];
 
   return (
-    <span className="relative inline-block align-baseline min-w-[14ch]">
+    <span className="relative inline-flex align-baseline">
       <AnimatePresence mode="wait">
         <motion.span
           key={word}
-          className="inline-block will-change-transform"
-          initial={{ opacity: 0, filter: "blur(8px)", clipPath: "inset(0 100% 0 0)" }}
-          animate={{ opacity: 1, filter: "blur(0px)", clipPath: "inset(0 0% 0 0)" }}
-          exit={{ opacity: 0, filter: "blur(8px)", clipPath: "inset(0 0% 0 100%)" }}
-          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-block"
+          initial={{ opacity: 0, filter: "blur(10px)", y: 2 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          exit={{ opacity: 0, filter: "blur(10px)", y: -2 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         >
           {word}
         </motion.span>
@@ -34,69 +36,105 @@ function RotatingWord() {
 
 export function Hero() {
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const measureRef = useRef<HTMLDivElement | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: stageRef,
     offset: ["start start", "end start"],
   });
 
-  // рост: ширина и лёгкий подъём, чтобы ощущалось как “становится секцией”
-  const w = useTransform(scrollYProgress, [0, 1], ["520px", "100%"]);
-  const y = useTransform(scrollYProgress, [0, 1], [96, 0]); // 96px = кратно 4
-  const r = useTransform(scrollYProgress, [0, 1], [28, 20]);
+  // Базовый (маленький) размер как в макете
+  const BASE_W = 520; // px
+
+  // Считаем конечный scale от ширины контейнера (как у only.digital: рост через transform)
+  const [endScale, setEndScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const cw = el.getBoundingClientRect().width;
+      // небольшой воздух по краям, чтобы было “дороже”
+      const target = (cw * 0.94) / BASE_W;
+      setEndScale(Math.max(1, Math.min(3, target)));
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Рост + лёгкий подъём (перекрытие низа)
+  const scale = useTransform(scrollYProgress, [0, 1], [1, endScale]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, -64]); // кратно 4
+
+  // Радиусы: аккуратно уменьшаем на росте
+  const rOuter = useTransform(scrollYProgress, [0, 1], [28, 20]);
+  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4)); // inset = 4 (p-1)
 
   return (
     <section id="hero" className="relative">
       <Container className="relative pt-20 md:pt-24">
-        {/* японская фраза справа */}
+        {/* Японская фраза справа */}
         <div className="pointer-events-none absolute right-0 top-20 hidden lg:block">
           <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
             精益生產
           </div>
         </div>
 
-        {/* заголовок */}
-        <h1 className="text-focus-in max-w-[980px] text-[56px] font-extrabold leading-[0.98] md:text-[72px] lg:text-[80px]">
-          Кабинет твоей
-          <br />
-          <span className="text-accent-1">команды</span>{" "}
-          <RotatingWord />
+        {/* Заголовок: строго 2 строки */}
+        <h1 className="text-focus-in max-w-[1200px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
+          <span className="block">Кабинет твоей</span>
+          <span className="block whitespace-nowrap">
+            <span className="text-accent-1">команды</span>{" "}
+            <span className="inline-block align-baseline text-[0.92em] md:text-[0.90em]">
+              <RotatingWord />
+            </span>
+          </span>
         </h1>
       </Container>
 
-      {/* stage: sticky media + контент, который едет под него */}
+      {/* stage: sticky media + нижний контент (будет “заезжать” под вставку за счёт scale) */}
       <div ref={stageRef} className="relative mt-10">
-        {/* sticky media */}
-        <div className="sticky top-24 z-30">
-          <Container className="flex justify-center">
-            <motion.div
-              style={{ width: w, y, ["--r" as any]: r }}
-              className="w-full max-w-full border border-text/10 bg-accent-3/80 p-1 shadow-[0_16px_48px_rgba(38,41,46,0.10)] rounded-[var(--r)]"
-            >
-              <div className="aspect-video w-full bg-accent-3 rounded-[calc(var(--r)-4px)]" />
-            </motion.div>
+        <div className="sticky top-24 z-40">
+          <Container>
+            <div ref={measureRef} className="flex justify-center">
+              <motion.div
+                className="border border-text/10 bg-accent-3/80 p-1 shadow-[0_16px_48px_rgba(38,41,46,0.10)] will-change-transform"
+                style={{
+                  width: BASE_W,
+                  borderRadius: rOuter,
+                  scale,
+                  y,
+                }}
+              >
+                <motion.div
+                  className="aspect-video w-full bg-accent-3"
+                  style={{ borderRadius: rInner }}
+                />
+              </motion.div>
+            </div>
           </Container>
         </div>
 
-        {/* горизонтальный разделитель между 16:9 и нижней частью */}
+        {/* Горизонтальный разделитель (между 16:9 и нижней частью) */}
         <div className="mt-12 border-t border-text/10" />
 
-        {/* нижняя часть (она поедет под sticky media, т.к. внутри stage и z ниже) */}
-        <div className="relative z-0">
+        {/* Нижняя часть */}
+        <div className="relative z-10">
           <Container className="py-10 md:py-12">
             <div className="relative md:grid md:grid-cols-2 md:gap-0">
-              {/* вертикальный разделитель по центру */}
+              {/* вертикальный разделитель строго по центру */}
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
-              {/* LEFT: место под рисунок + контакты (контакты НЕ липнут к левому краю) */}
+              {/* LEFT */}
               <div className="md:pr-10">
                 <div className="grid grid-cols-12 gap-6">
-                  {/* зона под SVG/PNG рисунок */}
+                  {/* зона под SVG/PNG (чтобы контакты не липли к левой границе) */}
                   <div className="col-span-12 md:col-span-7">
-                    <div className="h-40 md:h-56 lg:h-64">
-                      {/* сюда вставишь SVG/PNG */}
-                      {/* <img src="/hero/temple.svg" className="h-full w-full object-contain" alt="" /> */}
-                    </div>
+                    <div className="h-40 md:h-56 lg:h-64 rounded-lg border border-text/10 bg-accent-3/40" />
                   </div>
 
                   {/* контакты */}
@@ -124,7 +162,6 @@ export function Hero() {
                   бизнесом и его клиентами.
                 </div>
 
-                {/* плашки + подпись слева, CTA справа, на одной линии */}
                 <div className="mt-8 flex items-center justify-between gap-6">
                   <div className="flex items-center gap-3">
                     <span className="rounded-md border border-text/10 bg-accent-3/80 px-3 py-2 text-sm font-normal">
@@ -151,8 +188,8 @@ export function Hero() {
               </div>
             </div>
 
-            {/* даём stage запас по высоте, чтобы рост вставки реально “жил” и перекрывал низ */}
-            <div className="h-96 md:h-[28rem]" />
+            {/* запас по высоте, чтобы рост реально “проигрался” и перекрытие было заметным */}
+            <div className="h-[120vh]" />
           </Container>
         </div>
       </div>
