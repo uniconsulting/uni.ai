@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Container } from '@/components/Container';
 import { withBasePath } from '@/lib/basePath';
