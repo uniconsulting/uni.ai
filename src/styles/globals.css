@@ -46,6 +46,11 @@
   --radius-md: 20px;
   --radius-lg: 28px;   /* базовый bento tile */
   --radius-full: 9999px;
+  --radius-xl: 16px;   /* для rounded-xl (плашки) */
+  --radius-2xl: 24px;  /* для rounded-2xl (кнопка) */
+  --radius-3xl: 32px;  /* на будущее, если где-то всплывёт rounded-3xl */
+
+  --radius-full: 9999px;
 
   /* typography */
   --font-sans: "Garet", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
