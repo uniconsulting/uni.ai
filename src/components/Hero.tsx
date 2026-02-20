@@ -148,21 +148,20 @@ export function Hero() {
                             onError={() => setTempleVisible(false)}
                           />
                         ) : (
-                          // если картинки нет — просто не показываем, но место сохранено
                           <div className="h-full w-full" />
                         )}
                       </div>
                     </div>
 
-                    {/* контакты (отдельной колонкой, не липнут к левому краю) */}
+                    {/* контакты: лейблы легче, значения заметнее */}
                     <div className="col-span-12 md:col-span-5">
-                      <div className="text-base opacity-40 font-normal">наш telegram</div>
-                      <div className="mt-2 text-base font-normal">@uni_smb</div>
+                      <div className="text-sm font-normal leading-none opacity-40">наш telegram</div>
+                      <div className="mt-2 text-lg font-normal leading-none">@uni_smb</div>
 
                       <div className="my-6 h-px w-full bg-text/10" />
 
-                      <div className="text-base opacity-40 font-normal">email для связи</div>
-                      <div className="mt-2 text-base font-normal">uni.kit@mail.ru</div>
+                      <div className="text-sm font-normal leading-none opacity-40">email для связи</div>
+                      <div className="mt-2 text-lg font-normal leading-none">uni.kit@mail.ru</div>
                     </div>
                   </div>
                 </div>
@@ -182,14 +181,16 @@ export function Hero() {
                   {/* chips + подпись слева, CTA справа, на одной линии */}
                   <div className="mt-8 flex items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                      <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-normal">
+                      {/* плашки: прямоугольные, не круглые */}
+                      <span className="inline-flex h-10 min-w-12 items-center justify-center rounded-lg border border-text/10 bg-accent-3/70 px-3 text-sm font-normal">
                         道
                       </span>
-                      <span className="rounded-md border border-text/10 bg-accent-3/70 px-3 py-2 text-sm font-normal">
+                      <span className="inline-flex h-10 min-w-12 items-center justify-center rounded-lg border border-text/10 bg-accent-3/70 px-3 text-sm font-normal">
                         改善
                       </span>
 
-                      <span className="text-sm opacity-50 leading-tight">
+                      {/* подпись: спокойнее и читаемее */}
+                      <span className="text-sm font-normal leading-tight opacity-50">
                         наши продукты
                         <br />
                         японского качества
