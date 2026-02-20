@@ -91,7 +91,7 @@ export function Hero() {
             <span className="block">Кабинет твоей</span>
             <span className="block whitespace-nowrap">
               <span className="text-accent-1">команды</span>{" "}
-              <span className="inline-block align-baseline text-[0.92em] md:text-[0.90em]">
+              <span className="inline-block align-baseline">
                 <RotatingWord />
               </span>
             </span>
