@@ -47,7 +47,6 @@ export function Hero() {
     offset: ["start start", "end start"],
   });
 
-  // маленькая карточка как в макете
   const BASE_W = 420;
 
   useLayoutEffect(() => {
@@ -135,22 +134,23 @@ export function Hero() {
                 <div className="relative md:pr-10">
                   <div className="grid grid-cols-12 gap-6">
                     {/* храм */}
-                    <div className="col-span-12 md:col-span-7">
-                      <div className="relative h-48 md:h-56 lg:h-64">
+                    <div className="col-span-12 md:col-span-7 self-stretch">
+                      {/* h-full тянется по высоте строки, min-h задаёт минимум как в макете */}
+                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64">
                         {templeVisible ? (
                           <img
-  src={withBasePath("/hero/temple.svg")}
-  alt=""
-  className="pointer-events-none select-none absolute left-0 bottom-0 h-auto w-full max-w-[520px]"
-  onError={() => setTempleVisible(false)}
-/>
+                            src={withBasePath("/hero/temple.svg")}
+                            alt=""
+                            className="pointer-events-none select-none absolute bottom-0 left-1 h-auto w-full max-w-[560px]"
+                            onError={() => setTempleVisible(false)}
+                          />
                         ) : (
                           <div className="h-full w-full" />
                         )}
                       </div>
                     </div>
 
-                    {/* контакты: как на референсе */}
+                    {/* контакты */}
                     <div className="col-span-12 md:col-span-5">
                       <div className="text-lg font-normal leading-none opacity-40">
                         наш telegram
@@ -173,7 +173,6 @@ export function Hero() {
 
                 {/* RIGHT HALF */}
                 <div className="md:pl-10">
-                  {/* текст заметно крупнее, как в макете */}
                   <div className="text-lg leading-snug md:text-lg">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
@@ -186,7 +185,6 @@ export function Hero() {
 
                   <div className="mt-10 flex items-center justify-between gap-8">
                     <div className="flex items-center gap-4">
-                      {/* плашки: крупные карточки (не круги) */}
                       <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3/70 px-6 text-3xl font-normal">
                         道
                       </span>
@@ -194,7 +192,6 @@ export function Hero() {
                         改善
                       </span>
 
-                      {/* подпись рядом с плашками - крупнее и читаемее */}
                       <span className="text-lg font-normal leading-tight opacity-50">
                         наши продукты
                         <br />
