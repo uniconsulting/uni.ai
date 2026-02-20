@@ -65,7 +65,6 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
-  // оставляю твою текущую механику (чтобы не ломать поведение)
   const scale = useTransform(scrollYProgress, [0, 0.18, 1], [1, 1, endScale]);
   const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, -64]);
 
@@ -75,7 +74,7 @@ export function Hero() {
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
-    <section id="hero" className="relative">
+    <section id="hero" className="relative overflow-x-clip">
       {/* TOP */}
       <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
@@ -114,10 +113,7 @@ export function Hero() {
                     transformOrigin: "center top",
                   }}
                 >
-                  <motion.div
-                    className="aspect-video w-full bg-accent-3"
-                    style={{ borderRadius: rInner }}
-                  />
+                  <motion.div className="aspect-video w-full bg-accent-3" style={{ borderRadius: rInner }} />
                 </motion.div>
               </div>
             </div>
@@ -130,26 +126,27 @@ export function Hero() {
             <div className="relative px-1">
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
-              <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
-                {/* LEFT HALF */}
-                <div className="relative md:pr-10 overflow-hidden">
-                  {/* храм как подложка левой половины (без отдельной “рамки-ячейки”) */}
-                  {templeVisible && (
-                    <img
-                      src={withBasePath("/hero/temple.svg")}
-                      alt=""
-                      aria-hidden="true"
-                      className="pointer-events-none select-none absolute bottom-0 left-0 z-0 h-auto w-[900px] lg:w-[980px] max-w-none -translate-x-20"
-                      onError={() => setTempleVisible(false)}
-                    />
-                  )}
+              {/* ХРАМ: full-bleed маска от края страницы до центра (до разделителя) */}
+              <div className="pointer-events-none absolute inset-y-0 bottom-0 left-[calc(50%-50vw)] hidden w-[50vw] overflow-hidden md:block">
+                {templeVisible && (
+                  <img
+                    src={withBasePath("/hero/temple.svg")}
+                    alt=""
+                    aria-hidden="true"
+                    className="select-none absolute bottom-0 left-0 h-auto w-[980px] max-w-none -translate-x-16"
+                    onError={() => setTempleVisible(false)}
+                  />
+                )}
+              </div>
 
-                  {/* контент поверх */}
-                  <div className="relative z-10 grid h-full grid-cols-12 gap-6">
-                    {/* “пустая” зона под храм, чтобы контакты стояли справа как на макете */}
+              <div className="relative z-10 grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
+                {/* LEFT HALF */}
+                <div className="relative md:pr-10">
+                  <div className="grid h-full grid-cols-12 gap-6">
+                    {/* Пустая зона слева: именно под храм (контактам не мешаем) */}
                     <div className="hidden md:block md:col-span-7" />
 
-                    {/* контакты: верх telegram, низ email, разделитель по центру */}
+                    {/* контакты */}
                     <div className="col-span-12 md:col-span-5 flex h-full flex-col">
                       <div className="pt-2">
                         <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
@@ -180,10 +177,9 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
-                  {/* низ: плашки + CTA на одной линии по нижней границе */}
                   <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                     <div className="flex items-end gap-4">
-                      {/* плашки: без бордера, скругление видно */}
+                      {/* плашки: без серого бордера, скругление читается */}
                       <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-white/70 px-6 text-3xl font-normal shadow-[0_10px_28px_rgba(38,41,46,0.06)]">
                         道
                       </span>
