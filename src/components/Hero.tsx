@@ -6,12 +6,13 @@ import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
 const WORDS = ["ИИ-агентов", "отдела продаж", "тех-поддержки", "администраторов", "мечты"] as const;
+const WORD_CYCLE_MS = 4000;
 
 function RotatingWord() {
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), 4000);
+    const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), WORD_CYCLE_MS);
     return () => clearInterval(t);
   }, []);
 
@@ -47,6 +48,7 @@ export function Hero() {
     offset: ["start start", "end start"],
   });
 
+  // маленькая карточка как в макете
   const BASE_W = 420;
 
   useLayoutEffect(() => {
@@ -65,8 +67,10 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
+  // рост начинается не сразу, дальше масштабируем и даем чуть "вниз",
+  // чтобы при росте карточка перекрывала нижнюю композицию (как only.digital)
   const scale = useTransform(scrollYProgress, [0, 0.18, 1], [1, 1, endScale]);
-  const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, -64]);
+  const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, 24]);
 
   const rOuter = useTransform(scrollYProgress, [0, 0.65, 1], [28, 24, 20]);
   const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
@@ -74,7 +78,7 @@ export function Hero() {
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
-    <section id="hero" className="relative overflow-hidden">
+    <section id="hero" className="relative">
       {/* TOP */}
       <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
@@ -99,7 +103,7 @@ export function Hero() {
       {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
         {/* 16:9 */}
-        <div className="sticky top-24 z-40">
+        <div className="sticky top-24 z-50">
           <Container>
             <div className="px-1">
               <div ref={measureRef} className="flex justify-center">
@@ -132,15 +136,16 @@ export function Hero() {
               <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
                 {/* LEFT HALF */}
                 <div className="relative md:pr-10">
-                  <div className="grid h-full grid-cols-12 gap-6 items-stretch">
-                    {/* храм */}
-                    <div className="col-span-12 md:col-span-7 self-end relative">
-                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64">
+                  <div className="grid h-full grid-cols-12 gap-6">
+                    {/* храм: больше, смещен влево, строго клипается в своей колонке */}
+                    <div className="col-span-12 md:col-span-7">
+                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64 overflow-hidden">
                         {templeVisible ? (
                           <img
                             src={withBasePath("/hero/temple.svg")}
                             alt=""
-                            className="pointer-events-none select-none absolute bottom-0 left-0 h-auto w-[560px] sm:w-[600px] lg:w-[680px] max-w-none -translate-x-16"
+                            aria-hidden="true"
+                            className="pointer-events-none select-none absolute bottom-0 left-0 h-auto w-[760px] lg:w-[860px] max-w-none -translate-x-16"
                             onError={() => setTempleVisible(false)}
                           />
                         ) : (
@@ -149,16 +154,21 @@ export function Hero() {
                       </div>
                     </div>
 
-                    {/* контакты */}
-                    <div className="col-span-12 md:col-span-5 relative z-10 flex h-full flex-col">
-                      <div>
-                        <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
+                    {/* контакты: email прижат к низу (общая нижняя граница) */}
+                    <div className="col-span-12 md:col-span-5 flex h-full flex-col">
+                      <div className="pt-2">
+                        <div className="text-lg font-normal leading-none opacity-40">
+                          наш telegram
+                        </div>
                         <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
+
+                        <div className="my-8 h-px w-full bg-text/10" />
                       </div>
 
                       <div className="mt-auto">
-                        <div className="my-8 h-px w-full bg-text/10" />
-                        <div className="text-lg font-normal leading-none opacity-40">email для связи</div>
+                        <div className="text-lg font-normal leading-none opacity-40">
+                          email для связи
+                        </div>
                         <div className="mt-3 text-3xl font-normal leading-none">uni.kit@mail.ru</div>
                       </div>
                     </div>
@@ -177,13 +187,14 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
-                  {/* нижняя линия: плашки + CTA */}
+                  {/* низ: плашки + подпись + CTA на одной "посадочной линии" */}
                   <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                     <div className="flex items-end gap-4">
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3 px-6 text-3xl font-normal shadow-[0_10px_30px_rgba(38,41,46,0.08)]">
+                      {/* плашки: без бордюра, с читаемым скруглением */}
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-[28px] bg-white/70 px-6 text-3xl font-normal shadow-[0_10px_28px_rgba(38,41,46,0.06)]">
                         道
                       </span>
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3 px-6 text-3xl font-normal shadow-[0_10px_30px_rgba(38,41,46,0.08)]">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-[28px] bg-white/70 px-6 text-3xl font-normal shadow-[0_10px_28px_rgba(38,41,46,0.06)]">
                         改善
                       </span>
 
@@ -204,6 +215,7 @@ export function Hero() {
                 </div>
               </div>
 
+              {/* пространство, чтобы рост 16:9 “проигрался” и перекрыл нижний блок при скролле */}
               <div className="h-[110vh]" />
             </div>
           </Container>
