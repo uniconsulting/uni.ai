@@ -154,7 +154,7 @@ export function Hero() {
                       <div className="text-lg font-normal leading-none opacity-40">
                         наш telegram
                       </div>
-                      <div className="mt-3 text-5xl font-normal leading-none">
+                      <div className="mt-3 text-3xl font-normal leading-none">
                         @uni_smb
                       </div>
 
@@ -163,7 +163,7 @@ export function Hero() {
                       <div className="text-lg font-normal leading-none opacity-40">
                         email для связи
                       </div>
-                      <div className="mt-3 text-5xl font-normal leading-none">
+                      <div className="mt-3 text-3xl font-normal leading-none">
                         uni.kit@mail.ru
                       </div>
                     </div>
@@ -173,7 +173,7 @@ export function Hero() {
                 {/* RIGHT HALF */}
                 <div className="md:pl-10">
                   {/* текст заметно крупнее, как в макете */}
-                  <div className="text-2xl leading-snug md:text-3xl">
+                  <div className="text-lg leading-snug md:text-3xl">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
                     в бизнес полного цикла. Строим решения,
@@ -186,15 +186,15 @@ export function Hero() {
                   <div className="mt-10 flex items-center justify-between gap-8">
                     <div className="flex items-center gap-4">
                       {/* плашки: крупные карточки (не круги) */}
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-2xl border border-text/10 bg-accent-3/70 px-6 text-3xl font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3/70 px-6 text-3xl font-normal">
                         道
                       </span>
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-2xl border border-text/10 bg-accent-3/70 px-6 text-3xl font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3/70 px-6 text-3xl font-normal">
                         改善
                       </span>
 
                       {/* подпись рядом с плашками - крупнее и читаемее */}
-                      <span className="text-xl font-normal leading-tight opacity-50">
+                      <span className="text-lg font-normal leading-tight opacity-50">
                         наши продукты
                         <br />
                         японского качества
