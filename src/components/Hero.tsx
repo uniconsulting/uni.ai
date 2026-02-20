@@ -173,7 +173,7 @@ export function Hero() {
                 {/* RIGHT HALF */}
                 <div className="md:pl-10">
                   {/* текст заметно крупнее, как в макете */}
-                  <div className="text-lg leading-snug md:text-3xl">
+                  <div className="text-lg leading-snug md:text-lg">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
                     в бизнес полного цикла. Строим решения,
