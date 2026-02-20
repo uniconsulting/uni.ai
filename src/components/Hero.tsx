@@ -132,21 +132,31 @@ export function Hero() {
               <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
                 {/* LEFT HALF */}
                 <div className="relative md:pr-10">
-                  {/* ВАЖНО: храм живёт в своей “ячейке” (md:col-span-7),
-                      overflow-visible -> может вылетать влево за контейнер/страницу,
-                      но не пересечёт соседние блоки справа, потому что привязан к right-0 ячейки. */}
                   <div className="relative z-10 grid h-full grid-cols-12 gap-6">
                     {/* храм зона */}
                     <div className="hidden md:block md:col-span-7 relative overflow-visible">
-                      {templeVisible && (
-                        <img
-                          src={withBasePath("/hero/temple.svg")}
-                          alt=""
-                          aria-hidden="true"
-                          onError={() => setTempleVisible(false)}
-                          className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none"
-                        />
-                      )}
+                      {/* BLEED: расширяем зону влево до края вьюпорта, но правую границу (у контактов) не двигаем */}
+                      <div
+                        className="-ml-[var(--bleed)] w-[calc(100%+var(--bleed))] relative overflow-visible"
+                        style={
+                          {
+                            // 1416 — ваша дизайн-ширина контейнера; +4px — шаг сетки
+                            // max(0px, ...) чтобы на узких экранах не уходить в минус
+                            ["--bleed" as any]:
+                              "max(0px, calc((100vw - 1416px)/2 + 4px))",
+                          } as React.CSSProperties
+                        }
+                      >
+                        {templeVisible && (
+                          <img
+                            src={withBasePath("/hero/temple.svg")}
+                            alt=""
+                            aria-hidden="true"
+                            onError={() => setTempleVisible(false)}
+                            className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     {/* контакты */}
@@ -182,10 +192,11 @@ export function Hero() {
 
                   <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                     <div className="flex items-end gap-4">
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-white px-6 text-3xl font-normal]">
+                      {/* плашки: чистый белый фон, без бордера, rounded-xl */}
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
                         道
                       </span>
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-white px-6 text-3xl font-normal]">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
                         改善
                       </span>
 
@@ -196,9 +207,10 @@ export function Hero() {
                       </span>
                     </div>
 
+                    {/* кнопка: rounded-2xl */}
                     <a
                       href="#cta"
-                      className="rounded-xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
+                      className="rounded-2xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
                     >
                       приступим
                     </a>
