@@ -144,7 +144,7 @@ export function Hero() {
                           alt=""
                           aria-hidden="true"
                           onError={() => setTempleVisible(false)}
-                          className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none -translate-x-[-20%]"
+                          className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none -translate-x-[-10%]"
                         />
                       )}
                     </div>
@@ -198,7 +198,7 @@ export function Hero() {
 
                     <a
                       href="#cta"
-                      className="rounded-full bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
+                      className="rounded-2xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
                     >
                       приступим
                     </a>
