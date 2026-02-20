@@ -144,7 +144,7 @@ export function Hero() {
                           alt=""
                           aria-hidden="true"
                           onError={() => setTempleVisible(false)}
-                          className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none -translate-x-[80%]"
+                          className="pointer-events-none select-none absolute bottom-0 right-0 h-auto w-[900px] lg:w-[980px] max-w-none -translate-x-[10%]"
                         />
                       )}
                     </div>
