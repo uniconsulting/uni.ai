@@ -129,19 +129,18 @@ export function Hero() {
             <div className="relative px-1">
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
-              <div className="grid gap-10 md:grid-cols-2 md:gap-0">
+              <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
                 {/* LEFT HALF */}
                 <div className="relative md:pr-10">
-                  <div className="grid grid-cols-12 gap-6">
-                    {/* храм */}
+                  <div className="grid h-full grid-cols-12 gap-6 items-stretch">
+                    {/* храм: больше + смещён влево + обрезка */}
                     <div className="col-span-12 md:col-span-7 self-stretch">
-                      {/* h-full тянется по высоте строки, min-h задаёт минимум как в макете */}
-                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64">
+                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64 overflow-hidden">
                         {templeVisible ? (
                           <img
                             src={withBasePath("/hero/temple.svg")}
                             alt=""
-                            className="pointer-events-none select-none absolute bottom-0 left-1 h-auto w-full max-w-[560px]"
+                            className="pointer-events-none select-none absolute bottom-0 -left-10 h-auto w-[640px] lg:w-[720px] max-w-none"
                             onError={() => setTempleVisible(false)}
                           />
                         ) : (
@@ -150,29 +149,27 @@ export function Hero() {
                       </div>
                     </div>
 
-                    {/* контакты */}
-                    <div className="col-span-12 md:col-span-5">
-                      <div className="text-lg font-normal leading-none opacity-40">
-                        наш telegram
-                      </div>
-                      <div className="mt-3 text-3xl font-normal leading-none">
-                        @uni_smb
+                    {/* контакты: email прижат к низу (общая нижняя граница) */}
+                    <div className="col-span-12 md:col-span-5 flex h-full flex-col">
+                      <div>
+                        <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
+                        <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
                       </div>
 
-                      <div className="my-8 h-px w-full bg-text/10" />
-
-                      <div className="text-lg font-normal leading-none opacity-40">
-                        email для связи
+                      <div className="flex-1 flex items-center">
+                        <div className="h-px w-full bg-text/10" />
                       </div>
-                      <div className="mt-3 text-3xl font-normal leading-none">
-                        uni.kit@mail.ru
+
+                      <div>
+                        <div className="text-lg font-normal leading-none opacity-40">email для связи</div>
+                        <div className="mt-3 text-3xl font-normal leading-none">uni.kit@mail.ru</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* RIGHT HALF */}
-                <div className="md:pl-10">
+                <div className="md:pl-10 flex h-full flex-col">
                   <div className="text-lg leading-snug md:text-lg">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
@@ -183,12 +180,14 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
-                  <div className="mt-10 flex items-center justify-between gap-8">
-                    <div className="flex items-center gap-4">
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3/70 px-6 text-3xl font-normal">
+                  {/* ряд с плашками и кнопкой прижат вниз (общая нижняя граница) */}
+                  <div className="mt-auto pt-10 flex items-end justify-between gap-8">
+                    <div className="flex items-end gap-4">
+                      {/* плашки: видимое скругление */}
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl border border-text/10 bg-accent-3 px-6 text-3xl font-normal">
                         道
                       </span>
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3/70 px-6 text-3xl font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl border border-text/10 bg-accent-3 px-6 text-3xl font-normal">
                         改善
                       </span>
 
