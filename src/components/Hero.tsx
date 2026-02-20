@@ -55,7 +55,6 @@ export function Hero() {
 
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-      // почти во всю ширину контейнера (без “в упор”)
       const target = (cw * 0.96) / BASE_W;
       setEndScale(Math.max(1, Math.min(3, target)));
     };
@@ -66,19 +65,17 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
-  // ВАЖНО: рост начинается не сразу. До ~18% скролла — карточка статична (как в макете).
   const scale = useTransform(scrollYProgress, [0, 0.18, 1], [1, 1, endScale]);
   const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, -64]);
 
   const rOuter = useTransform(scrollYProgress, [0, 0.65, 1], [28, 24, 20]);
   const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
 
-  // чтобы нижняя часть была видна на первом экране
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
     <section id="hero" className="relative">
-      {/* TOP: заголовок + японский вертикальный текст */}
+      {/* TOP */}
       <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
           <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
@@ -99,9 +96,9 @@ export function Hero() {
         </div>
       </Container>
 
-      {/* STAGE: 16:9 карточка (sticky + scale) + divider + нижняя композиция */}
+      {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
-        {/* карточка 16:9 */}
+        {/* 16:9 */}
         <div className="sticky top-24 z-40">
           <Container>
             <div className="px-1">
@@ -126,15 +123,14 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* нижняя часть как в макете */}
+        {/* низ */}
         <div className="relative z-10">
           <Container className="py-10 md:py-12">
             <div className="relative px-1">
-              {/* вертикальный разделитель ровно по центру */}
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
               <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-                {/* LEFT HALF: храм + контакты */}
+                {/* LEFT HALF */}
                 <div className="relative md:pr-10">
                   <div className="grid grid-cols-12 gap-6">
                     {/* храм */}
@@ -153,22 +149,31 @@ export function Hero() {
                       </div>
                     </div>
 
-                    {/* контакты: лейблы легче, значения заметнее */}
+                    {/* контакты: как на референсе */}
                     <div className="col-span-12 md:col-span-5">
-                      <div className="text-sm font-normal leading-none opacity-40">наш telegram</div>
-                      <div className="mt-2 text-lg font-normal leading-none">@uni_smb</div>
+                      <div className="text-lg font-normal leading-none opacity-40">
+                        наш telegram
+                      </div>
+                      <div className="mt-3 text-5xl font-normal leading-none">
+                        @uni_smb
+                      </div>
 
-                      <div className="my-6 h-px w-full bg-text/10" />
+                      <div className="my-8 h-px w-full bg-text/10" />
 
-                      <div className="text-sm font-normal leading-none opacity-40">email для связи</div>
-                      <div className="mt-2 text-lg font-normal leading-none">uni.kit@mail.ru</div>
+                      <div className="text-lg font-normal leading-none opacity-40">
+                        email для связи
+                      </div>
+                      <div className="mt-3 text-5xl font-normal leading-none">
+                        uni.kit@mail.ru
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* RIGHT HALF */}
                 <div className="md:pl-10">
-                  <div className="text-base leading-relaxed">
+                  {/* текст заметно крупнее, как в макете */}
+                  <div className="text-2xl leading-snug md:text-3xl">
                     ЮНИ.ai – интегратор ИИ-решений
                     <br />
                     в бизнес полного цикла. Строим решения,
@@ -178,19 +183,18 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
-                  {/* chips + подпись слева, CTA справа, на одной линии */}
-                  <div className="mt-8 flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-3">
-                      {/* плашки: прямоугольные, не круглые */}
-                      <span className="inline-flex h-10 min-w-12 items-center justify-center rounded-lg border border-text/10 bg-accent-3/70 px-3 text-sm font-normal">
+                  <div className="mt-10 flex items-center justify-between gap-8">
+                    <div className="flex items-center gap-4">
+                      {/* плашки: крупные карточки (не круги) */}
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-2xl border border-text/10 bg-accent-3/70 px-6 text-3xl font-normal">
                         道
                       </span>
-                      <span className="inline-flex h-10 min-w-12 items-center justify-center rounded-lg border border-text/10 bg-accent-3/70 px-3 text-sm font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-2xl border border-text/10 bg-accent-3/70 px-6 text-3xl font-normal">
                         改善
                       </span>
 
-                      {/* подпись: спокойнее и читаемее */}
-                      <span className="text-sm font-normal leading-tight opacity-50">
+                      {/* подпись рядом с плашками - крупнее и читаемее */}
+                      <span className="text-xl font-normal leading-tight opacity-50">
                         наши продукты
                         <br />
                         японского качества
@@ -199,7 +203,7 @@ export function Hero() {
 
                     <a
                       href="#cta"
-                      className="rounded-full bg-accent-1 px-8 py-3 text-sm font-semibold text-bg hover:bg-accent-1/90"
+                      className="rounded-full bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
                     >
                       приступим
                     </a>
@@ -207,7 +211,6 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* пространство, чтобы рост 16:9 “проигрался” и перекрыл нижний блок при скролле */}
               <div className="h-[110vh]" />
             </div>
           </Container>
