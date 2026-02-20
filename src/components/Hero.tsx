@@ -74,7 +74,7 @@ export function Hero() {
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
-    <section id="hero" className="relative">
+    <section id="hero" className="relative overflow-hidden">
       {/* TOP */}
       <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
@@ -133,14 +133,14 @@ export function Hero() {
                 {/* LEFT HALF */}
                 <div className="relative md:pr-10">
                   <div className="grid h-full grid-cols-12 gap-6 items-stretch">
-                    {/* храм: больше + смещён влево + обрезка */}
-                    <div className="col-span-12 md:col-span-7 self-stretch">
-                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64 overflow-hidden">
+                    {/* храм */}
+                    <div className="col-span-12 md:col-span-7 self-end relative">
+                      <div className="relative h-full min-h-48 md:min-h-56 lg:min-h-64">
                         {templeVisible ? (
                           <img
                             src={withBasePath("/hero/temple.svg")}
                             alt=""
-                            className="pointer-events-none select-none absolute bottom-0 -left-10 h-auto w-[640px] lg:w-[720px] max-w-none"
+                            className="pointer-events-none select-none absolute bottom-0 left-0 h-auto w-[560px] sm:w-[600px] lg:w-[680px] max-w-none -translate-x-16"
                             onError={() => setTempleVisible(false)}
                           />
                         ) : (
@@ -149,18 +149,15 @@ export function Hero() {
                       </div>
                     </div>
 
-                    {/* контакты: email прижат к низу (общая нижняя граница) */}
-                    <div className="col-span-12 md:col-span-5 flex h-full flex-col">
+                    {/* контакты */}
+                    <div className="col-span-12 md:col-span-5 relative z-10 flex h-full flex-col">
                       <div>
                         <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
                         <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
                       </div>
 
-                      <div className="flex-1 flex items-center">
-                        <div className="h-px w-full bg-text/10" />
-                      </div>
-
-                      <div>
+                      <div className="mt-auto">
+                        <div className="my-8 h-px w-full bg-text/10" />
                         <div className="text-lg font-normal leading-none opacity-40">email для связи</div>
                         <div className="mt-3 text-3xl font-normal leading-none">uni.kit@mail.ru</div>
                       </div>
@@ -180,14 +177,13 @@ export function Hero() {
                     бизнесом и его клиентами.
                   </div>
 
-                  {/* ряд с плашками и кнопкой прижат вниз (общая нижняя граница) */}
+                  {/* нижняя линия: плашки + CTA */}
                   <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                     <div className="flex items-end gap-4">
-                      {/* плашки: видимое скругление */}
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl border border-text/10 bg-accent-3 px-6 text-3xl font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3 px-6 text-3xl font-normal shadow-[0_10px_30px_rgba(38,41,46,0.08)]">
                         道
                       </span>
-                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl border border-text/10 bg-accent-3 px-6 text-3xl font-normal">
+                      <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-3xl bg-accent-3 px-6 text-3xl font-normal shadow-[0_10px_30px_rgba(38,41,46,0.08)]">
                         改善
                       </span>
 
