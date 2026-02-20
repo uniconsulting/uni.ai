@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
+import { withBasePath } from "@/lib/basePath";
 
 const WORDS = ["ИИ-агентов", "отдела продаж", "тех-поддержки", "администраторов", "мечты"] as const;
 
@@ -138,11 +139,11 @@ export function Hero() {
                       <div className="relative h-48 md:h-56 lg:h-64">
                         {templeVisible ? (
                           <img
-                            src="/hero/temple.svg"
-                            alt=""
-                            className="pointer-events-none select-none absolute left-0 bottom-0 h-auto w-full max-w-[520px]"
-                            onError={() => setTempleVisible(false)}
-                          />
+  src={withBasePath("/hero/temple.svg")}
+  alt=""
+  className="pointer-events-none select-none absolute left-0 bottom-0 h-auto w-full max-w-[520px]"
+  onError={() => setTempleVisible(false)}
+/>
                         ) : (
                           <div className="h-full w-full" />
                         )}
