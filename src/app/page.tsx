@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
+import { InfoBlocks } from "@/components/InfoBlocks";
 import { Container } from "@/components/Container";
 import { BentoTile } from "@/components/BentoTile";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -12,6 +13,9 @@ export default function Page() {
       <main className="pb-12 md:pb-20">
         {/* Hero сам управляет контейнером внутри себя */}
         <Hero />
+
+        {/* 3. Инфо-блоки (sticky stage) — вне общего Container, чтобы секция жила своей геометрией */}
+        <InfoBlocks />
 
         {/* Остальные секции: единый контейнер */}
         <Container className="mt-20 space-y-20">
@@ -26,41 +30,19 @@ export default function Page() {
                   ЮНИ: ИИ-инструменты, которые реально упрощают бизнес
                 </h1>
                 <p className="max-w-[72ch] text-base opacity-80 md:text-lg">
-                  Это каркас проекта. Дальше по секциям: Header → Hero → 3 инфо-блока → ниши +
-                  демо-чат → тарифы → ROI → японское качество → FAQ → CTA → Footer.
+                  Это каркас проекта. Дальше по секциям: Header → Hero → 3 инфо-блока → ниши + демо-чат → тарифы → ROI →
+                  японское качество → FAQ → CTA → Footer.
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <a
-                    href="#pricing"
-                    className="rounded-full bg-accent-1 px-5 py-3 text-sm font-semibold text-bg"
-                  >
+                  <a href="#pricing" className="rounded-full bg-accent-1 px-5 py-3 text-sm font-semibold text-bg">
                     Смотреть тарифы
                   </a>
-                  <a
-                    href="#roi"
-                    className="rounded-full border border-text/15 px-5 py-3 text-sm font-semibold"
-                  >
+                  <a href="#roi" className="rounded-full border border-text/15 px-5 py-3 text-sm font-semibold">
                     Посчитать ROI
                   </a>
                 </div>
               </div>
             </BentoTile>
-          </section>
-
-          {/* 3. 3 инфо-блока с 16:9 окнами */}
-          <section id="info" className="space-y-6">
-            <SectionTitle overline="03" title="Инфо-блоки" description="Заглушка под 3 блока 16:9." />
-            <div className="grid gap-6 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <BentoTile key={i} className="space-y-4">
-                  <div className="aspect-video w-full rounded-md border border-text/10 bg-accent-3/70" />
-                  <div className="space-y-2">
-                    <div className="text-sm font-bold">Блок {i}</div>
-                    <div className="text-sm opacity-75">Тут будет смысловой текст.</div>
-                  </div>
-                </BentoTile>
-              ))}
-            </div>
           </section>
 
           {/* 4. Блок ниш + демо-чат */}
