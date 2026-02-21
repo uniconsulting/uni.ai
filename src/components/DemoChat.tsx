@@ -22,11 +22,11 @@ export function DemoChat() {
       />
 
       {/* vertical divider */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-text/10"
-      />
-
+<div
+  aria-hidden
+  className="pointer-events-none absolute left-1/2 top-0 h-[260px] md:h-[420px] lg:h-[520px] w-px -translate-x-1/2 bg-text/10"
+/>
+      
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
           {/* LEFT */}
