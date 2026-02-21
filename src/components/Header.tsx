@@ -31,11 +31,11 @@ export function Header() {
               ))}
             </nav>
 
-            <a href="#login" className="rounded-xl border border-accent-1 px-4 py-2 text-sm text-accent-1 hover:bg-accent-1/10">
+            <a href="#login" className="rounded-sm border border-accent-1 px-4 py-2 text-sm font-semibold text-accent-1 hover:bg-accent-1/10">
               войти
             </a>
 
-            <a href="#cta" className="rounded-xl bg-accent-1 px-4 py-2 text-sm text-bg hover:bg-accent-1/90">
+            <a href="#cta" className="rounded-sm bg-accent-1 px-4 py-2 text-sm font-semibold text-bg hover:bg-accent-1/90">
               начать бесплатно
             </a>
           </div>
