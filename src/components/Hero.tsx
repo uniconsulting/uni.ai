@@ -244,7 +244,7 @@ export function Hero() {
               alt=""
               aria-hidden="true"
               onError={() => setTempleVisible(false)}
-              className="pointer-events-none select-none absolute bottom-4 right-1/2 z-10 h-auto w-[720px] max-w-none -translate-x-[45%]"
+              className="pointer-events-none select-none absolute bottom-6 right-1/2 z-10 h-auto w-[720px] max-w-none -translate-x-[50%]"
             />
           )}
 
@@ -299,10 +299,10 @@ export function Hero() {
 
                     <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                       <div className="flex items-center gap-4">
-                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
+                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-3xl font-normal">
                           道
                         </span>
-                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
+                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-3xl font-normal">
                           改善
                         </span>
 
