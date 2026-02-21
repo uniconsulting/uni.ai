@@ -1,8 +1,8 @@
-import { Header } from '@/components/Header';
+import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
-import { Container } from '@/components/Container';
-import { BentoTile } from '@/components/BentoTile';
-import { SectionTitle } from '@/components/SectionTitle';
+import { Container } from "@/components/Container";
+import { BentoTile } from "@/components/BentoTile";
+import { SectionTitle } from "@/components/SectionTitle";
 
 export default function Page() {
   return (
@@ -10,8 +10,11 @@ export default function Page() {
       <Header />
 
       <main className="pb-12 md:pb-20">
-        <Container className="space-y-20">
-          <Hero />
+        {/* Hero сам управляет контейнером внутри себя */}
+        <Hero />
+
+        {/* Остальные секции: единый контейнер */}
+        <Container className="mt-20 space-y-20">
           {/* 2. Главная страница-композиция */}
           <section id="composition" className="space-y-6">
             <BentoTile className="p-8 md:p-12">
@@ -110,9 +113,7 @@ export default function Page() {
 
           {/* 10. Footer */}
           <footer className="pt-8">
-            <div className="text-xs opacity-70">
-              © {new Date().getFullYear()} ЮНИ • foundation repo
-            </div>
+            <div className="text-xs opacity-70">© {new Date().getFullYear()} ЮНИ • foundation repo</div>
           </footer>
         </Container>
       </main>
