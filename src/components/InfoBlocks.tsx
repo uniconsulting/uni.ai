@@ -139,7 +139,7 @@ export function InfoBlocks() {
                   </div>
 
                   {/* RIGHT COLUMN */}
-                  <div className="relative h-full px-6 lg:px-10">
+                  <div className="relative h-full px-4 lg:px-6">
                     <motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
                       <div className="flex h-full items-start justify-center">
                         {/* ВАЖНО: фиксируем “целевую” ширину и центрируем в правой колонке */}
