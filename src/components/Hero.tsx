@@ -1,4 +1,4 @@
-
+/* components/Hero.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -60,7 +60,7 @@ export function Hero() {
   const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]); // запрещаем “ползти” вниз
+  const y = useTransform(progress, [0, 1], [0, 0]); // не ползём вниз
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
   // BLUR: блюрим фон hero (кроме вставки)
@@ -89,6 +89,8 @@ export function Hero() {
 
   useEffect(() => {
     const LOCK_PX = 760;
+    const EPS = 0.001;
+
     const lockYRef = { current: null as number | null };
     const pushedToNextRef = { current: false };
 
@@ -111,13 +113,17 @@ export function Hero() {
       window.scrollTo({ top: lockYRef.current });
     };
 
+    const unlock = () => {
+      lockYRef.current = null;
+    };
+
     const scrollToInfo = () => {
       const next = document.getElementById("info");
       if (!next) return;
 
       const top = next.getBoundingClientRect().top + window.scrollY - 96; // top-24
-      lockYRef.current = null;
-
+      unlock();
+      setHeaderHidden(false); // <-- критично: вернуть нормальный скролл
       window.scrollTo({ top, behavior: "smooth" });
     };
 
@@ -126,19 +132,28 @@ export function Hero() {
       const next = clamp(p + deltaY / LOCK_PX, 0, 1);
       progressRaw.set(next);
 
-      // пока мы в hero-локе — фиксируем страницу на месте
-      ensureLocked();
+      const atStart = next <= EPS;
+      const atEnd = next >= 1 - EPS;
 
-      // header
+      // header логика
       if (deltaY > 0 && next > 0) setHeaderHidden(true);
       if (deltaY < 0) setHeaderHidden(false);
-      if (next === 0) setHeaderHidden(false);
+      if (atStart) setHeaderHidden(false);
+
+      // пока не дошли до 1 — фиксируем страницу на месте
+      if (!atEnd) {
+        ensureLocked();
+      } else {
+        // дошли до 1 — отпускаем и обязательно снимаем "headerHidden"
+        unlock();
+        setHeaderHidden(false);
+      }
 
       // сброс флага, если пользователь пошёл назад
-      if (next < 1) pushedToNextRef.current = false;
+      if (!atEnd) pushedToNextRef.current = false;
 
-      // как только дошли до 1080 на движении вниз — сразу уводим к следующей секции
-      if (deltaY > 0 && next === 1 && !pushedToNextRef.current) {
+      // при первом достижении 1 на движении вниз — мягко уводим к следующей секции
+      if (deltaY > 0 && atEnd && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
         requestAnimationFrame(scrollToInfo);
       }
@@ -146,36 +161,33 @@ export function Hero() {
 
     const onWheel = (e: WheelEvent) => {
       const p = progressRaw.get();
+      const atStart = p <= EPS;
+      const atEnd = p >= 1 - EPS;
+
       const down = e.deltaY > 0;
       const up = e.deltaY < 0;
 
       const active = heroActive();
 
-      // вне hero не вмешиваемся
-      if (!active && (p === 0 || p === 1)) return;
+      // если hero уже не активен — не мешаем
+      if (!active && (atStart || atEnd)) return;
       if (!active && !(p > 0 && p < 1)) return;
 
-      // если полностью раскрыто и вниз — мы уже уводим в consume (там scrollToInfo),
-      // но на всякий случай блокируем “естественный” скролл, чтобы ничего не “ползло”
-      if (p === 1 && down && active) {
-        e.preventDefault();
-        consume(e.deltaY);
-        return;
-      }
-
-      // если полностью свернуто и вверх — отдаём скролл странице
-      if (p === 0 && up && active) {
-        lockYRef.current = null;
+      // если раскрыто до конца и продолжают вниз — полностью отпускаем нативный скролл
+      if (atEnd && down) {
+        unlock();
         setHeaderHidden(false);
         return;
       }
 
-      const shouldLock = (p > 0 && p < 1) || active;
-      if (!shouldLock) {
-        lockYRef.current = null;
+      // если полностью свернуто и вверх — отдаём скролл странице
+      if (atStart && up) {
+        unlock();
+        setHeaderHidden(false);
         return;
       }
 
+      // иначе — управляем прогрессом и лочим
       e.preventDefault();
       consume(e.deltaY);
     };
@@ -186,6 +198,9 @@ export function Hero() {
 
     const onTouchMove = (e: TouchEvent) => {
       const p = progressRaw.get();
+      const atStart = p <= EPS;
+      const atEnd = p >= 1 - EPS;
+
       const yNow = e.touches[0]?.clientY ?? touchStartY;
       const delta = touchStartY - yNow;
       touchStartY = yNow;
@@ -195,11 +210,19 @@ export function Hero() {
 
       const active = heroActive();
 
-      if (!active && (p === 0 || p === 1)) return;
+      if (!active && (atStart || atEnd)) return;
       if (!active && !(p > 0 && p < 1)) return;
 
-      if (p === 0 && up && active) {
-        lockYRef.current = null;
+      // если раскрыто до конца и свайп дальше вниз — отпускаем
+      if (atEnd && down) {
+        unlock();
+        setHeaderHidden(false);
+        return;
+      }
+
+      // если свернуто и тянут вверх — отпускаем
+      if (atStart && up) {
+        unlock();
         setHeaderHidden(false);
         return;
       }
@@ -288,7 +311,6 @@ export function Hero() {
                 <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
                 <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
-                  {/* LEFT HALF */}
                   <div className="relative md:pr-10">
                     <div className="relative z-10 grid h-full grid-cols-12 gap-6">
                       <div className="hidden md:block md:col-span-7" />
@@ -319,7 +341,6 @@ export function Hero() {
                     </div>
                   </div>
 
-                  {/* RIGHT HALF */}
                   <div className="md:pl-10 flex h-full flex-col">
                     <div className="text-lg leading-snug md:text-lg hover-accent-2">
                       ЮНИ.ai – интегратор ИИ-решений
