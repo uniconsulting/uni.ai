@@ -326,6 +326,10 @@ export function Hero() {
             </Container>
           </div>
         </div>
+
+        {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
+        <div className="h-[32vh] md:h-[44vh]" />
+      </div>
     </section>
   );
 }
