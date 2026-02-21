@@ -54,7 +54,7 @@ export function Hero() {
   const [templeVisible, setTempleVisible] = useState(true);
 
   const BASE_W = 420;
-  const MAX_W = 1080; // <= главное изменение
+  const MAX_W = 1080;
 
   const progressRaw = useMotionValue(0);
   const progress = useSpring(progressRaw, {
@@ -63,14 +63,11 @@ export function Hero() {
     mass: 0.7,
   });
 
-  // вставка: рост от центра, без “ползания” вниз
   const scale = useTransform(progress, [0, 1], [1, endScale]);
   const y = useTransform(progress, [0, 1], [0, 0]);
 
-  // радиус уменьшаем по мере роста
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
-  // BLUR: блюрим фон hero (кроме вставки)
   const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
   const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
   const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
@@ -86,13 +83,11 @@ export function Hero() {
     const update = () => {
       const cw = el.getBoundingClientRect().width;
 
-      // целевая ширина вставки: не больше 1080 и не больше контейнера
       const targetW = Math.min(MAX_W, cw);
       const targetScale = targetW / BASE_W;
 
       setEndScale(Math.max(1, targetScale));
 
-      // releaseSpace считаем от финальной ширины (targetW), а не от ширины контейнера
       const maxH = (targetW * 9) / 16;
       const buf = Math.ceil(STICKY_TOP + maxH + 40);
       setReleaseSpace(buf);
@@ -143,12 +138,10 @@ export function Hero() {
       const down = e.deltaY > 0;
       const up = e.deltaY < 0;
 
-      // дошли до 1080: вниз отдаём обычному скроллу
       if (p === 1 && down) {
         lockYRef.current = null;
         return;
       }
-      // свернули: вверх отдаём обычному скроллу
       if (p === 0 && up) {
         lockYRef.current = null;
         setHeaderHidden(false);
@@ -212,10 +205,7 @@ export function Hero() {
   return (
     <section id="hero" className="relative overflow-x-clip">
       {/* TOP (блюрится) */}
-      <motion.div
-        className="relative will-change-[filter]"
-        style={{ filter: bgFilter, opacity: bgOpacity }}
-      >
+      <motion.div className="relative will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
         <Container className={`relative ${topPad}`}>
           <div className="relative px-1">
             <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
@@ -238,7 +228,11 @@ export function Hero() {
       </motion.div>
 
       {/* STAGE */}
-      <div ref={stageRef} className="relative mt-12">
+      <div
+        ref={stageRef}
+        className="relative mt-12"
+        style={{ paddingBottom: releaseSpace }} // ✅ запас теперь ВНУТРИ stageRef
+      >
         {/* 16:9 (НЕ блюрится) */}
         <div className="sticky top-24 z-40">
           <Container>
@@ -264,10 +258,7 @@ export function Hero() {
         </div>
 
         {/* НИЗ (блюрится) */}
-        <motion.div
-          className="relative z-20 will-change-[filter]"
-          style={{ filter: bgFilter, opacity: bgOpacity }}
-        >
+        <motion.div className="relative z-20 will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
           <div className="relative">
             {templeVisible && (
               <img
@@ -358,9 +349,7 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* запас для “отлипания” sticky после завершения лок-скролла */}
-      <div aria-hidden className="pointer-events-none" style={{ height: releaseSpace }} />
+      {/* ❌ внешний spacer удалён, чтобы sticky не “заканчивался” и не полз вниз */}
     </section>
   );
 }
-
