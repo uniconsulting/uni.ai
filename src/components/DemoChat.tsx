@@ -224,7 +224,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text ring-1 ring-text/10"
+          className="flex items-center gap-2 rounded-2xl bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text ring-1 ring-text/10"
           aria-haspopup="listbox"
           aria-expanded={open}
         >
@@ -235,7 +235,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
         {open && (
           <div
             role="listbox"
-            className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-md bg-accent-3 ring-1 ring-text/10"
+            className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10"
           >
             {PILLS.map((item) => {
               const active = item === niche;
@@ -268,9 +268,9 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   return (
     <div className="w-full">
       {/* dynamic border */}
-      <div className="rounded-[25px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
+      <div className="rounded-[33px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
         {/* main frame */}
-        <div className="overflow-hidden rounded-2xl bg-accent-3">
+        <div className="overflow-hidden rounded-3xl bg-accent-3">
           {/* header */}
           <div className="bg-bg px-4 py-3">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -286,7 +286,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               <div className="justify-self-end">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-3 ring-1 ring-text/10">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent-3 ring-1 ring-text/10">
                   <div className="h-4 w-4 rounded-sm bg-accent-1" />
                 </div>
               </div>
@@ -306,7 +306,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                       Для быстрого старта используйте FAQ-кнопки над строкой ввода.
                     </div>
 
-                    <div className="mt-6 inline-flex rounded-md bg-bg p-1">
+                    <div className="mt-6 inline-flex rounded-2xl bg-bg p-1">
                       {(["sales", "support", "kb"] as const).map((m) => {
                         const active = m === mode;
                         return (
@@ -315,8 +315,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                             onClick={() => setMode(m)}
                             className={
                               active
-                                ? "rounded-md bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
-                                : "rounded-md px-5 py-2 text-[12px] font-semibold text-text/70"
+                                ? "rounded-2xl bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
+                                : "rounded-2xl px-5 py-2 text-[12px] font-semibold text-text/70"
                             }
                           >
                             {MODE_LABEL[m]}
@@ -334,8 +334,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                         <div
                           className={
                             m.role === "user"
-                              ? "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
-                              : "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
+                              ? "max-w-[78%] whitespace-pre-wrap rounded-3xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
+                              : "max-w-[78%] whitespace-pre-wrap rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
                           }
                         >
                           {m.text}
@@ -345,7 +345,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
                     {typing && (
                       <div className="flex justify-start">
-                        <div className="rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
+                        <div className="rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
                           ...печатает
                         </div>
                       </div>
@@ -362,7 +362,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                   <button
                     key={t}
                     onClick={() => pickPreset(t)}
-                    className="rounded-full bg-accent-3 px-5 py-3 text-[12px] font-semibold text-text"
+                    className="rounded-2xl bg-accent-3 px-5 py-3 text-[12px] font-semibold text-text"
                   >
                     {t}
                   </button>
@@ -370,7 +370,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               {/* input row */}
-              <div className="flex h-14 items-center gap-3 rounded-md bg-accent-3 px-4">
+              <div className="flex h-14 items-center gap-3 rounded-2xl bg-accent-3 px-4">
                 <input
                   ref={inputRef}
                   value={input}
@@ -388,7 +388,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-bg"
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-bg"
                     aria-label="Записать голосовое"
                     onClick={() => inputRef.current?.focus()}
                   >
@@ -397,7 +397,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-1"
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-1"
                     aria-label="Отправить"
                     onClick={() => send(input)}
                   >
@@ -408,7 +408,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
               {!empty && (
                 <div className="mt-4 flex justify-center">
-                  <div className="inline-flex rounded-full bg-accent-3 p-1">
+                  <div className="inline-flex rounded-2xl bg-accent-3 p-1">
                     {(["sales", "support", "kb"] as const).map((m) => {
                       const active = m === mode;
                       return (
@@ -417,8 +417,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                           onClick={() => setMode(m)}
                           className={
                             active
-                              ? "rounded-full bg-accent-1 px-4 py-2 text-[11px] font-semibold text-bg"
-                              : "rounded-full px-4 py-2 text-[11px] font-semibold text-text/70"
+                              ? "rounded-2xl bg-accent-1 px-4 py-2 text-[11px] font-semibold text-bg"
+                              : "rounded-2xl px-4 py-2 text-[11px] font-semibold text-text/70"
                           }
                         >
                           {MODE_LABEL[m]}
