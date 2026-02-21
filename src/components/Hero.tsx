@@ -244,7 +244,7 @@ export function Hero() {
               alt=""
               aria-hidden="true"
               onError={() => setTempleVisible(false)}
-              className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[980px] max-w-none -translate-x-[30%]"
+              className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[880px] max-w-none -translate-x-[30%]"
             />
           )}
 
@@ -328,7 +328,7 @@ export function Hero() {
         </div>
 
         {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
-        <div className="h-[56vh] md:h-[72vh]" />
+        <div className="h-[32vh] md:h-[44vh]" />
       </div>
     </section>
   );
