@@ -315,7 +315,7 @@ export function Hero() {
 
                       <a
                         href="#cta"
-                        className="rounded-2xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
+                        className="rounded-xl bg-accent-1 px-10 py-4 text-xl font-semibold text-bg hover:bg-accent-1/90"
                       >
                         приступим
                       </a>
