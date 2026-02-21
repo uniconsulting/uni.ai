@@ -34,7 +34,7 @@ export function DemoChat() {
             <div className="flex items-start gap-5">
               {/* icon = height of heading block (2 lines) */}
               <div className="shrink-0">
-                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-accent-1">
+                <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent-1">
                   <Settings className="h-6 w-6 text-bg" strokeWidth={2.2} />
                 </div>
               </div>
@@ -49,7 +49,7 @@ export function DemoChat() {
               {PILLS.map((t) => (
                 <div
                   key={t}
-                  className="btn-lift-accent1 rounded-sm bg-accent-3 px-7 py-4 text-[12px] font-semibold leading-snug text-text"
+                  className="btn-lift-outline rounded-sm bg-accent-3 px-7 py-4 text-[12px] font-semibold leading-snug text-text"
                 >
                   {t}
                 </div>
