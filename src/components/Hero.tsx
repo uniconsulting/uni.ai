@@ -1,3 +1,4 @@
+/* components/Hero.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -52,6 +53,9 @@ export function Hero() {
   const [endScale, setEndScale] = useState(1);
   const [templeVisible, setTempleVisible] = useState(true);
 
+  // важное: sticky выключаем после достижения 1, чтобы вставка не могла перекрывать InfoBlocks
+  const [pinEnabled, setPinEnabled] = useState(true);
+
   const BASE_W = 420;
   const MAX_W = 1080;
 
@@ -59,10 +63,9 @@ export function Hero() {
   const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]); // не ползём вниз
+  const y = useTransform(progress, [0, 1], [0, 0]); // запрещаем движение по Y
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
-  // BLUR: блюрим фон hero (кроме вставки)
   const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
   const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
   const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
@@ -119,7 +122,16 @@ export function Hero() {
       lockYRef.current = null;
     };
 
-    const scrollToInfo = () => {
+    const computeTargetH = () => {
+      const m = measureRef.current;
+      if (!m) return (Math.min(MAX_W, window.innerWidth) * 9) / 16;
+
+      const cw = m.getBoundingClientRect().width;
+      const targetW = Math.min(MAX_W, cw);
+      return (targetW * 9) / 16;
+    };
+
+    const jumpToInfoSafely = () => {
       if (jumpingRef.current) return;
 
       const next = document.getElementById("info");
@@ -128,28 +140,32 @@ export function Hero() {
 
       jumpingRef.current = true;
 
+      // отключаем sticky ДО прыжка, чтобы вставка не могла оказаться поверх следующей секции
+      setPinEnabled(false);
+
       const infoAbsTop = next.getBoundingClientRect().top + window.scrollY;
       const stageAbsBottom = stage.getBoundingClientRect().bottom + window.scrollY;
 
-      // хотим поставить info под header
+      const targetH = computeTargetH();
+
+      // хотим поставить начало info под header
       const desired = infoAbsTop - STICKY_TOP;
 
-      // но обязаны "перешагнуть" момент, когда hero-stage ещё держит sticky
-      // условие: низ stage выше sticky-top
-      const safe = stageAbsBottom - STICKY_TOP + 2;
+      // гарантируем, что sticky уже НЕ может удерживаться своим контейнером:
+      // scrollY >= stageBottom - (stickyTop + stickyHeight)
+      const releaseY = stageAbsBottom - (STICKY_TOP + targetH) + 2;
 
-      const top = Math.max(desired, safe);
+      const top = Math.max(desired, releaseY);
 
       unlock();
       setHeaderHidden(false);
 
-      // без smooth, чтобы не было промежуточного кадра с двумя sticky
       window.scrollTo({ top, behavior: "auto" });
 
       if (jumpT) window.clearTimeout(jumpT);
       jumpT = window.setTimeout(() => {
         jumpingRef.current = false;
-      }, 220);
+      }, 180);
     };
 
     const consume = (deltaY: number) => {
@@ -164,18 +180,27 @@ export function Hero() {
       if (deltaY < 0) setHeaderHidden(false);
       if (atStart) setHeaderHidden(false);
 
-      // Лок держим только пока не дошли до конца
-      if (!atEnd) ensureLocked();
-      else {
-        unlock();
-        setHeaderHidden(false);
+      // пока не дошли до конца, держим страницу на месте
+      if (!atEnd) {
+        setPinEnabled(true);
+        ensureLocked();
+        pushedToNextRef.current = false;
+        return;
       }
 
-      if (!atEnd) pushedToNextRef.current = false;
+      // дошли до конца
+      unlock();
+      setHeaderHidden(false);
 
-      if (deltaY > 0 && atEnd && !pushedToNextRef.current) {
+      // если дошли до 1 и продолжают вниз, один раз прыгаем к info
+      if (deltaY > 0 && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
-        requestAnimationFrame(scrollToInfo);
+        requestAnimationFrame(jumpToInfoSafely);
+      }
+
+      // если пользователь пошёл вверх от конца, возвращаем sticky и даём схлопывать
+      if (deltaY < 0) {
+        setPinEnabled(true);
       }
     };
 
@@ -189,21 +214,29 @@ export function Hero() {
 
       const active = heroActive();
 
+      // если мы уже ушли вниз (hero не активен) и прогресс на краю, не вмешиваемся
       if (!active && (atStart || atEnd)) return;
-      if (!active && !(p > 0 && p < 1)) return;
 
-      // критично: на atEnd + down всегда блокируем нативный скролл и прыгаем безопасно
+      // если дошли до конца и крутим вниз в зоне hero:
+      // 1) если ещё не прыгали, прыгаем (и блокируем дефолт)
+      // 2) если уже прыгнули, дефолт НЕ блокируем, иначе будет "залипание"
       if (active && atEnd && down) {
-        e.preventDefault();
-        scrollToInfo();
+        if (!pushedToNextRef.current && !jumpingRef.current) {
+          e.preventDefault();
+          jumpToInfoSafely();
+        }
         return;
       }
 
+      // если в начале и крутим вверх, отдаём странице
       if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
         return;
       }
+
+      // остальное: лок-анимация
+      if (!active && !(p > 0 && p < 1)) return;
 
       e.preventDefault();
       consume(e.deltaY);
@@ -228,11 +261,12 @@ export function Hero() {
       const active = heroActive();
 
       if (!active && (atStart || atEnd)) return;
-      if (!active && !(p > 0 && p < 1)) return;
 
       if (active && atEnd && down) {
-        e.preventDefault();
-        scrollToInfo();
+        if (!pushedToNextRef.current && !jumpingRef.current) {
+          e.preventDefault();
+          jumpToInfoSafely();
+        }
         return;
       }
 
@@ -241,6 +275,8 @@ export function Hero() {
         setHeaderHidden(false);
         return;
       }
+
+      if (!active && !(p > 0 && p < 1)) return;
 
       e.preventDefault();
       consume(delta);
@@ -286,7 +322,7 @@ export function Hero() {
       {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
         {/* 16:9 (НЕ блюрится) */}
-        <div className="sticky top-24 z-40">
+        <div className={pinEnabled ? "sticky top-24 z-40" : "relative z-40"}>
           <Container>
             <div className="px-1">
               <div ref={measureRef} className="w-full">
