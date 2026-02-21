@@ -176,6 +176,11 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     el.scrollTop = el.scrollHeight;
   }, [msgs.length, typing]);
 
+  // синхронизация при смене initialNiche извне (клик по пилюле сверху)
+  useEffect(() => {
+    if (initialNiche) setNiche(initialNiche);
+  }, [initialNiche]);
+
   const send = (text: string) => {
     const t = text.trim();
     if (!t || typing) return;
@@ -199,16 +204,15 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   return (
     <div className="w-full">
       <div className="rounded-xl bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
-        <div className="rounded-xl bg-accent-3 overflow-hidden">
+        <div className="overflow-hidden rounded-xl bg-accent-3">
           {/* header */}
           <div className="bg-bg px-4 py-3">
             <div className="flex items-center gap-3">
-              {/* niche select */}
               <div className="relative rounded-full bg-accent-3 px-4 py-2 pr-9">
                 <select
                   value={niche}
                   onChange={(e) => setNiche(e.target.value as Niche)}
-                  className="appearance-none bg-transparent text-text text-[12px] font-semibold outline-none"
+                  className="appearance-none bg-transparent text-[12px] font-semibold text-text outline-none"
                 >
                   {PILLS.map((n) => (
                     <option key={n} value={n}>
@@ -219,7 +223,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text/60" />
               </div>
 
-              {/* center */}
               <div className="flex-1 text-center leading-none">
                 <div className="text-[13px] font-semibold text-text">ЮНИ.ai</div>
                 <div className="mt-1 text-[11px] font-medium text-text/50">
@@ -227,18 +230,17 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 </div>
               </div>
 
-              {/* logo circle */}
-              <div className="h-9 w-9 rounded-full bg-accent-3 ring-1 ring-text/10 flex items-center justify-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-3 ring-1 ring-text/10">
                 <div className="h-4 w-4 rounded-sm bg-accent-1" />
               </div>
             </div>
           </div>
 
           {/* body */}
-          <div className="flex min-h-[520px] md:min-h-[620px] flex-col">
+          <div className="flex min-h-[520px] flex-col md:min-h-[620px]">
             <div ref={listRef} className="flex-1 overflow-auto px-6 py-7">
               {empty ? (
-                <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="flex h-full flex-col items-center justify-center text-center">
                   <div className="text-[14px] font-semibold text-text">
                     Выберите нишу и роль, затем задайте вопрос
                   </div>
@@ -272,8 +274,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                       <div
                         className={
                           m.role === "user"
-                            ? "max-w-[78%] rounded-2xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg whitespace-pre-wrap"
-                            : "max-w-[78%] rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text whitespace-pre-wrap"
+                            ? "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
+                            : "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
                         }
                       >
                         {m.text}
@@ -325,7 +327,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="h-10 w-10 rounded-full bg-bg flex items-center justify-center"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-bg"
                     aria-label="Записать голосовое"
                     onClick={() => inputRef.current?.focus()}
                   >
@@ -334,7 +336,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
                   <button
                     type="button"
-                    className="h-10 w-10 rounded-full bg-accent-1 flex items-center justify-center"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-1"
                     aria-label="Отправить"
                     onClick={() => send(input)}
                   >
@@ -343,7 +345,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 </div>
               </div>
 
-              {/* роли внизу, когда уже есть чат */}
               {!empty && (
                 <div className="mt-4 flex justify-center">
                   <div className="inline-flex rounded-full bg-accent-3 p-1">
@@ -392,11 +393,11 @@ export function DemoChat() {
       />
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
+        {/* === Этап №1 (НЕ ТРОГАЕМ) === */}
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
           {/* LEFT */}
           <div className="md:pr-12">
             <div className="flex items-start gap-5">
-              {/* icon = height of heading block (2 lines) */}
               <div className="shrink-0">
                 <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent-1">
                   <Settings className="h-6 w-6 text-bg" strokeWidth={2.2} />
@@ -434,11 +435,14 @@ export function DemoChat() {
               <div className="hover-accent text-[18px] font-medium opacity-70">demo-чат</div>
             </div>
 
-            {/* stage 2 (integrated) */}
-            <div className="mt-10 min-h-[260px]">
-              <DemoChatWidget initialNiche={selectedNiche} />
-            </div>
+            {/* place for stage 2 (оставляем пустым, как было) */}
+            <div className="mt-10 min-h-[260px]" />
           </div>
+        </div>
+
+        {/* === Этап №2 (чат под всей первой частью) === */}
+        <div className="mt-12 md:mt-14">
+          <DemoChatWidget initialNiche={selectedNiche} />
         </div>
       </Container>
     </section>
