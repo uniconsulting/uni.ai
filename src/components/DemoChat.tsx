@@ -18,10 +18,6 @@ type Niche = (typeof PILLS)[number];
 type Mode = "sales" | "support" | "kb";
 type Msg = { id: string; role: "user" | "bot"; text: string };
 
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
-}
-
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
@@ -164,21 +160,22 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   const [typing, setTyping] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const presets = useMemo(() => PRESETS[mode][niche] ?? [], [mode, niche]);
   const empty = msgs.length === 0;
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [msgs.length, typing]);
 
   // синхронизация при смене initialNiche извне (клик по пилюле сверху)
   useEffect(() => {
     if (initialNiche) setNiche(initialNiche);
   }, [initialNiche]);
+
+  useEffect(() => {
+    if (empty) return;
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [msgs.length, typing, empty]);
 
   const send = (text: string) => {
     const t = text.trim();
@@ -200,95 +197,160 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
+  function NicheDropdown() {
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      const onDown = (e: PointerEvent) => {
+        const root = rootRef.current;
+        if (!root) return;
+        if (!root.contains(e.target as Node)) setOpen(false);
+      };
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setOpen(false);
+      };
+
+      window.addEventListener("pointerdown", onDown);
+      window.addEventListener("keydown", onKey);
+      return () => {
+        window.removeEventListener("pointerdown", onDown);
+        window.removeEventListener("keydown", onKey);
+      };
+    }, []);
+
+    return (
+      <div ref={rootRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-2 rounded-full bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text ring-1 ring-text/10"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <span className="max-w-[260px] truncate">{niche}</span>
+          <ChevronDown className={`h-4 w-4 text-text/60 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+
+        {open && (
+          <div
+            role="listbox"
+            className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl bg-accent-3 ring-1 ring-text/10"
+          >
+            {PILLS.map((item) => {
+              const active = item === niche;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    setNiche(item);
+                    setOpen(false);
+                  }}
+                  className={
+                    active
+                      ? "flex w-full items-center justify-between bg-bg px-4 py-2 text-left text-[12px] font-semibold text-text"
+                      : "flex w-full items-center justify-between px-4 py-2 text-left text-[12px] font-semibold text-text hover:bg-bg/60"
+                  }
+                >
+                  <span className="truncate">{item}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      <div className="rounded-xl bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
-        <div className="overflow-hidden rounded-xl bg-accent-3">
+      {/* dynamic border */}
+      <div className="rounded-[25px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
+        {/* main frame */}
+        <div className="overflow-hidden rounded-2xl bg-accent-3">
           {/* header */}
           <div className="bg-bg px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="relative rounded-full bg-accent-3 px-4 py-2 pr-9">
-                <select
-                  value={niche}
-                  onChange={(e) => setNiche(e.target.value as Niche)}
-                  className="appearance-none bg-transparent text-[12px] font-semibold text-text outline-none"
-                >
-                  {PILLS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text/60" />
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div className="justify-self-start">
+                <NicheDropdown />
               </div>
 
-              <div className="flex-1 text-center leading-none">
+              <div className="justify-self-center text-center leading-none">
                 <div className="text-[13px] font-semibold text-text">ЮНИ.ai</div>
                 <div className="mt-1 text-[11px] font-medium text-text/50">
                   {typing ? "...печатает" : "в сети"}
                 </div>
               </div>
 
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-3 ring-1 ring-text/10">
-                <div className="h-4 w-4 rounded-sm bg-accent-1" />
+              <div className="justify-self-end">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-3 ring-1 ring-text/10">
+                  <div className="h-4 w-4 rounded-sm bg-accent-1" />
+                </div>
               </div>
             </div>
           </div>
 
           {/* body */}
           <div className="flex min-h-[520px] flex-col md:min-h-[620px]">
-            <div ref={listRef} className="flex-1 overflow-auto px-6 py-7">
+            <div className="relative flex-1">
               {empty ? (
-                <div className="flex h-full flex-col items-center justify-center text-center">
-                  <div className="text-[14px] font-semibold text-text">
-                    Выберите нишу и роль, затем задайте вопрос
-                  </div>
-                  <div className="mt-2 text-[12px] font-medium text-text/55">
-                    Для быстрого старта используйте FAQ-кнопки над строкой ввода.
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                  <div>
+                    <div className="text-[14px] font-semibold text-text">
+                      Выберите нишу и роль, затем задайте вопрос
+                    </div>
+                    <div className="mt-2 text-[12px] font-medium text-text/55">
+                      Для быстрого старта используйте FAQ-кнопки над строкой ввода.
+                    </div>
 
-                  <div className="mt-6 inline-flex rounded-full bg-bg p-1">
-                    {(["sales", "support", "kb"] as const).map((m) => {
-                      const active = m === mode;
-                      return (
-                        <button
-                          key={m}
-                          onClick={() => setMode(m)}
-                          className={
-                            active
-                              ? "rounded-full bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
-                              : "rounded-full px-5 py-2 text-[12px] font-semibold text-text/70"
-                          }
-                        >
-                          {MODE_LABEL[m]}
-                        </button>
-                      );
-                    })}
+                    <div className="mt-6 inline-flex rounded-full bg-bg p-1">
+                      {(["sales", "support", "kb"] as const).map((m) => {
+                        const active = m === mode;
+                        return (
+                          <button
+                            key={m}
+                            onClick={() => setMode(m)}
+                            className={
+                              active
+                                ? "rounded-full bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
+                                : "rounded-full px-5 py-2 text-[12px] font-semibold text-text/70"
+                            }
+                          >
+                            {MODE_LABEL[m]}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {msgs.map((m) => (
-                    <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                      <div
-                        className={
-                          m.role === "user"
-                            ? "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
-                            : "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
-                        }
-                      >
-                        {m.text}
+                <div ref={listRef} className="h-full overflow-auto px-6 py-7">
+                  <div className="space-y-3">
+                    {msgs.map((m) => (
+                      <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                        <div
+                          className={
+                            m.role === "user"
+                              ? "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
+                              : "max-w-[78%] whitespace-pre-wrap rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
+                          }
+                        >
+                          {m.text}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  {typing && (
-                    <div className="flex justify-start">
-                      <div className="rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
-                        ...печатает
+                    {typing && (
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
+                          ...печатает
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -307,16 +369,16 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 ))}
               </div>
 
-              <div className="flex items-end gap-3 rounded-xl bg-accent-3 px-4 py-3">
-                <textarea
+              {/* input row */}
+              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 px-4">
+                <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Сообщение"
-                  rows={1}
-                  className="min-h-[22px] max-h-[96px] w-full resize-none bg-transparent text-[12px] font-semibold text-text placeholder:text-text/40 outline-none"
+                  className="h-full w-full bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       send(input);
                     }
