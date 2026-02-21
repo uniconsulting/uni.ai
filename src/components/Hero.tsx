@@ -50,24 +50,19 @@ export function Hero() {
   const measureRef = useRef<HTMLDivElement | null>(null);
 
   const [endScale, setEndScale] = useState(1);
-  const [releaseSpace, setReleaseSpace] = useState(0);
   const [templeVisible, setTempleVisible] = useState(true);
 
   const BASE_W = 420;
   const MAX_W = 1080;
 
   const progressRaw = useMotionValue(0);
-  const progress = useSpring(progressRaw, {
-    stiffness: 260,
-    damping: 38,
-    mass: 0.7,
-  });
+  const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]);
-
+  const y = useTransform(progress, [0, 1], [0, 0]); // запрещаем “ползти” вниз
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
+  // BLUR: блюрим фон hero (кроме вставки)
   const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
   const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
   const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
@@ -78,19 +73,11 @@ export function Hero() {
     const el = measureRef.current;
     if (!el) return;
 
-    const STICKY_TOP = 96; // top-24
-
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-
       const targetW = Math.min(MAX_W, cw);
       const targetScale = targetW / BASE_W;
-
       setEndScale(Math.max(1, targetScale));
-
-      const maxH = (targetW * 9) / 16;
-      const buf = Math.ceil(STICKY_TOP + maxH + 40);
-      setReleaseSpace(buf);
     };
 
     update();
@@ -102,6 +89,8 @@ export function Hero() {
   useEffect(() => {
     const LOCK_PX = 760;
     const lockYRef = { current: null as number | null };
+    const pushedToNextRef = { current: false };
+
     let touchStartY = 0;
 
     const setHeaderHidden = (hidden: boolean) => {
@@ -121,16 +110,37 @@ export function Hero() {
       window.scrollTo({ top: lockYRef.current });
     };
 
+    const scrollToInfo = () => {
+      const next = document.getElementById("info");
+      if (!next) return;
+
+      const top = next.getBoundingClientRect().top + window.scrollY - 96; // top-24
+      lockYRef.current = null;
+
+      window.scrollTo({ top, behavior: "smooth" });
+    };
+
     const consume = (deltaY: number) => {
       const p = progressRaw.get();
       const next = clamp(p + deltaY / LOCK_PX, 0, 1);
       progressRaw.set(next);
 
+      // пока мы в hero-локе — фиксируем страницу на месте
       ensureLocked();
 
+      // header
       if (deltaY > 0 && next > 0) setHeaderHidden(true);
       if (deltaY < 0) setHeaderHidden(false);
       if (next === 0) setHeaderHidden(false);
+
+      // сброс флага, если пользователь пошёл назад
+      if (next < 1) pushedToNextRef.current = false;
+
+      // как только дошли до 1080 на движении вниз — сразу уводим к следующей секции
+      if (deltaY > 0 && next === 1 && !pushedToNextRef.current) {
+        pushedToNextRef.current = true;
+        requestAnimationFrame(scrollToInfo);
+      }
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -138,17 +148,28 @@ export function Hero() {
       const down = e.deltaY > 0;
       const up = e.deltaY < 0;
 
-      if (p === 1 && down) {
-        lockYRef.current = null;
+      const active = heroActive();
+
+      // вне hero не вмешиваемся
+      if (!active && (p === 0 || p === 1)) return;
+      if (!active && !(p > 0 && p < 1)) return;
+
+      // если полностью раскрыто и вниз — мы уже уводим в consume (там scrollToInfo),
+      // но на всякий случай блокируем “естественный” скролл, чтобы ничего не “ползло”
+      if (p === 1 && down && active) {
+        e.preventDefault();
+        consume(e.deltaY);
         return;
       }
-      if (p === 0 && up) {
+
+      // если полностью свернуто и вверх — отдаём скролл странице
+      if (p === 0 && up && active) {
         lockYRef.current = null;
         setHeaderHidden(false);
         return;
       }
 
-      const shouldLock = (p > 0 && p < 1) || heroActive();
+      const shouldLock = (p > 0 && p < 1) || active;
       if (!shouldLock) {
         lockYRef.current = null;
         return;
@@ -171,19 +192,14 @@ export function Hero() {
       const down = delta > 0;
       const up = delta < 0;
 
-      if (p === 1 && down) {
-        lockYRef.current = null;
-        return;
-      }
-      if (p === 0 && up) {
+      const active = heroActive();
+
+      if (!active && (p === 0 || p === 1)) return;
+      if (!active && !(p > 0 && p < 1)) return;
+
+      if (p === 0 && up && active) {
         lockYRef.current = null;
         setHeaderHidden(false);
-        return;
-      }
-
-      const shouldLock = (p > 0 && p < 1) || heroActive();
-      if (!shouldLock) {
-        lockYRef.current = null;
         return;
       }
 
@@ -228,11 +244,7 @@ export function Hero() {
       </motion.div>
 
       {/* STAGE */}
-      <div
-        ref={stageRef}
-        className="relative mt-12"
-        style={{ paddingBottom: releaseSpace }} // ✅ запас теперь ВНУТРИ stageRef
-      >
+      <div ref={stageRef} className="relative mt-12">
         {/* 16:9 (НЕ блюрится) */}
         <div className="sticky top-24 z-40">
           <Container>
@@ -348,8 +360,6 @@ export function Hero() {
           </div>
         </motion.div>
       </div>
-
-      {/* ❌ внешний spacer удалён, чтобы sticky не “заканчивался” и не полз вниз */}
     </section>
   );
 }
