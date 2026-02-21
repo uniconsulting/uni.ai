@@ -14,12 +14,11 @@ export default function Page() {
         {/* Hero сам управляет контейнером внутри себя */}
         <Hero />
 
-        {/* 3. Инфо-блоки (sticky stage) — вне общего Container, чтобы секция жила своей геометрией */}
+        {/* InfoBlocks живёт своей геометрией */}
         <InfoBlocks />
 
         {/* Остальные секции: единый контейнер */}
         <Container className="mt-20 space-y-20">
-          {/* 2. Главная страница-композиция */}
           <section id="composition" className="space-y-6">
             <BentoTile className="p-8 md:p-12">
               <div className="space-y-4">
@@ -45,7 +44,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 4. Блок ниш + демо-чат */}
           <section id="niches" className="space-y-6">
             <SectionTitle overline="04" title="Ниши + демо-чат" />
             <BentoTile>
@@ -53,7 +51,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 5. Планы/тарифы + доп-услуги */}
           <section id="pricing" className="space-y-6">
             <SectionTitle overline="05" title="Планы и тарифы" />
             <BentoTile>
@@ -61,7 +58,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 6. ROI-калькулятор */}
           <section id="roi" className="space-y-6">
             <SectionTitle overline="06" title="ROI-калькулятор" />
             <BentoTile>
@@ -69,7 +65,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 7. Японское качество */}
           <section id="quality" className="space-y-6">
             <SectionTitle overline="07" title="Японское качество" />
             <BentoTile>
@@ -77,7 +72,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 8. FAQ */}
           <section id="faq" className="space-y-6">
             <SectionTitle overline="08" title="FAQ" />
             <BentoTile>
@@ -85,7 +79,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 9. CTA */}
           <section id="cta" className="space-y-6">
             <SectionTitle overline="09" title="CTA" />
             <BentoTile>
@@ -93,7 +86,6 @@ export default function Page() {
             </BentoTile>
           </section>
 
-          {/* 10. Footer */}
           <footer className="pt-8">
             <div className="text-xs opacity-70">© {new Date().getFullYear()} ЮНИ • foundation repo</div>
           </footer>
