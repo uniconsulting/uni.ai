@@ -39,7 +39,7 @@ export function DemoChat() {
                 </div>
               </div>
 
-              <h2 className="font-extrabold leading-[0.95] tracking-tight text-[34px] md:text-[40px] lg:text-[44px]">
+              <h2 className="font-extrabold leading-[0.95] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
                 <span className="block">Готовые настройки</span>
                 <span className="block">для многих направлений</span>
               </h2>
@@ -49,7 +49,7 @@ export function DemoChat() {
               {PILLS.map((t) => (
                 <div
                   key={t}
-                  className="rounded-lg bg-accent-3 px-7 py-4 text-[14px] font-semibold leading-snug text-text"
+                  className="rounded-lg bg-accent-3 px-7 py-4 text-[12px] font-semibold leading-snug text-text"
                 >
                   {t}
                 </div>
