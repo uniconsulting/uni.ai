@@ -1,6 +1,8 @@
+/* app/page.tsx */
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { InfoBlocks } from "@/components/InfoBlocks";
+import { DemoChat } from "@/components/DemoChat";
 import { Container } from "@/components/Container";
 import { BentoTile } from "@/components/BentoTile";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -11,13 +13,12 @@ export default function Page() {
       <Header />
 
       <main className="pb-12 md:pb-20">
-        {/* Hero сам управляет контейнером внутри себя */}
         <Hero />
-
-        {/* InfoBlocks живёт своей геометрией */}
         <InfoBlocks />
 
-        {/* Остальные секции: единый контейнер */}
+        {/* DemoChat (этап 1: шапка) */}
+        <DemoChat />
+
         <Container className="mt-20 space-y-20">
           <section id="composition" className="space-y-6">
             <BentoTile className="p-8 md:p-12">
