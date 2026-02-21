@@ -310,14 +310,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
               <div className="justify-self-end">
                 {/* 3) SVG-лого внутри рамки */}
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent-3 ring-1 ring-text/10">
-<img
-  src={withBasePath("/brand/uni-logo.svg")}
-  alt="ЮНИ"
-  className="block h-5 w-5"
-  draggable={false}
-/>
-                </div>
+<div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-3 ring-1 ring-text/10 overflow-hidden">
+  <img
+    src={withBasePath("/brand/uni-logo.svg")}
+    alt="ЮНИ"
+    className="h-[70%] w-[70%] object-contain"
+    draggable={false}
+  />
+</div>
               </div>
             </div>
           </div>
