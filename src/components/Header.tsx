@@ -11,7 +11,7 @@ const NAV = [
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur">
+    <header className="sticky site-header top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur">
       <Container>
         <div className="flex h-16 items-center px-5">
           <Link href="#hero" className="flex items-center">
@@ -31,11 +31,11 @@ export function Header() {
               ))}
             </nav>
 
-            <a href="#login" className="rounded-full border border-accent-1 px-4 py-2 text-sm text-accent-1 hover:bg-accent-1/10">
+            <a href="#login" className="rounded-xl border border-accent-1 px-4 py-2 text-sm text-accent-1 hover:bg-accent-1/10">
               войти
             </a>
 
-            <a href="#cta" className="rounded-full bg-accent-1 px-4 py-2 text-sm text-bg hover:bg-accent-1/90">
+            <a href="#cta" className="rounded-xl bg-accent-1 px-4 py-2 text-sm text-bg hover:bg-accent-1/90">
               начать бесплатно
             </a>
           </div>
