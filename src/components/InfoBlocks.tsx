@@ -1,93 +1,116 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
 
 export function InfoBlocks() {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const insetRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
 
-  // чтобы разделители всегда попадали ровно в “центральную линию” вставки
-  const [insetH, setInsetH] = useState(0);
-
-  useLayoutEffect(() => {
-    const el = insetRef.current;
-    if (!el) return;
-
-    const update = () => setInsetH(el.getBoundingClientRect().height);
-    update();
-
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // sticky-stage: пока скроллим внутри секции, меняем состояния блоков
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
 
-  const p = useSpring(scrollYProgress, { stiffness: 220, damping: 42, mass: 0.85 });
+  const p = useSpring(scrollYProgress, { stiffness: 180, damping: 34, mass: 0.9 });
 
-  // Таймлайн (0..1):
-  // A (блок 1) -> B (блок 2) -> C (блок 3)
-  // 0..0.28 держим A
-  // 0.28..0.40 A уезжает, линии/текст B въезжают
-  // 0.40..0.62 держим B
-  // 0.62..0.78 B уезжает, линии/текст C въезжают
-  // 0.78..1 держим C
+  // прогресс-окна: A(1) -> B(2) -> A(3)
+  const t1a = 0.28;
+  const t1b = 0.38;
+  const t2a = 0.62;
+  const t2b = 0.72;
 
-  // LEFT TEXT 1 (A)
-  const left1Opacity = useTransform(p, [0, 0.28, 0.40], [1, 1, 0]);
-  const left1X = useTransform(p, [0.28, 0.40], [0, -160]);
+  // левый текст #1 уезжает
+  const left1Opacity = useTransform(p, [0, t1a, t1b], [1, 1, 0]);
+  const left1X = useTransform(p, [0, t1a, t1b], [0, 0, -110]);
 
-  // LEFT TEXT 3 (C)
-  const left3Opacity = useTransform(p, [0.62, 0.78, 1], [0, 1, 1]);
-  const left3X = useTransform(p, [0.62, 0.78], [-160, 0]);
+  // левый текст #3 приезжает
+  const left3Opacity = useTransform(p, [t2a, t2b, 1], [0, 1, 1]);
+  const left3X = useTransform(p, [t2a, t2b, 1], [-110, 0, 0]);
 
-  // RIGHT TEXT 2 (B)
-  const right2Opacity = useTransform(p, [0.28, 0.40, 0.62, 0.78], [0, 1, 1, 0]);
-  const right2X = useTransform(p, [0.28, 0.40, 0.62, 0.78], [160, 0, 0, 160]);
+  // правый текст #2 появляется, потом исчезает
+  const right2Opacity = useTransform(p, [0, t1a, t1b, t2a, t2b, 1], [0, 0, 1, 1, 0, 0]);
+  const right2X = useTransform(p, [0, t1a, t1b, t2a, t2b, 1], [110, 110, 0, 0, 110, 110]);
 
-  // LEFT DIVIDER (виден только в B)
-  const leftLineOpacity = useTransform(p, [0.28, 0.40, 0.62, 0.78], [0, 1, 1, 0]);
-  const leftLineX = useTransform(p, [0.28, 0.40, 0.62, 0.78], [-120, 0, 0, -120]);
+  // разделитель справа: виден в #1 и #3
+  const rightLineOpacity = useTransform(p, [0, t1a, t1b, t2a, t2b, 1], [1, 1, 0, 0, 1, 1]);
+  const rightLineX = useTransform(p, [0, t1a, t1b], [0, 0, 80]);
 
-  // RIGHT DIVIDER (виден в A и C)
-  const rightLineOpacity = useTransform(p, [0, 0.28, 0.40, 0.62, 0.78, 1], [1, 1, 0, 0, 1, 1]);
-  const rightLineX = useTransform(p, [0, 0.28, 0.40, 0.62, 0.78], [0, 0, 120, 120, 0]);
-
-  const dividerTop = insetH ? insetH / 2 : 163; // fallback ~ (580*9/16)/2
+  // разделитель слева: виден только в #2
+  const leftLineOpacity = useTransform(p, [0, t1a, t1b, t2a, t2b, 1], [0, 0, 1, 1, 0, 0]);
+  const leftLineX = useTransform(p, [0, t1a, t1b], [-80, -80, 0]);
 
   return (
-    <section
-      id="info"
-      ref={sectionRef as any}
-      className="relative overflow-x-clip bg-bg"
-    >
-      {/* ВАЖНО: высокий “коридор” скролла, чтобы 3-й блок 100% успевал закончить до следующей секции */}
-      <div className="relative h-[340vh]">
-        <div className="sticky top-24 z-30">
-          <Container className="py-16 md:py-20">
-            {/* как в Hero: чуть “жирнее” внутренний отступ */}
-            <div className="relative px-1">
-              {/* DESKTOP */}
-              <div className="hidden lg:grid lg:grid-cols-[1fr_580px_1fr] lg:gap-14">
-                {/* LEFT */}
-                <div className="relative">
+    <section id="info" ref={sectionRef} className="relative mt-20 min-h-[320vh]">
+      {/* MOBILE fallback */}
+      <Container className="md:hidden py-10 space-y-10">
+        <div className="space-y-6">
+          <div className="text-4xl font-extrabold leading-[0.95]">
+            Не знаете,
+            <br />
+            с чего начать?
+          </div>
+          <div className="text-base leading-relaxed opacity-70">
+            Представьте, что Вам необходимо составить вакансию - опишите именно те требования, которые
+            для Вас важны.
+            <br />
+            <br />
+            Встроенный помощник составит должностную инструкцию, а далее...
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-[580px]">
+          <div className="aspect-video w-full rounded-[44px] bg-accent-3" />
+        </div>
+
+        <div className="space-y-6">
+          <div className="text-3xl font-extrabold leading-[1.05]">
+            Простые, понятные,
+            <br />
+            бесплатные уроки
+          </div>
+          <div className="text-base leading-relaxed opacity-70">
+            Мы позаботились о том, чтобы Ваш опыт построения ИИ-команды принёс удовольствие.
+            <br />
+            <br />
+            Обучающие материалы и подсказки будут рядом на каждом этапе
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="text-3xl font-extrabold leading-[1.05]">
+            Больше, чем кабинет
+            <br />
+            Это - виртуальный офис
+          </div>
+          <div className="text-base leading-relaxed opacity-70">
+            Управляйте ботами для Telegram, VK и Avito из единого интерфейса.
+            <br />
+            <br />
+            Настраивайте поведение, подключайте базы знаний и анализируйте результаты.
+          </div>
+        </div>
+      </Container>
+
+      {/* DESKTOP stage */}
+      <div className="hidden md:block sticky top-24 z-30">
+        <Container>
+          <div className="h-[calc(100vh-96px)] flex items-center">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_580px_minmax(0,1fr)] items-center gap-x-10">
+              {/* LEFT */}
+              <div className="relative flex items-center">
+                <div className="relative w-full max-w-[520px] min-h-[360px]">
                   <motion.div
-                    className="max-w-[520px]"
+                    className="absolute inset-0"
                     style={{ opacity: left1Opacity, x: left1X }}
                   >
-                    <h2 className="text-[64px] font-extrabold leading-[0.95] tracking-tight">
+                    <div className="text-[56px] font-extrabold leading-[0.92] tracking-tight">
                       Не знаете,
                       <br />
                       с чего начать?
-                    </h2>
+                    </div>
 
-                    <div className="mt-12 text-[22px] leading-[1.55] opacity-70">
+                    <div className="mt-10 text-lg leading-[1.6] opacity-70">
                       Представьте, что Вам
                       <br />
                       необходимо составить
@@ -108,16 +131,16 @@ export function InfoBlocks() {
                   </motion.div>
 
                   <motion.div
-                    className="max-w-[520px]"
+                    className="absolute inset-0"
                     style={{ opacity: left3Opacity, x: left3X }}
                   >
-                    <h2 className="text-[64px] font-extrabold leading-[0.95] tracking-tight">
+                    <div className="text-[56px] font-extrabold leading-[0.92] tracking-tight">
                       Больше, чем кабинет
                       <br />
-                      Это — виртуальный офис
-                    </h2>
+                      Это - виртуальный офис
+                    </div>
 
-                    <div className="mt-12 text-[22px] leading-[1.55] opacity-70">
+                    <div className="mt-10 text-lg leading-[1.6] opacity-70">
                       Управляйте ботами для
                       <br />
                       Telegram, VK и Avito из
@@ -132,56 +155,40 @@ export function InfoBlocks() {
                       и анализируйте результаты.
                     </div>
                   </motion.div>
-
-                  {/* LEFT divider (только на втором состоянии) */}
-                  <motion.div
-                    aria-hidden="true"
-                    className="absolute left-0 h-px w-[260px] bg-text/15"
-                    style={{
-                      top: dividerTop,
-                      opacity: leftLineOpacity,
-                      x: leftLineX,
-                      translateY: "-50%",
-                    }}
-                  />
                 </div>
 
-                {/* CENTER 16:9 (580px) */}
-                <div className="flex justify-center">
-                  <div
-                    ref={insetRef}
-                    className="w-full max-w-[580px] overflow-hidden rounded-[56px] bg-accent-3"
-                  >
-                    <div className="aspect-video w-full" />
-                  </div>
+                {/* LEFT LINE (только в состоянии #2) */}
+                <motion.div
+                  className="ml-auto mr-6 h-px w-44 bg-text/15"
+                  style={{ opacity: leftLineOpacity, x: leftLineX }}
+                />
+              </div>
+
+              {/* CENTER 16:9 */}
+              <div className="flex justify-center">
+                <div className="w-full max-w-[580px]">
+                  <div className="aspect-video w-full rounded-[44px] bg-accent-3" />
                 </div>
+              </div>
 
-                {/* RIGHT */}
-                <div className="relative">
-                  {/* RIGHT divider (состояния 1 и 3) */}
-                  <motion.div
-                    aria-hidden="true"
-                    className="absolute left-0 h-px w-[260px] bg-text/15"
-                    style={{
-                      top: dividerTop,
-                      opacity: rightLineOpacity,
-                      x: rightLineX,
-                      translateY: "-50%",
-                    }}
-                  />
+              {/* RIGHT */}
+              <div className="relative flex items-center">
+                {/* RIGHT LINE (в #1 и #3) */}
+                <motion.div
+                  className="mr-auto ml-6 h-px w-44 bg-text/15"
+                  style={{ opacity: rightLineOpacity, x: rightLineX }}
+                />
 
-                  {/* RIGHT text (состояние 2) */}
-                  <motion.div
-                    className="max-w-[520px]"
-                    style={{ opacity: right2Opacity, x: right2X }}
-                  >
-                    <h2 className="text-[64px] font-extrabold leading-[0.95] tracking-tight">
+                {/* RIGHT TEXT #2 */}
+                <div className="relative w-full max-w-[520px] min-h-[360px]">
+                  <motion.div style={{ opacity: right2Opacity, x: right2X }}>
+                    <div className="text-[48px] font-extrabold leading-[0.98] tracking-tight">
                       Простые, понятные,
                       <br />
                       бесплатные уроки
-                    </h2>
+                    </div>
 
-                    <div className="mt-12 text-[22px] leading-[1.55] opacity-70">
+                    <div className="mt-10 text-lg leading-[1.6] opacity-70">
                       Мы позаботились о том,
                       <br />
                       чтобы Ваш опыт построения
@@ -200,52 +207,9 @@ export function InfoBlocks() {
                   </motion.div>
                 </div>
               </div>
-
-              {/* MOBILE / TABLET fallback: без sticky-магии, просто 3 блока */}
-              <div className="lg:hidden space-y-10">
-                <div className="space-y-5">
-                  <h2 className="text-4xl font-extrabold leading-tight tracking-tight">
-                    Не знаете,
-                    <br />
-                    с чего начать?
-                  </h2>
-                  <div className="text-lg leading-relaxed opacity-70">
-                    Представьте, что Вам необходимо составить вакансию - опишите именно те требования,
-                    которые для Вас важны. Встроенный помощник составит должностную инструкцию, а далее...
-                  </div>
-                </div>
-
-                <div className="w-full overflow-hidden rounded-[40px] bg-accent-3">
-                  <div className="aspect-video w-full" />
-                </div>
-
-                <div className="space-y-5">
-                  <h2 className="text-4xl font-extrabold leading-tight tracking-tight">
-                    Простые, понятные,
-                    <br />
-                    бесплатные уроки
-                  </h2>
-                  <div className="text-lg leading-relaxed opacity-70">
-                    Мы позаботились о том, чтобы Ваш опыт построения ИИ-команды принёс удовольствие.
-                    Обучающие материалы и подсказки будут рядом на каждом этапе.
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <h2 className="text-4xl font-extrabold leading-tight tracking-tight">
-                    Больше, чем кабинет
-                    <br />
-                    Это — виртуальный офис
-                  </h2>
-                  <div className="text-lg leading-relaxed opacity-70">
-                    Управляйте ботами для Telegram, VK и Avito из единого интерфейса.
-                    Настраивайте поведение, подключайте базы знаний и анализируйте результаты.
-                  </div>
-                </div>
-              </div>
             </div>
-          </Container>
-        </div>
+          </div>
+        </Container>
       </div>
     </section>
   );
