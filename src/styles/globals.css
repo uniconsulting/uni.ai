@@ -130,3 +130,30 @@ html[data-header-hidden="1"] .site-header {
   opacity: 0;
   pointer-events: none;
 }
+
+/* Универсальный hover: плавно уводит цвет в accent-1 */
+.hover-accent {
+  transition:
+    color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: color, background-color, border-color, fill, stroke;
+}
+
+.hover-accent:hover {
+  color: var(--color-accent-1);
+}
+
+/* чтобы иконки внутри (svg) тоже “краснели” */
+.hover-accent:hover svg {
+  fill: var(--color-accent-1);
+  stroke: var(--color-accent-1);
+}
+
+/* если нужно, чтобы работало и на кликабельных элементах с клавиатуры */
+.hover-accent:focus-visible {
+  color: var(--color-accent-1);
+  outline: none;
+}
