@@ -142,7 +142,7 @@ export function InfoBlocks() {
                   <div className="relative h-full px-6 lg:px-10">
 <motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
   <div className="flex h-full items-start justify-center">
-    <div className="ml-auto w-full max-w-[420px] text-right">
+    <div className="w-full max-w-[420px] text-right">
       <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
         Простые, понятные,
         <br />
