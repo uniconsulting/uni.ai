@@ -244,7 +244,7 @@ export function Hero() {
               alt=""
               aria-hidden="true"
               onError={() => setTempleVisible(false)}
-              className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[880px] max-w-none -translate-x-[30%]"
+              className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[720px] max-w-none -translate-x-[30%]"
             />
           )}
 
