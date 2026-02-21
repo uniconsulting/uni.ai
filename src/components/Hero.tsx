@@ -51,12 +51,7 @@ export function Hero() {
   const measureRef = useRef<HTMLDivElement | null>(null);
 
   const [endScale, setEndScale] = useState(1);
-  const [releaseSpace, setReleaseSpace] = useState(0);
   const [templeVisible, setTempleVisible] = useState(true);
-
-  // handoff UI: как только дошли до 1080 и уводим на #info — прячем вставку Hero,
-  // чтобы она не перекрывала InfoBlocks и не выглядела как “сползание”.
-  const [handoffHideInsert, setHandoffHideInsert] = useState(false);
 
   const BASE_W = 420;
   const MAX_W = 1080;
@@ -65,7 +60,7 @@ export function Hero() {
   const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]); // запрещаем “ползти” вниз
+  const y = useTransform(progress, [0, 1], [0, 0]); // не ползём вниз
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
   // BLUR: блюрим фон hero (кроме вставки)
@@ -79,21 +74,11 @@ export function Hero() {
     const el = measureRef.current;
     if (!el) return;
 
-    const STICKY_TOP = 96; // top-24
-
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-
-      // целевая ширина вставки: не больше 1080 и не больше контейнера
       const targetW = Math.min(MAX_W, cw);
       const targetScale = targetW / BASE_W;
       setEndScale(Math.max(1, targetScale));
-
-      // критично: даём sticky-вставке “длину прилипания”, иначе она “падает” в поток
-      // и визуально “сползает” на следующую секцию.
-      const maxH = (targetW * 9) / 16;
-      const buf = Math.ceil(STICKY_TOP + maxH + 40);
-      setReleaseSpace(buf);
     };
 
     update();
@@ -108,9 +93,10 @@ export function Hero() {
 
     const lockYRef = { current: null as number | null };
     const pushedToNextRef = { current: false };
-    const handoffRef = { current: false };
+    const jumpingRef = { current: false };
 
     let touchStartY = 0;
+    let jumpT: number | null = null;
 
     const setHeaderHidden = (hidden: boolean) => {
       if (hidden) document.documentElement.dataset.headerHidden = "1";
@@ -134,13 +120,25 @@ export function Hero() {
     };
 
     const scrollToInfo = () => {
+      if (jumpingRef.current) return;
+
       const next = document.getElementById("info");
       if (!next) return;
+
+      jumpingRef.current = true;
 
       const top = next.getBoundingClientRect().top + window.scrollY - 96; // top-24
       unlock();
       setHeaderHidden(false);
-      window.scrollTo({ top, behavior: "smooth" });
+
+      // ВАЖНО: без smooth, иначе будет промежуточный “проезд” и наложение sticky-слоёв
+      window.scrollTo({ top, behavior: "auto" });
+
+      // маленький дебаунс, чтобы колесо/тач не спамили jump подряд
+      if (jumpT) window.clearTimeout(jumpT);
+      jumpT = window.setTimeout(() => {
+        jumpingRef.current = false;
+      }, 220);
     };
 
     const consume = (deltaY: number) => {
@@ -151,33 +149,23 @@ export function Hero() {
       const atStart = next <= EPS;
       const atEnd = next >= 1 - EPS;
 
-      // header
       if (deltaY > 0 && next > 0) setHeaderHidden(true);
       if (deltaY < 0) setHeaderHidden(false);
       if (atStart) setHeaderHidden(false);
 
-      // если пользователь пошёл назад — возвращаем вставку и сбрасываем handoff
-      if (!atEnd) {
-        pushedToNextRef.current = false;
-        handoffRef.current = false;
-        setHandoffHideInsert(false);
+      // Лок держим только пока не дошли до конца
+      if (!atEnd) ensureLocked();
+      else {
+        unlock();
+        setHeaderHidden(false);
       }
 
-      // пока не дошли до 1 — фиксируем страницу
-      if (!atEnd) {
-        ensureLocked();
-        return;
-      }
+      // если пользователь пошёл назад — можно снова прыгать потом
+      if (!atEnd) pushedToNextRef.current = false;
 
-      // дошли до конца
-      unlock();
-      setHeaderHidden(false);
-
-      // на движении вниз: один раз инициируем handoff на #info и прячем вставку Hero
-      if (deltaY > 0 && !pushedToNextRef.current) {
+      // В момент первого достижения 1 на движении вниз — прыжок к info
+      if (deltaY > 0 && atEnd && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
-        handoffRef.current = true;
-        setHandoffHideInsert(true);
         requestAnimationFrame(scrollToInfo);
       }
     };
@@ -192,26 +180,19 @@ export function Hero() {
 
       const active = heroActive();
 
-      // если идёт handoff (мы уже уводим на #info) — не мешаем нативному скроллу
-      if (handoffRef.current) {
-        unlock();
-        setHeaderHidden(false);
-        return;
-      }
-
-      // вне hero не вмешиваемся
+      // если hero не активен и мы не в лок-анимации — не мешаем
       if (!active && (atStart || atEnd)) return;
       if (!active && !(p > 0 && p < 1)) return;
 
-      // если раскрыто до конца и вниз — отдаём нативному скроллу
-      if (atEnd && down) {
-        unlock();
-        setHeaderHidden(false);
+      // КЛЮЧЕВОЕ: когда уже atEnd и пользователь крутит вниз — НЕ даём нативному скроллу “чуть-чуть”
+      // проскроллить страницу (именно это и даёт эффект "сползания" на InfoBlocks).
+      if (active && atEnd && down) {
+        e.preventDefault();
+        scrollToInfo();
         return;
       }
 
-      // если свернуто и вверх — отдаём нативному скроллу
-      if (atStart && up) {
+      if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
         return;
@@ -239,22 +220,16 @@ export function Hero() {
 
       const active = heroActive();
 
-      if (handoffRef.current) {
-        unlock();
-        setHeaderHidden(false);
-        return;
-      }
-
       if (!active && (atStart || atEnd)) return;
       if (!active && !(p > 0 && p < 1)) return;
 
-      if (atEnd && down) {
-        unlock();
-        setHeaderHidden(false);
+      if (active && atEnd && down) {
+        e.preventDefault();
+        scrollToInfo();
         return;
       }
 
-      if (atStart && up) {
+      if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
         return;
@@ -269,6 +244,7 @@ export function Hero() {
     window.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
+      if (jumpT) window.clearTimeout(jumpT);
       window.removeEventListener("wheel", onWheel as any);
       window.removeEventListener("touchstart", onTouchStart as any);
       window.removeEventListener("touchmove", onTouchMove as any);
@@ -301,11 +277,7 @@ export function Hero() {
       </motion.div>
 
       {/* STAGE */}
-      <div
-        ref={stageRef}
-        className="relative mt-12"
-        style={{ paddingBottom: releaseSpace }} // ✅ sticky-range внутри stage
-      >
+      <div ref={stageRef} className="relative mt-12">
         {/* 16:9 (НЕ блюрится) */}
         <div className="sticky top-24 z-40">
           <Container>
@@ -319,8 +291,6 @@ export function Hero() {
                       borderRadius: rOuter,
                       scale,
                       y,
-                      opacity: handoffHideInsert ? 0 : 1, // ✅ чтобы не “уезжала” и не перекрывала InfoBlocks
-                      pointerEvents: handoffHideInsert ? "none" : "auto",
                       transformOrigin: "center center",
                     }}
                   >
