@@ -60,7 +60,7 @@ export function DemoChat() {
           {/* RIGHT */}
           <div className="md:pl-12">
             <div className="flex items-start justify-end">
-              <div className="text-[14px] font-medium opacity-70">demo-чат</div>
+              <div className="hover-accent text-[18px] font-medium opacity-70">demo-чат</div>
             </div>
 
             {/* place for stage 2 */}
