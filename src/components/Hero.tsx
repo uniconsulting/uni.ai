@@ -1,3 +1,4 @@
+/* components/Hero.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -89,6 +90,7 @@ export function Hero() {
   useEffect(() => {
     const LOCK_PX = 760;
     const EPS = 0.001;
+    const STICKY_TOP = 96; // top-24
 
     const lockYRef = { current: null as number | null };
     const pushedToNextRef = { current: false };
@@ -122,18 +124,29 @@ export function Hero() {
       if (jumpingRef.current) return;
 
       const next = document.getElementById("info");
-      if (!next) return;
+      const stage = stageRef.current;
+      if (!next || !stage) return;
 
       jumpingRef.current = true;
 
-      const top = next.getBoundingClientRect().top + window.scrollY - 96; // top-24
+      const infoAbsTop = next.getBoundingClientRect().top + window.scrollY;
+      const stageAbsBottom = stage.getBoundingClientRect().bottom + window.scrollY;
+
+      // хотим поставить info под header
+      const desired = infoAbsTop - STICKY_TOP;
+
+      // но обязаны "перешагнуть" момент, когда hero-stage ещё держит sticky
+      // условие: низ stage выше sticky-top
+      const safe = stageAbsBottom - STICKY_TOP + 2;
+
+      const top = Math.max(desired, safe);
+
       unlock();
       setHeaderHidden(false);
 
-      // ВАЖНО: без smooth, иначе будет промежуточный “проезд” и наложение sticky-слоёв
+      // без smooth, чтобы не было промежуточного кадра с двумя sticky
       window.scrollTo({ top, behavior: "auto" });
 
-      // маленький дебаунс, чтобы колесо/тач не спамили jump подряд
       if (jumpT) window.clearTimeout(jumpT);
       jumpT = window.setTimeout(() => {
         jumpingRef.current = false;
@@ -159,10 +172,8 @@ export function Hero() {
         setHeaderHidden(false);
       }
 
-      // если пользователь пошёл назад — можно снова прыгать потом
       if (!atEnd) pushedToNextRef.current = false;
 
-      // В момент первого достижения 1 на движении вниз — прыжок к info
       if (deltaY > 0 && atEnd && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
         requestAnimationFrame(scrollToInfo);
@@ -179,12 +190,10 @@ export function Hero() {
 
       const active = heroActive();
 
-      // если hero не активен и мы не в лок-анимации — не мешаем
       if (!active && (atStart || atEnd)) return;
       if (!active && !(p > 0 && p < 1)) return;
 
-      // КЛЮЧЕВОЕ: когда уже atEnd и пользователь крутит вниз — НЕ даём нативному скроллу “чуть-чуть”
-      // проскроллить страницу (именно это и даёт эффект "сползания" на InfoBlocks).
+      // критично: на atEnd + down всегда блокируем нативный скролл и прыгаем безопасно
       if (active && atEnd && down) {
         e.preventDefault();
         scrollToInfo();
