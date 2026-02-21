@@ -120,12 +120,11 @@ body {
   writing-mode: vertical-rl;
   text-orientation: upright;
   
-}
 .site-header {
   transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease;
   will-change: transform, opacity;
 }
-html[data-hero-scroll="1"] .site-header {
+html[data-header-hidden="1"] .site-header {
   transform: translateY(-120%);
   opacity: 0;
   pointer-events: none;
