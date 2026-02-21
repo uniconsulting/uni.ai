@@ -228,7 +228,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
           aria-haspopup="listbox"
           aria-expanded={open}
         >
-          <span className="max-w-[260px] truncate">{niche}</span>
+          <span className="max-w-auto truncate">{niche}</span>
           <ChevronDown className={`h-4 w-4 text-text/60 transition ${open ? "rotate-180" : ""}`} />
         </button>
 
@@ -370,7 +370,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               {/* input row */}
-              <div className="flex h-14 items-center gap-3 rounded-2xl bg-accent-3 px-4">
+              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 px-4">
                 <input
                   ref={inputRef}
                   value={input}
@@ -388,7 +388,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-bg"
+                    className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg"
                     aria-label="Записать голосовое"
                     onClick={() => inputRef.current?.focus()}
                   >
@@ -397,7 +397,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-1"
+                    className="flex h-10 w-10 items-center justify-center rounded-sm bg-accent-1"
                     aria-label="Отправить"
                     onClick={() => send(input)}
                   >
