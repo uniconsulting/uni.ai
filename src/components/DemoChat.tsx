@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
 import { ChevronDown, Mic, SendHorizontal, Settings } from "lucide-react";
+import { withBasePath } from "@/lib/basePath";
 
 const PILLS = [
   "Ремонт коммерческих помещений",
@@ -13,8 +14,6 @@ const PILLS = [
   "Производство (b2b)",
   "Онлайн-школа",
 ] as const;
-
-const LOGO_SRC = "/brand/uni-logo.svg"; // положи svg сюда: public/brand/uni-logo.svg
 
 type Niche = (typeof PILLS)[number];
 type Mode = "sales" | "support" | "kb";
@@ -312,12 +311,12 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               <div className="justify-self-end">
                 {/* 3) SVG-лого внутри рамки */}
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent-3 ring-1 ring-text/10">
-                  <img
-                    src={LOGO_SRC}
-                    alt="ЮНИ"
-                    className="h-5 w-5"
-                    draggable={false}
-                  />
+<img
+  src={withBasePath("/brand/uni-logo.svg")}
+  alt="ЮНИ"
+  className="block h-5 w-5"
+  draggable={false}
+/>
                 </div>
               </div>
             </div>
