@@ -61,7 +61,11 @@ export function Hero() {
   const MAX_W = 1080;
 
   const progressRaw = useMotionValue(0);
-  const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
+  const progress = useSpring(progressRaw, {
+    stiffness: 260,
+    damping: 38,
+    mass: 0.7,
+  });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
   const y = useTransform(progress, [0, 1], [0, 0]); // движение по Y запрещено
@@ -136,12 +140,42 @@ export function Hero() {
     };
 
     const resetHero = () => {
-      // визуально сбрасываем hero: вставка назад, blur в ноль
       progressRaw.set(0);
       pushedToNextRef.current = false;
       setHeaderHidden(false);
       setPinEnabled(false);
       unlock();
+    };
+
+    // ✅ главное: сбрасываем hero только если реально ушли вниз (scrollY изменился),
+    // иначе получаем "микро-сброс" прямо в hero и повторный рост
+    const deferResetAfterJump = (targetTop: number) => {
+      let tries = 0;
+
+      const tick = () => {
+        tries += 1;
+        const yNow = window.scrollY;
+
+        // если не сдвинулись с места (остались на самом верху) — НЕ сбрасываем
+        const moved = yNow > 8;
+
+        // "долетели" до цели (или почти), и реально ушли вниз
+        if (moved && yNow >= targetTop - 2) {
+          resetHero();
+          return;
+        }
+
+        // несколько кадров ждём, пока браузер применит scrollTo
+        if (tries < 14) {
+          requestAnimationFrame(tick);
+          return;
+        }
+
+        // fallback: если мы всё же ушли вниз, сбросим; если нет — не трогаем
+        if (moved) resetHero();
+      };
+
+      requestAnimationFrame(tick);
     };
 
     const jumpToInfoSafely = () => {
@@ -152,8 +186,9 @@ export function Hero() {
       if (!next || !stage) return;
 
       jumpingRef.current = true;
+      pushedToNextRef.current = true;
 
-      // sticky выключаем заранее, чтобы исключить перекрытия на любых "промежуточных" кадрах
+      // sticky выключаем заранее, чтобы исключить перекрытия
       setPinEnabled(false);
 
       const infoAbsTop = next.getBoundingClientRect().top + window.scrollY;
@@ -172,11 +207,11 @@ export function Hero() {
       unlock();
       setHeaderHidden(false);
 
-      // без smooth: иначе ловим "проезд" и эффекты наложения
+      // без smooth: иначе ловим "проезд"
       window.scrollTo({ top, behavior: "auto" });
 
-      // сразу после переноса на info сбрасываем hero
-      requestAnimationFrame(resetHero);
+      // ✅ сброс только после того, как реально улетели вниз
+      deferResetAfterJump(top);
 
       if (jumpT) window.clearTimeout(jumpT);
       jumpT = window.setTimeout(() => {
@@ -208,7 +243,7 @@ export function Hero() {
       unlock();
       setHeaderHidden(false);
 
-      // если продолжают вниз, уходим к info
+      // если продолжают вниз, уходим к info (один раз)
       if (deltaY > 0 && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
         requestAnimationFrame(jumpToInfoSafely);
@@ -230,25 +265,23 @@ export function Hero() {
       const active = heroActive();
       const top = atPageTop();
 
-      // ВАЖНО: запуск анимации только с самого верха страницы.
-      // Если мы не в анимации и не на top, не вмешиваемся.
+      // запуск анимации только с самого верха страницы
       if (!inAnim && !(top && active)) return;
 
-      // если уже на конце и пользователь крутит вниз в зоне hero, принудительно прыгаем
+      // если уже на конце и крутят вниз в зоне hero — прыгаем (и блокируем дефолт)
       if (active && atEnd && down) {
         e.preventDefault();
         jumpToInfoSafely();
         return;
       }
 
-      // если в начале и крутят вверх, отдаём странице
+      // если в начале и крутят вверх — отдаём странице
       if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
         return;
       }
 
-      // остальное: лок-анимация
       e.preventDefault();
       consume(e.deltaY);
     };
@@ -306,7 +339,10 @@ export function Hero() {
   return (
     <section id="hero" className="relative overflow-x-clip">
       {/* TOP (блюрится) */}
-      <motion.div className="relative will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
+      <motion.div
+        className="relative will-change-[filter]"
+        style={{ filter: bgFilter, opacity: bgOpacity }}
+      >
         <Container className={`relative ${topPad}`}>
           <div className="relative px-1">
             <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
@@ -355,7 +391,10 @@ export function Hero() {
         </div>
 
         {/* НИЗ (блюрится) */}
-        <motion.div className="relative z-20 will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
+        <motion.div
+          className="relative z-20 will-change-[filter]"
+          style={{ filter: bgFilter, opacity: bgOpacity }}
+        >
           <div className="relative">
             {templeVisible && (
               <img
