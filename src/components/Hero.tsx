@@ -192,7 +192,7 @@ export function Hero() {
       <Container className={`relative ${topPad}`}>
         <div className="relative px-1">
           <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
-            <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
+            <div className="jp-vertical text-[120px] font-normal leading-none hover-accent opacity-90">
               精益生產
             </div>
           </div>
@@ -261,10 +261,10 @@ export function Hero() {
 
                       <div className="col-span-12 md:col-span-5 relative z-20 flex h-full flex-col">
                         <div className="pt-2">
-                          <div className="text-lg font-normal leading-none opacity-40">
+                          <div className="text-lg font-normal leading-none opacity-40 hover-accent">
                             наш telegram
                           </div>
-                          <div className="mt-3 text-3xl font-normal leading-none">
+                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">
                             @uni_smb
                           </div>
                         </div>
@@ -274,10 +274,10 @@ export function Hero() {
                         </div>
 
                         <div>
-                          <div className="text-lg font-normal leading-none opacity-40">
+                          <div className="text-lg font-normal leading-none opacity-40 hover-accent">
                             email для связи
                           </div>
-                          <div className="mt-3 text-3xl font-normal leading-none">
+                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">
                             uni.kit@mail.ru
                           </div>
                         </div>
@@ -287,7 +287,7 @@ export function Hero() {
 
                   {/* RIGHT HALF */}
                   <div className="md:pl-10 flex h-full flex-col">
-                    <div className="text-lg leading-snug md:text-lg">
+                    <div className="text-lg leading-snug md:text-lg hover-accent">
                       ЮНИ.ai – интегратор ИИ-решений
                       <br />
                       в бизнес полного цикла. Строим решения,
@@ -299,14 +299,14 @@ export function Hero() {
 
                     <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                       <div className="flex items-center gap-4">
-                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
+                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal hover-accent">
                           道
                         </span>
-                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
+                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal hover-accent">
                           改善
                         </span>
 
-                        <span className="text-lg font-normal leading-none opacity-50">
+                        <span className="text-lg font-normal leading-none opacity-50 hover-accent">
                           наши продукты
                           <br />
                           японского качества
