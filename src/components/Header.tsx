@@ -25,7 +25,7 @@ export function Header() {
           <div className="ml-auto flex items-center justify-end gap-6">
             <nav className="hidden items-center gap-6 md:flex">
               {NAV.map((item) => (
-                <a key={item.href} href={item.href} className="text-sm opacity-70 hover:opacity-100">
+                <a key={item.href} href={item.href} className="text-sm opacity-70 hover-accent">
                   {item.label}
                 </a>
               ))}
