@@ -370,7 +370,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               {/* input row */}
-              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 px-4">
+              <div className="flex h-14 items-center gap-3 rounded-md bg-accent-3 px-4">
                 <input
                   ref={inputRef}
                   value={input}
