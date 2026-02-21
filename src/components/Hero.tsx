@@ -1,3 +1,4 @@
+/* components/Hero.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -52,8 +53,9 @@ export function Hero() {
   const [endScale, setEndScale] = useState(1);
   const [templeVisible, setTempleVisible] = useState(true);
 
-  // sticky выключаем после достижения 1, чтобы вставка не могла перекрывать InfoBlocks
-  const [pinEnabled, setPinEnabled] = useState(true);
+  // sticky включаем только во время лок-анимации (и при схлопывании),
+  // после прыжка на info выключаем, чтобы не было перекрытий
+  const [pinEnabled, setPinEnabled] = useState(false);
 
   const BASE_W = 420;
   const MAX_W = 1080;
@@ -62,9 +64,10 @@ export function Hero() {
   const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]); // запрещаем движение по Y
+  const y = useTransform(progress, [0, 1], [0, 0]); // движение по Y запрещено
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
+  // blur только внутри hero (кроме вставки)
   const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
   const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
   const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
@@ -97,10 +100,6 @@ export function Hero() {
     const pushedToNextRef = { current: false };
     const jumpingRef = { current: false };
 
-    // новое: после прыжка вниз держим hero в "reset" и не даём запускать анимацию,
-    // пока пользователь реально не вернётся в самый верх страницы
-    const resetPendingRef = { current: false };
-
     let touchStartY = 0;
     let jumpT: number | null = null;
 
@@ -109,7 +108,7 @@ export function Hero() {
       else delete document.documentElement.dataset.headerHidden;
     };
 
-    const atPageTop = () => window.scrollY <= 2;
+    const atPageTop = () => window.scrollY <= 4;
 
     const heroActive = () => {
       const el = stageRef.current;
@@ -136,28 +135,13 @@ export function Hero() {
       return (targetW * 9) / 16;
     };
 
-    const resetHeroToStart = () => {
-      // Сбрасываем прогресс: вставка уменьшается, блюр пропадает (всё это уже вне экрана)
+    const resetHero = () => {
+      // визуально сбрасываем hero: вставка назад, blur в ноль
       progressRaw.set(0);
       pushedToNextRef.current = false;
       setHeaderHidden(false);
-      unlock();
-
-      // sticky держим выключенным, пока не вернулись наверх
       setPinEnabled(false);
-      resetPendingRef.current = true;
-    };
-
-    const maybeRearmAtTop = () => {
-      if (!resetPendingRef.current) return;
-      if (!atPageTop()) return;
-
-      // теперь разрешаем снова sticky + лок-анимацию
-      resetPendingRef.current = false;
-      setPinEnabled(true);
-      progressRaw.set(0);
-      setHeaderHidden(false);
-      pushedToNextRef.current = false;
+      unlock();
     };
 
     const jumpToInfoSafely = () => {
@@ -169,7 +153,7 @@ export function Hero() {
 
       jumpingRef.current = true;
 
-      // выключаем sticky ДО прыжка, чтобы вставка не могла оказаться поверх следующей секции
+      // sticky выключаем заранее, чтобы исключить перекрытия на любых "промежуточных" кадрах
       setPinEnabled(false);
 
       const infoAbsTop = next.getBoundingClientRect().top + window.scrollY;
@@ -177,11 +161,10 @@ export function Hero() {
 
       const targetH = computeTargetH();
 
-      // хотим поставить начало info под header
+      // хотим поставить info под header
       const desired = infoAbsTop - STICKY_TOP;
 
-      // гарантируем, что sticky уже НЕ может удерживаться своим контейнером:
-      // scrollY >= stageBottom - (stickyTop + stickyHeight)
+      // гарантируем, что область sticky уже "пройдена"
       const releaseY = stageAbsBottom - (STICKY_TOP + targetH) + 2;
 
       const top = Math.max(desired, releaseY);
@@ -189,11 +172,11 @@ export function Hero() {
       unlock();
       setHeaderHidden(false);
 
-      // без smooth, чтобы не было промежуточного кадра с двумя sticky-слоями
+      // без smooth: иначе ловим "проезд" и эффекты наложения
       window.scrollTo({ top, behavior: "auto" });
 
-      // сразу после переноса на info — сбрасываем hero в начальную стадию
-      resetHeroToStart();
+      // сразу после переноса на info сбрасываем hero
+      requestAnimationFrame(resetHero);
 
       if (jumpT) window.clearTimeout(jumpT);
       jumpT = window.setTimeout(() => {
@@ -213,7 +196,7 @@ export function Hero() {
       if (deltaY < 0) setHeaderHidden(false);
       if (atStart) setHeaderHidden(false);
 
-      // пока не дошли до конца, держим страницу на месте
+      // в процессе анимации держим страницу и включаем sticky
       if (!atEnd) {
         setPinEnabled(true);
         ensureLocked();
@@ -225,18 +208,19 @@ export function Hero() {
       unlock();
       setHeaderHidden(false);
 
+      // если продолжают вниз, уходим к info
       if (deltaY > 0 && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
         requestAnimationFrame(jumpToInfoSafely);
       }
 
+      // если пошли вверх от конца, разрешаем схлопывать (sticky нужен)
       if (deltaY < 0) setPinEnabled(true);
     };
 
     const onWheel = (e: WheelEvent) => {
-      maybeRearmAtTop();
-
       const p = progressRaw.get();
+      const inAnim = p > EPS && p < 1 - EPS;
       const atStart = p <= EPS;
       const atEnd = p >= 1 - EPS;
 
@@ -244,33 +228,27 @@ export function Hero() {
       const up = e.deltaY < 0;
 
       const active = heroActive();
+      const top = atPageTop();
 
-      // если hero в reset-режиме и мы не в самом верху страницы — вообще не запускаем лок-анимацию
-      if (active && atStart && down && resetPendingRef.current && !atPageTop()) {
-        return; // нативный скролл
-      }
+      // ВАЖНО: запуск анимации только с самого верха страницы.
+      // Если мы не в анимации и не на top, не вмешиваемся.
+      if (!inAnim && !(top && active)) return;
 
-      // если мы уже ушли вниз (hero не активен) и прогресс на краю, не вмешиваемся
-      if (!active && (atStart || atEnd)) return;
-
-      // если дошли до конца и крутим вниз в зоне hero:
+      // если уже на конце и пользователь крутит вниз в зоне hero, принудительно прыгаем
       if (active && atEnd && down) {
-        if (!pushedToNextRef.current && !jumpingRef.current) {
-          e.preventDefault();
-          jumpToInfoSafely();
-        }
+        e.preventDefault();
+        jumpToInfoSafely();
         return;
       }
 
-      // если в начале и крутим вверх, отдаём странице
+      // если в начале и крутят вверх, отдаём странице
       if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
         return;
       }
 
-      if (!active && !(p > 0 && p < 1)) return;
-
+      // остальное: лок-анимация
       e.preventDefault();
       consume(e.deltaY);
     };
@@ -280,9 +258,8 @@ export function Hero() {
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      maybeRearmAtTop();
-
       const p = progressRaw.get();
+      const inAnim = p > EPS && p < 1 - EPS;
       const atStart = p <= EPS;
       const atEnd = p >= 1 - EPS;
 
@@ -294,19 +271,13 @@ export function Hero() {
       const up = delta < 0;
 
       const active = heroActive();
+      const top = atPageTop();
 
-      // reset-режим: не запускаем лок-анимацию пока не вернулись в самый верх страницы
-      if (active && atStart && down && resetPendingRef.current && !atPageTop()) {
-        return; // нативный скролл
-      }
-
-      if (!active && (atStart || atEnd)) return;
+      if (!inAnim && !(top && active)) return;
 
       if (active && atEnd && down) {
-        if (!pushedToNextRef.current && !jumpingRef.current) {
-          e.preventDefault();
-          jumpToInfoSafely();
-        }
+        e.preventDefault();
+        jumpToInfoSafely();
         return;
       }
 
@@ -316,27 +287,19 @@ export function Hero() {
         return;
       }
 
-      if (!active && !(p > 0 && p < 1)) return;
-
       e.preventDefault();
       consume(delta);
-    };
-
-    const onScroll = () => {
-      maybeRearmAtTop();
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
       if (jumpT) window.clearTimeout(jumpT);
       window.removeEventListener("wheel", onWheel as any);
       window.removeEventListener("touchstart", onTouchStart as any);
       window.removeEventListener("touchmove", onTouchMove as any);
-      window.removeEventListener("scroll", onScroll as any);
     };
   }, [progressRaw]);
 
