@@ -299,10 +299,10 @@ export function Hero() {
 
                     <div className="mt-auto pt-10 flex items-end justify-between gap-8">
                       <div className="flex items-center gap-4">
-                        <span className="inline-flex h-10 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
+                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
                           道
                         </span>
-                        <span className="inline-flex h-10 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
+                        <span className="inline-flex h-14 min-w-24 items-center justify-center rounded-xl bg-accent-3 px-6 text-2xl font-normal">
                           改善
                         </span>
 
@@ -328,7 +328,7 @@ export function Hero() {
         </div>
 
         {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
-        <div className="h-[32vh] md:h-[44vh]" />
+        <div className="h-[2vh] md:h-[4vh]" />
       </div>
     </section>
   );
