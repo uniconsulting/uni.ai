@@ -54,17 +54,26 @@ export function Hero() {
   const [templeVisible, setTempleVisible] = useState(true);
 
   const BASE_W = 420;
+  const MAX_W = 1080; // <= главное изменение
 
   const progressRaw = useMotionValue(0);
-  const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
+  const progress = useSpring(progressRaw, {
+    stiffness: 260,
+    damping: 38,
+    mass: 0.7,
+  });
 
+  // вставка: рост от центра, без “ползания” вниз
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-
-  // рост от центра, без уезда
   const y = useTransform(progress, [0, 1], [0, 0]);
 
   // радиус уменьшаем по мере роста
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
+
+  // BLUR: блюрим фон hero (кроме вставки)
+  const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
+  const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
+  const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
 
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
@@ -77,13 +86,14 @@ export function Hero() {
     const update = () => {
       const cw = el.getBoundingClientRect().width;
 
-      // максимальная ширина вставки = ширина контейнера
-      const target = cw / BASE_W;
-      setEndScale(Math.max(1, target));
+      // целевая ширина вставки: не больше 1080 и не больше контейнера
+      const targetW = Math.min(MAX_W, cw);
+      const targetScale = targetW / BASE_W;
 
-      // буфер, чтобы вставка успела "отлипнуть" и уйти вверх до InfoBlocks
-      // maxHeight = cw * 9/16, плюс top-offset и небольшой запас
-      const maxH = (cw * 9) / 16;
+      setEndScale(Math.max(1, targetScale));
+
+      // releaseSpace считаем от финальной ширины (targetW), а не от ширины контейнера
+      const maxH = (targetW * 9) / 16;
       const buf = Math.ceil(STICKY_TOP + maxH + 40);
       setReleaseSpace(buf);
     };
@@ -133,10 +143,12 @@ export function Hero() {
       const down = e.deltaY > 0;
       const up = e.deltaY < 0;
 
+      // дошли до 1080: вниз отдаём обычному скроллу
       if (p === 1 && down) {
         lockYRef.current = null;
         return;
       }
+      // свернули: вверх отдаём обычному скроллу
       if (p === 0 && up) {
         lockYRef.current = null;
         setHeaderHidden(false);
@@ -199,30 +211,35 @@ export function Hero() {
 
   return (
     <section id="hero" className="relative overflow-x-clip">
-      {/* TOP */}
-      <Container className={`relative ${topPad}`}>
-        <div className="relative px-1">
-          <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
-            <div className="jp-vertical text-[120px] font-normal leading-none hover-accent-2 opacity-90">
-              精益生產
+      {/* TOP (блюрится) */}
+      <motion.div
+        className="relative will-change-[filter]"
+        style={{ filter: bgFilter, opacity: bgOpacity }}
+      >
+        <Container className={`relative ${topPad}`}>
+          <div className="relative px-1">
+            <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
+              <div className="jp-vertical text-[120px] font-normal leading-none hover-accent-2 opacity-90">
+                精益生產
+              </div>
             </div>
-          </div>
 
-          <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
-            <span className="block">Кабинет твоей</span>
-            <span className="block whitespace-nowrap">
-              <span className="text-accent-1">команды</span>{" "}
-              <span className="inline-block align-baseline">
-                <RotatingWord />
+            <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
+              <span className="block">Кабинет твоей</span>
+              <span className="block whitespace-nowrap">
+                <span className="text-accent-1">команды</span>{" "}
+                <span className="inline-block align-baseline">
+                  <RotatingWord />
+                </span>
               </span>
-            </span>
-          </h1>
-        </div>
-      </Container>
+            </h1>
+          </div>
+        </Container>
+      </motion.div>
 
-      {/* STAGE (всё, что должно "принадлежать" Hero и его лок-скроллу) */}
+      {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
-        {/* 16:9 */}
+        {/* 16:9 (НЕ блюрится) */}
         <div className="sticky top-24 z-40">
           <Container>
             <div className="px-1">
@@ -246,19 +263,22 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* НИЗ */}
-        <div className="relative">
-          {templeVisible && (
-            <img
-              src={withBasePath("/hero/temple.svg")}
-              alt=""
-              aria-hidden="true"
-              onError={() => setTempleVisible(false)}
-              className="pointer-events-none select-none absolute bottom-6 right-1/2 z-10 h-auto w-[720px] max-w-none -translate-x-[50%]"
-            />
-          )}
+        {/* НИЗ (блюрится) */}
+        <motion.div
+          className="relative z-20 will-change-[filter]"
+          style={{ filter: bgFilter, opacity: bgOpacity }}
+        >
+          <div className="relative">
+            {templeVisible && (
+              <img
+                src={withBasePath("/hero/temple.svg")}
+                alt=""
+                aria-hidden="true"
+                onError={() => setTempleVisible(false)}
+                className="pointer-events-none select-none absolute bottom-6 right-1/2 z-10 h-auto w-[720px] max-w-none -translate-x-[50%]"
+              />
+            )}
 
-          <div className="relative z-20">
             <Container className="py-10 md:py-12">
               <div className="relative px-1">
                 <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
@@ -335,9 +355,10 @@ export function Hero() {
               </div>
             </Container>
           </div>
-        </div>
+        </motion.div>
       </div>
 
+      {/* запас для “отлипания” sticky после завершения лок-скролла */}
       <div aria-hidden className="pointer-events-none" style={{ height: releaseSpace }} />
     </section>
   );
