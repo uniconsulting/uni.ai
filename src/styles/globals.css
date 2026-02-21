@@ -157,3 +157,28 @@ html[data-header-hidden="1"] .site-header {
   color: var(--color-accent-1);
   outline: none;
 }
+
+/* Универсальный hover: плавно уводит цвет в accent-2 */
+.hover-accent-2 {
+  transition:
+    color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: color, background-color, border-color, fill, stroke;
+}
+
+.hover-accent-2:hover {
+  color: var(--color-accent-2);
+}
+
+.hover-accent-2:hover svg {
+  fill: var(--color-accent-2);
+  stroke: var(--color-accent-2);
+}
+
+.hover-accent-2:focus-visible {
+  color: var(--color-accent-2);
+  outline: none;
+}
