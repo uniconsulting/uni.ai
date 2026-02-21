@@ -140,34 +140,34 @@ export function InfoBlocks() {
 
                   {/* RIGHT COLUMN */}
                   <div className="relative h-full px-6 lg:px-10">
-                    <motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
-                      <div className="flex h-full items-start justify-start">
-                        <div className="max-w-[420px] text-left">
-                          <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
-                            Простые, понятные,
-                            <br />
-                            бесплатные уроки
-                          </div>
+<motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
+  <div className="flex h-full items-start justify-center">
+    <div className="ml-auto w-full max-w-[420px] text-right">
+      <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
+        Простые, понятные,
+        <br />
+        бесплатные уроки
+      </div>
 
-                          <div className="mt-9 text-[18px] leading-snug opacity-85">
-                            Мы позаботились о том,
-                            <br />
-                            чтобы Ваш опыт построения
-                            <br />
-                            ИИ-команды принёс
-                            <br />
-                            удовольствие.
-                            <br />
-                            <br />
-                            Обучающие материалы
-                            <br />
-                            и подсказки будут рядом
-                            <br />
-                            на каждом этапе
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
+      <div className="mt-9 text-[18px] leading-snug opacity-85">
+        Мы позаботились о том,
+        <br />
+        чтобы Ваш опыт построения
+        <br />
+        ИИ-команды принёс
+        <br />
+        удовольствие.
+        <br />
+        <br />
+        Обучающие материалы
+        <br />
+        и подсказки будут рядом
+        <br />
+        на каждом этапе
+      </div>
+    </div>
+  </div>
+</motion.div>
                   </div>
                 </div>
               </div>
