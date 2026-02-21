@@ -20,168 +20,109 @@ function clamp(v: number, min: number, max: number) {
 function RotatingWord() {
   const [i, setI] = useState(0);
 
-  useEffect(() => {
-    const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), 4000);
-    return () => clearInterval(t);
-  }, []);
+useEffect(() => {
+  const LOCK_PX = 520; // скорость: меньше = быстрее (попробуй 420–650)
+  let touchStartY = 0;
 
-  const word = WORDS[i];
+  const lockYRef = { current: null as number | null };
 
-  return (
-    <span className="relative inline-flex align-baseline">
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={word}
-          className="inline-block"
-          initial={{ opacity: 0, filter: "blur(10px)", y: 2 }}
-          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-          exit={{ opacity: 0, filter: "blur(10px)", y: -2 }}
-          transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {word}
-        </motion.span>
-      </AnimatePresence>
-    </span>
-  );
-}
+  const setHeaderHidden = (hidden: boolean) => {
+    if (hidden) document.documentElement.dataset.headerHidden = "1";
+    else delete document.documentElement.dataset.headerHidden;
+  };
 
-export function Hero() {
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const measureRef = useRef<HTMLDivElement | null>(null);
+  const heroActive = () => {
+    const el = stageRef.current;
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    // hero "активен", пока стейдж на экране (с запасом)
+    return r.top < window.innerHeight * 0.8 && r.bottom > 0;
+  };
 
-  const [endScale, setEndScale] = useState(1);
-  const [templeVisible, setTempleVisible] = useState(true);
+  const ensureLocked = () => {
+    if (lockYRef.current == null) lockYRef.current = window.scrollY;
+    window.scrollTo({ top: lockYRef.current });
+  };
 
-  // 16:9 базовая ширина как в макете
-  const BASE_W = 420;
+  const consume = (deltaY: number) => {
+    const p = progressRaw.get();
+    const next = clamp(p + deltaY / LOCK_PX, 0, 1);
+    progressRaw.set(next);
 
-  // где начинается “стейдж” на странице (чтобы фиксировать scroll)
-  const stageTopRef = useRef(0);
+    ensureLocked();
 
-  // ручной прогресс (0..1), который мы будем крутить колесом/тачем
-  const progressRaw = useMotionValue(0);
-  const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
+    if (next > 0) setHeaderHidden(true);
+    if (next === 0) setHeaderHidden(false);
+  };
 
-  // scale и смещение по прогрессу
-  const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, -64]);
+  const onWheel = (e: WheelEvent) => {
+    const p = progressRaw.get();
+    const down = e.deltaY > 0;
+    const up = e.deltaY < 0;
 
-  // радиусы уменьшаем по мере роста (и внутренний = внешний - 4px)
-  const rOuter = useTransform(progress, [0, 1], [28, 16]);
-  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
+    // Лочим, если:
+    // 1) прогресс в процессе (0..1)
+    // 2) мы в hero и начинаем скроллить вниз при p===0 (старт разворота)
+    // 3) мы в hero и скроллим вверх при p===1 (старт сворачивания назад)
+    const shouldLock =
+      (p > 0 && p < 1) ||
+      (heroActive() && p === 0 && down) ||
+      (heroActive() && p === 1 && up);
 
-  // чтобы нижняя часть была видна на первом экране
-  const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
+    if (!shouldLock) {
+      lockYRef.current = null; // отпускаем якорь, если вышли из режима
+      return;
+    }
 
-  // считаем endScale так, чтобы карточка в максимуме упёрлась в ширину контейнера
-  useLayoutEffect(() => {
-    const el = measureRef.current;
-    if (!el) return;
+    e.preventDefault();
+    consume(e.deltaY);
 
-    const update = () => {
-      const cw = el.getBoundingClientRect().width; // это уже ширина “внутри” Container
-      const target = cw / BASE_W; // упираемся в границы контейнера
-      setEndScale(Math.max(1, target));
-    };
+    // если дошли до края прогресса, отпускать якорь можно,
+    // но только когда пользователь продолжит скроллить "в ту же сторону"
+    if (progressRaw.get() === 1 && down) lockYRef.current = null;
+    if (progressRaw.get() === 0 && up) lockYRef.current = null;
+  };
 
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const onTouchStart = (e: TouchEvent) => {
+    touchStartY = e.touches[0]?.clientY ?? 0;
+  };
 
-  // stageTop (важно для “не едет страница до старта”)
-  useLayoutEffect(() => {
-    const calc = () => {
-      if (!stageRef.current) return;
-      const top = stageRef.current.getBoundingClientRect().top + window.scrollY;
-      stageTopRef.current = top;
-    };
+  const onTouchMove = (e: TouchEvent) => {
+    const p = progressRaw.get();
+    const yNow = e.touches[0]?.clientY ?? touchStartY;
+    const delta = touchStartY - yNow; // свайп вверх = delta>0 (как scroll down)
+    touchStartY = yNow;
 
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
+    const down = delta > 0;
+    const up = delta < 0;
 
-  // логика: пока progress не 1, мы “поглощаем” скролл и держим страницу на месте
-  useEffect(() => {
-    const LOCK_PX = 900; // сколько “скролла” нужно, чтобы дойти от 0 до 1 (подстрой по ощущениям)
-    let touchStartY = 0;
+    const shouldLock =
+      (p > 0 && p < 1) ||
+      (heroActive() && p === 0 && down) ||
+      (heroActive() && p === 1 && up);
 
-    const setHeaderHidden = (hidden: boolean) => {
-      if (hidden) document.documentElement.dataset.headerHidden = "1";
-      else delete document.documentElement.dataset.headerHidden;
-    };
+    if (!shouldLock) {
+      lockYRef.current = null;
+      return;
+    }
 
-    const atStageTop = () => Math.abs(window.scrollY - stageTopRef.current) <= 2;
+    e.preventDefault();
+    consume(delta);
 
-    const consume = (deltaY: number) => {
-      const p = progressRaw.get();
-      const next = clamp(p + deltaY / LOCK_PX, 0, 1);
-      progressRaw.set(next);
+    if (progressRaw.get() === 1 && down) lockYRef.current = null;
+    if (progressRaw.get() === 0 && up) lockYRef.current = null;
+  };
 
-      // фиксируем страницу на верхней точке стейджа, чтобы вообще не было “подъезда”
-      window.scrollTo({ top: stageTopRef.current });
+  window.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: false });
 
-      // хеддер: вниз скрываем, вверх (когда возвращаемся к 0) показываем
-      if (next > 0) setHeaderHidden(true);
-      if (next === 0) setHeaderHidden(false);
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      const p = progressRaw.get();
-      const down = e.deltaY > 0;
-      const up = e.deltaY < 0;
-
-      // Активируем “лок” когда:
-      // - мы стоим на верхней точке hero-stage и прогресс не завершён, и пользователь скроллит вниз
-      // - или прогресс уже в процессе (между 0 и 1)
-      // - или мы на верхней точке и хотим скроллом вверх “сворачивать” назад
-      const shouldLock =
-        (atStageTop() && p < 1 && down) ||
-        (p > 0 && p < 1) ||
-        (atStageTop() && p > 0 && up);
-
-      if (!shouldLock) return;
-
-      e.preventDefault();
-      consume(e.deltaY);
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0]?.clientY ?? 0;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      const p = progressRaw.get();
-      const yNow = e.touches[0]?.clientY ?? touchStartY;
-      const delta = touchStartY - yNow; // свайп вверх = delta>0 (как scroll down)
-      touchStartY = yNow;
-
-      const down = delta > 0;
-      const up = delta < 0;
-
-      const shouldLock =
-        (atStageTop() && p < 1 && down) ||
-        (p > 0 && p < 1) ||
-        (atStageTop() && p > 0 && up);
-
-      if (!shouldLock) return;
-
-      e.preventDefault();
-      consume(delta);
-    };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-
-    return () => {
-      window.removeEventListener("wheel", onWheel as any);
-      window.removeEventListener("touchstart", onTouchStart as any);
-      window.removeEventListener("touchmove", onTouchMove as any);
-    };
-  }, [progressRaw]);
+  return () => {
+    window.removeEventListener("wheel", onWheel as any);
+    window.removeEventListener("touchstart", onTouchStart as any);
+    window.removeEventListener("touchmove", onTouchMove as any);
+  };
+}, [progressRaw]);
 
   return (
     <section id="hero" className="relative overflow-x-clip">
