@@ -12,7 +12,7 @@ export function InfoBlocks() {
     offset: ["start start", "end start"],
   });
 
-  const p = useSpring(scrollYProgress, { stiffness: 120, damping: 26, mass: 0.9 });
+  const p = useSpring(scrollYProgress, { stiffness: 220, damping: 34, mass: 0.7 });
 
   const a = useMemo(() => ({ s1: 0.28, t12: 0.46, s2: 0.62, t23: 0.8 }), []);
 
@@ -42,7 +42,7 @@ export function InfoBlocks() {
 
   return (
     <section id="info" ref={sectionRef} className="relative overflow-x-clip" aria-label="Инфо-блоки">
-      <div className="relative h-[240vh]">
+      <div className="relative h-[300vh]">
         <div className="sticky top-24 z-20">
           <Container className="py-12 md:py-16">
             {/* Desktop */}
