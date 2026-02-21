@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValueEvent,
+} from "framer-motion";
 import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
@@ -47,6 +53,7 @@ export function Hero() {
     offset: ["start start", "end start"],
   });
 
+  // маленькая карточка как в макете
   const BASE_W = 420;
 
   useLayoutEffect(() => {
@@ -55,6 +62,7 @@ export function Hero() {
 
     const update = () => {
       const cw = el.getBoundingClientRect().width;
+      // конечный масштаб почти во всю ширину контейнера (без упора)
       const target = (cw * 0.96) / BASE_W;
       setEndScale(Math.max(1, Math.min(3, target)));
     };
@@ -65,151 +73,180 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
-  const scale = useTransform(scrollYProgress, [0, 0.18, 1], [1, 1, endScale]);
-  const y = useTransform(scrollYProgress, [0, 0.18, 1], [0, 0, -64]);
+  // таймлайн пина:
+  // - сразу начинаем рост
+  // - доезжаем до endScale
+  // - дальше держим endScale, но пин еще чуть продолжается (чтобы “досмотреть” момент)
+  const GROW_START = 0.02;
+  const GROW_END = 0.72;
 
-  const rOuter = useTransform(scrollYProgress, [0, 0.65, 1], [28, 24, 20]);
+  const scale = useTransform(
+    scrollYProgress,
+    [0, GROW_START, GROW_END, 1],
+    [1, 1, endScale, endScale]
+  );
+
+  // легкий подъем, чтобы при росте карточка “заезжала” на нижний контент
+  const y = useTransform(scrollYProgress, [0, GROW_START, GROW_END, 1], [0, 0, -48, -48]);
+
+  const rOuter = useTransform(scrollYProgress, [0, GROW_START, GROW_END, 1], [28, 28, 20, 20]);
   const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
+
+  // если захочешь завязать скрытие Header на этот этап:
+  // html[data-hero-scroll="1"] .site-header { transform: translateY(-120%); opacity:0; pointer-events:none; }
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    const hide = v > 0.01; // “начал скроллить”
+    document.documentElement.dataset.heroScroll = hide ? "1" : "0";
+  });
+
+  useEffect(() => {
+    return () => {
+      delete document.documentElement.dataset.heroScroll;
+    };
+  }, []);
 
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
   return (
     <section id="hero" className="relative overflow-x-clip">
-      {/* TOP */}
-      <Container className={`relative ${topPad}`}>
-        <div className="relative px-1">
-          <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
-            <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
-              精益生產
-            </div>
-          </div>
+      {/* STAGE: высокий блок, внутри которого сцена pinned (sticky). */}
+      <div ref={stageRef} className="relative h-[260vh]">
+        <div className="sticky top-0 h-[100svh]">
+          {/* Фон/подложки pinned-сцены */}
+          <div className="relative h-full">
+            {/* ХРАМ: вне Container, режется вьюпортом (overflow-x-clip у секции),
+                ограничен левой половиной через right-1/2 */}
+            {templeVisible && (
+              <img
+                src={withBasePath("/hero/temple.svg")}
+                alt=""
+                aria-hidden="true"
+                onError={() => setTempleVisible(false)}
+                className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[980px] max-w-none -translate-x-[30%]"
+              />
+            )}
 
-          <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
-            <span className="block">Кабинет твоей</span>
-            <span className="block whitespace-nowrap">
-              <span className="text-accent-1">команды</span>{" "}
-              <span className="inline-block align-baseline">
-                <RotatingWord />
-              </span>
-            </span>
-          </h1>
-        </div>
-      </Container>
+            {/* Контент pinned-сцены */}
+            <div className="relative z-20 h-full">
+              <Container className={`relative h-full ${topPad}`}>
+                <div className="relative px-1 flex h-full flex-col">
+                  {/* Японская фраза справа */}
+                  <div className="pointer-events-none absolute right-1 top-8 hidden lg:block">
+                    <div className="jp-vertical text-[120px] font-normal leading-none opacity-90">
+                      精益生產
+                    </div>
+                  </div>
 
-      {/* STAGE */}
-      <div ref={stageRef} className="relative mt-12">
-        {/* 16:9 */}
-        <div className="sticky top-24 z-40">
-          <Container>
-            <div className="px-1">
-              <div ref={measureRef} className="flex justify-center">
-                <motion.div
-                  className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
-                  style={{
-                    width: BASE_W,
-                    borderRadius: rOuter,
-                    scale,
-                    y,
-                    transformOrigin: "center top",
-                  }}
-                >
-                  <motion.div
-                    className="aspect-video w-full bg-accent-3"
-                    style={{ borderRadius: rInner }}
-                  />
-                </motion.div>
-              </div>
-            </div>
-          </Container>
-        </div>
+                  {/* Заголовок */}
+                  <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
+                    <span className="block">Кабинет твоей</span>
+                    <span className="block whitespace-nowrap">
+                      <span className="text-accent-1">команды</span>{" "}
+                      <span className="inline-block align-baseline">
+                        <RotatingWord />
+                      </span>
+                    </span>
+                  </h1>
 
-        {/* низ */}
-        <div className="relative">
-          {/* ХРАМ: вне Container, режется вьюпортом (section overflow-x-clip),
-              ограничен левой половиной через right-1/2 */}
-          {templeVisible && (
-            <img
-              src={withBasePath("/hero/temple.svg")}
-              alt=""
-              aria-hidden="true"
-              onError={() => setTempleVisible(false)}
-              className="pointer-events-none select-none absolute bottom-0 right-1/2 z-10 h-auto w-[980px] max-w-none -translate-x-[30%]"
-            />
-          )}
+                  {/* 16:9 карточка (растет во время pinned-скролла) */}
+                  <div ref={measureRef} className="mt-10 md:mt-12 flex justify-center">
+                    <motion.div
+                      className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
+                      style={{
+                        width: BASE_W,
+                        borderRadius: rOuter,
+                        scale,
+                        y,
+                        transformOrigin: "center top",
+                      }}
+                    >
+                      <motion.div
+                        className="aspect-video w-full bg-accent-3"
+                        style={{ borderRadius: rInner }}
+                      />
+                    </motion.div>
+                  </div>
 
-          {/* Контент поверх */}
-          <div className="relative z-20">
-            <Container className="py-10 md:py-12">
-              <div className="relative px-1">
-                <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
+                  {/* Нижняя композиция pinned (чтобы “не ехала” пока идет рост 16:9) */}
+                  <div className="mt-auto pb-8 md:pb-12">
+                    <div className="relative">
+                      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-text/10" />
 
-                <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
-                  {/* LEFT HALF */}
-                  <div className="relative md:pr-10">
-                    <div className="relative z-10 grid h-full grid-cols-12 gap-6">
-                      <div className="hidden md:block md:col-span-7" />
+                      <div className="grid gap-10 md:grid-cols-2 md:gap-0 md:items-stretch">
+                        {/* LEFT HALF */}
+                        <div className="relative md:pr-10">
+                          <div className="grid grid-cols-12 gap-6">
+                            <div className="hidden md:block md:col-span-7" />
 
-                      <div className="col-span-12 md:col-span-5 relative z-20 flex h-full flex-col">
-                        <div className="pt-2">
-                          <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
-                          <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
+                            <div className="col-span-12 md:col-span-5 flex h-full flex-col">
+                              <div className="pt-2">
+                                <div className="text-lg font-normal leading-none opacity-40">
+                                  наш telegram
+                                </div>
+                                <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
+                              </div>
+
+                              <div className="flex-1 flex items-center">
+                                <div className="h-px w-full bg-text/10" />
+                              </div>
+
+                              <div>
+                                <div className="text-lg font-normal leading-none opacity-40">
+                                  email для связи
+                                </div>
+                                <div className="mt-3 text-3xl font-normal leading-none">
+                                  uni.kit@mail.ru
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex-1 flex items-center">
-                          <div className="h-px w-full bg-text/10" />
-                        </div>
+                        {/* RIGHT HALF */}
+                        <div className="md:pl-10 flex h-full flex-col">
+                          <div className="text-lg leading-snug md:text-lg">
+                            ЮНИ.ai – интегратор ИИ-решений
+                            <br />
+                            в бизнес полного цикла. Строим решения,
+                            <br />
+                            основанные на ответственности перед
+                            <br />
+                            бизнесом и его клиентами.
+                          </div>
 
-                        <div>
-                          <div className="text-lg font-normal leading-none opacity-40">email для связи</div>
-                          <div className="mt-3 text-3xl font-normal leading-none">uni.kit@mail.ru</div>
+                          <div className="mt-auto pt-10 flex items-end justify-between gap-8">
+                            <div className="flex items-end gap-4">
+                              {/* плашки: белые, без бордера, rounded-xl */}
+                              <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
+                                道
+                              </span>
+                              <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
+                                改善
+                              </span>
+
+                              <span className="text-lg font-normal leading-tight opacity-50">
+                                наши продукты
+                                <br />
+                                японского качества
+                              </span>
+                            </div>
+
+                            {/* кнопка: rounded-2xl */}
+                            <a
+                              href="#cta"
+                              className="rounded-2xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
+                            >
+                              приступим
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* RIGHT HALF */}
-                  <div className="md:pl-10 flex h-full flex-col">
-                    <div className="text-lg leading-snug md:text-lg">
-                      ЮНИ.ai – интегратор ИИ-решений
-                      <br />
-                      в бизнес полного цикла. Строим решения,
-                      <br />
-                      основанные на ответственности перед
-                      <br />
-                      бизнесом и его клиентами.
-                    </div>
-
-                    <div className="mt-auto pt-10 flex items-end justify-between gap-8">
-                      <div className="flex items-end gap-4">
-                        {/* плашки: белые, без бордера, rounded-xl */}
-                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
-                          道
-                        </span>
-                        <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
-                          改善
-                        </span>
-
-                        <span className="text-lg font-normal leading-tight opacity-50">
-                          наши продукты
-                          <br />
-                          японского качества
-                        </span>
-                      </div>
-
-                      {/* кнопка: rounded-2xl */}
-                      <a
-                        href="#cta"
-                        className="rounded-2xl bg-accent-1 px-10 py-4 text-base font-semibold text-bg hover:bg-accent-1/90"
-                      >
-                        приступим
-                      </a>
-                    </div>
-                  </div>
+                  {/* конец pinned-сцены */}
                 </div>
-
-                <div className="h-[110vh]" />
-              </div>
-            </Container>
+              </Container>
+            </div>
           </div>
         </div>
       </div>
