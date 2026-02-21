@@ -52,35 +52,28 @@ export function Hero() {
   const [endScale, setEndScale] = useState(1);
   const [templeVisible, setTempleVisible] = useState(true);
 
-  // 16:9 базовая ширина как в макете
   const BASE_W = 420;
 
-  // ручной прогресс (0..1), который крутим wheel/touch
   const progressRaw = useMotionValue(0);
-  const progress = useSpring(progressRaw, {
-    stiffness: 260,
-    damping: 38,
-    mass: 0.7,
-  });
+  const progress = useSpring(progressRaw, { stiffness: 260, damping: 38, mass: 0.7 });
 
-  // scale / y
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, -64]);
 
-  // радиусы: чем больше scale, тем меньше радиус
+  // УБРАЛ y-смещение: чтобы рост был равномерным без “уезда”
+  const y = useTransform(progress, [0, 1], [0, 0]);
+
+  // радиусы уменьшаем по мере роста
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
-  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
 
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
-  // endScale: упираемся в ширину контейнера (внутри Container)
   useLayoutEffect(() => {
     const el = measureRef.current;
     if (!el) return;
 
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-      const target = cw / BASE_W;
+      const target = cw / BASE_W; // упираемся в границы контейнера
       setEndScale(Math.max(1, target));
     };
 
@@ -90,11 +83,9 @@ export function Hero() {
     return () => ro.disconnect();
   }, []);
 
-  // Лок-скролл: пока progress не дошёл до 1, “скролл” крутит прогресс, а страница стоит на месте.
   useEffect(() => {
-    const LOCK_PX = 760; // скорость (меньше = быстрее)
+    const LOCK_PX = 760;
     const lockYRef = { current: null as number | null };
-
     let touchStartY = 0;
 
     const setHeaderHidden = (hidden: boolean) => {
@@ -106,8 +97,6 @@ export function Hero() {
       const el = stageRef.current;
       if (!el) return false;
       const r = el.getBoundingClientRect();
-      // Важно: хотим стартовать лок без “подъезда”, поэтому зона довольно широкая.
-      // При первом экране stage обычно уже в видимой области.
       return r.top < window.innerHeight * 0.85 && r.bottom > 0;
     };
 
@@ -121,12 +110,8 @@ export function Hero() {
       const next = clamp(p + deltaY / LOCK_PX, 0, 1);
       progressRaw.set(next);
 
-      // пока прогресс “в работе” — фиксируем страницу
       ensureLocked();
 
-      // хеддер:
-      // - вниз (deltaY>0) скрываем сразу
-      // - вверх (deltaY<0) показываем сразу (по требованию)
       if (deltaY > 0 && next > 0) setHeaderHidden(true);
       if (deltaY < 0) setHeaderHidden(false);
       if (next === 0) setHeaderHidden(false);
@@ -137,24 +122,17 @@ export function Hero() {
       const down = e.deltaY > 0;
       const up = e.deltaY < 0;
 
-      // Не лочим:
-      // - если уже полностью раскрыли (p===1) и продолжают вниз -> отдаём скролл странице
       if (p === 1 && down) {
         lockYRef.current = null;
         return;
       }
-      // - если полностью свернули (p===0) и продолжают вверх -> отдаём скролл странице
       if (p === 0 && up) {
         lockYRef.current = null;
         setHeaderHidden(false);
         return;
       }
 
-      // Лочим, если:
-      // - прогресс в процессе, или
-      // - hero активен и пользователь начинает движение (вниз/вверх)
       const shouldLock = (p > 0 && p < 1) || heroActive();
-
       if (!shouldLock) {
         lockYRef.current = null;
         return;
@@ -171,7 +149,7 @@ export function Hero() {
     const onTouchMove = (e: TouchEvent) => {
       const p = progressRaw.get();
       const yNow = e.touches[0]?.clientY ?? touchStartY;
-      const delta = touchStartY - yNow; // свайп вверх = delta>0 (как scroll down)
+      const delta = touchStartY - yNow;
       touchStartY = yNow;
 
       const down = delta > 0;
@@ -237,23 +215,20 @@ export function Hero() {
         <div className="sticky top-24 z-40">
           <Container>
             <div className="px-1">
-              {/* ВАЖНО: меряем реальную доступную ширину контейнера */}
               <div ref={measureRef} className="w-full">
                 <div className="flex justify-center">
+                  {/* УБРАЛ фон/бордер/паддинг. Оставил чистую “вставку”. */}
                   <motion.div
-                    className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
+                    className="will-change-transform overflow-hidden bg-accent-3"
                     style={{
                       width: BASE_W,
                       borderRadius: rOuter,
                       scale,
                       y,
-                      transformOrigin: "center top",
+                      transformOrigin: "center center", // ключ: рост равномерно во все стороны
                     }}
                   >
-                    <motion.div
-                      className="aspect-video w-full bg-accent-3"
-                      style={{ borderRadius: rInner }}
-                    />
+                    <div className="aspect-video w-full" />
                   </motion.div>
                 </div>
               </div>
@@ -261,7 +236,7 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* низ */}
+        {/* НИЗ: храм должен быть привязан к низу композиции, НЕ к спейсеру */}
         <div className="relative">
           {templeVisible && (
             <img
@@ -347,12 +322,13 @@ export function Hero() {
                     </div>
                   </div>
                 </div>
-
-                <div className="h-[110vh]" />
               </div>
             </Container>
           </div>
         </div>
+
+        {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
+        <div className="h-[110vh]" />
       </div>
     </section>
   );
