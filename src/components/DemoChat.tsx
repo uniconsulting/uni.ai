@@ -24,7 +24,7 @@ export function DemoChat() {
       {/* vertical divider */}
 <div
   aria-hidden
-  className="pointer-events-none absolute left-1/2 top-0 h-[260px] md:h-[420px] lg:h-[520px] w-px -translate-x-1/2 bg-text/10"
+  className="pointer-events-none absolute left-1/2 top-0 h-[60px] md:h-[120px] lg:h-[260px] w-px -translate-x-1/2 bg-text/10"
 />
       
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
