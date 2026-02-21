@@ -298,7 +298,7 @@ export function Hero() {
                     </div>
 
                     <div className="mt-auto pt-10 flex items-end justify-between gap-8">
-                      <div className="flex items-end gap-4">
+                      <div className="flex items-center gap-4">
                         <span className="inline-flex h-16 min-w-24 items-center justify-center rounded-xl bg-white px-6 text-3xl font-normal">
                           道
                         </span>
@@ -306,7 +306,7 @@ export function Hero() {
                           改善
                         </span>
 
-                        <span className="text-lg font-normal leading-tight opacity-50">
+                        <span className="text-lg font-normal leading-none opacity-50">
                           наши продукты
                           <br />
                           японского качества
@@ -328,7 +328,7 @@ export function Hero() {
         </div>
 
         {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
-        <div className="h-[110vh]" />
+        <div className="h-[56vh] md:h-[72vh]" />
       </div>
     </section>
   );
