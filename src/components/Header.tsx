@@ -31,7 +31,7 @@ export function Header() {
               ))}
             </nav>
 
-            <a href="#login" className="btn-lift-accent1 rounded-sm border border-accent-1 px-4 py-2 text-sm font-semibold text-accent-1">
+            <a href="#login" className="btn-lift-outline rounded-sm border border-accent-1 px-4 py-2 text-sm font-semibold text-accent-1">
               войти
             </a>
 
