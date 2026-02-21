@@ -141,7 +141,7 @@ export function InfoBlocks() {
                   {/* RIGHT COLUMN */}
                   <div className="relative h-full px-6 lg:px-10">
                     <motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
-                      <div className="flex h-full items-start justify-center">
+                      <div className="flex h-full items-start justify-start">
                         <div className="w-full max-w-[420px] text-left">
                           <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
                             Простые, понятные,
