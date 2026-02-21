@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
 import { ChevronDown, Mic, SendHorizontal, Settings } from "lucide-react";
 
@@ -13,6 +13,8 @@ const PILLS = [
   "Производство (b2b)",
   "Онлайн-школа",
 ] as const;
+
+const LOGO_SRC = "/brand/uni-logo.svg"; // положи svg сюда: public/brand/uni-logo.svg
 
 type Niche = (typeof PILLS)[number];
 type Mode = "sales" | "support" | "kb";
@@ -165,7 +167,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   const presets = useMemo(() => PRESETS[mode][niche] ?? [], [mode, niche]);
   const empty = msgs.length === 0;
 
-  // синхронизация при смене initialNiche извне (клик по пилюле сверху)
   useEffect(() => {
     if (initialNiche) setNiche(initialNiche);
   }, [initialNiche]);
@@ -201,6 +202,21 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
 
+    // 2) ширина по самому длинному тексту
+    const longest = useMemo(() => PILLS.reduce((a, b) => (a.length >= b.length ? a : b)), []);
+    const measureRef = useRef<HTMLSpanElement | null>(null);
+    const [w, setW] = useState<number | undefined>(undefined);
+
+    useLayoutEffect(() => {
+      const el = measureRef.current;
+      if (!el) return;
+
+      const textW = el.getBoundingClientRect().width;
+      // px-4 + px-4 + gap-2 + chevron(16px)
+      const extra = 16 + 16 + 8 + 16;
+      setW(Math.ceil(textW + extra));
+    }, [longest]);
+
     useEffect(() => {
       const onDown = (e: PointerEvent) => {
         const root = rootRef.current;
@@ -221,21 +237,31 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
     return (
       <div ref={rootRef} className="relative">
+        <span
+          ref={measureRef}
+          aria-hidden
+          className="pointer-events-none absolute -z-10 opacity-0 whitespace-nowrap text-[12px] font-semibold"
+        >
+          {longest}
+        </span>
+
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-2xl bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text ring-1 ring-text/10"
+          style={w ? { width: w } : undefined}
+          className="flex items-center justify-between rounded-2xl bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text ring-1 ring-text/10"
           aria-haspopup="listbox"
           aria-expanded={open}
         >
-          <span className="max-w-auto truncate">{niche}</span>
+          <span className="whitespace-nowrap">{niche}</span>
           <ChevronDown className={`h-4 w-4 text-text/60 transition ${open ? "rotate-180" : ""}`} />
         </button>
 
         {open && (
           <div
             role="listbox"
-            className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10"
+            style={w ? { width: w } : undefined}
+            className="absolute left-0 top-full z-50 mt-2 overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10"
           >
             {PILLS.map((item) => {
               const active = item === niche;
@@ -255,7 +281,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                       : "flex w-full items-center justify-between px-4 py-2 text-left text-[12px] font-semibold text-text hover:bg-bg/60"
                   }
                 >
-                  <span className="truncate">{item}</span>
+                  <span className="whitespace-nowrap">{item}</span>
                 </button>
               );
             })}
@@ -267,9 +293,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
   return (
     <div className="w-full">
-      {/* dynamic border */}
       <div className="rounded-[33px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
-        {/* main frame */}
         <div className="overflow-hidden rounded-3xl bg-accent-3">
           {/* header */}
           <div className="bg-bg px-4 py-3">
@@ -286,8 +310,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               <div className="justify-self-end">
+                {/* 3) SVG-лого внутри рамки */}
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent-3 ring-1 ring-text/10">
-                  <div className="h-4 w-4 rounded-sm bg-accent-1" />
+                  <img
+                    src={LOGO_SRC}
+                    alt="ЮНИ"
+                    className="h-5 w-5"
+                    draggable={false}
+                  />
                 </div>
               </div>
             </div>
@@ -369,14 +399,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 ))}
               </div>
 
-              {/* input row */}
-              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 px-4">
+              {/* 1) input row: одинаковые отступы вокруг send, кнопки "левее" */}
+              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 p-2 pl-4">
                 <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Сообщение"
-                  className="h-full w-full bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
+                  className="h-10 flex-1 min-w-0 bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -441,13 +471,11 @@ export function DemoChat() {
 
   return (
     <section id="demo-chat" className="relative">
-      {/* horizontal divider */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10"
       />
 
-      {/* vertical divider */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[320px] lg:h-[340px] w-px -translate-x-1/2 bg-text/10"
@@ -456,7 +484,6 @@ export function DemoChat() {
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         {/* === Этап №1 (НЕ ТРОГАЕМ) === */}
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-          {/* LEFT */}
           <div className="md:pr-12">
             <div className="flex items-start gap-5">
               <div className="shrink-0">
@@ -490,18 +517,16 @@ export function DemoChat() {
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="md:pl-12">
             <div className="flex items-start justify-end">
               <div className="hover-accent text-[18px] font-medium opacity-70">demo-чат</div>
             </div>
 
-            {/* place for stage 2 (оставляем пустым, как было) */}
             <div className="mt-10 min-h-[260px]" />
           </div>
         </div>
 
-        {/* === Этап №2 (чат под всей первой частью) === */}
+        {/* === Этап №2 === */}
         <div className="mt-12 md:mt-14">
           <DemoChatWidget initialNiche={selectedNiche} />
         </div>
@@ -509,4 +534,3 @@ export function DemoChat() {
     </section>
   );
 }
-
