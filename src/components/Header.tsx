@@ -11,7 +11,7 @@ const NAV = [
 
 export function Header() {
   return (
-    <header className="sticky site-header top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur">
+    <header className="sticky site-header top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur px-1">
       <Container>
         <div className="flex h-16 items-center">
           <Link href="#hero" className="flex items-center">
