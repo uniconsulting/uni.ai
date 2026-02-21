@@ -50,6 +50,7 @@ export function Hero() {
   const measureRef = useRef<HTMLDivElement | null>(null);
 
   const [endScale, setEndScale] = useState(1);
+  const [releaseSpace, setReleaseSpace] = useState(0);
   const [templeVisible, setTempleVisible] = useState(true);
 
   const BASE_W = 420;
@@ -59,10 +60,10 @@ export function Hero() {
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
 
-  // УБРАЛ y-смещение: чтобы рост был равномерным без “уезда”
+  // рост от центра, без уезда
   const y = useTransform(progress, [0, 1], [0, 0]);
 
-  // радиусы уменьшаем по мере роста
+  // радиус уменьшаем по мере роста
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
@@ -71,10 +72,20 @@ export function Hero() {
     const el = measureRef.current;
     if (!el) return;
 
+    const STICKY_TOP = 96; // top-24
+
     const update = () => {
       const cw = el.getBoundingClientRect().width;
-      const target = cw / BASE_W; // упираемся в границы контейнера
+
+      // максимальная ширина вставки = ширина контейнера
+      const target = cw / BASE_W;
       setEndScale(Math.max(1, target));
+
+      // буфер, чтобы вставка успела "отлипнуть" и уйти вверх до InfoBlocks
+      // maxHeight = cw * 9/16, плюс top-offset и небольшой запас
+      const maxH = (cw * 9) / 16;
+      const buf = Math.ceil(STICKY_TOP + maxH + 40);
+      setReleaseSpace(buf);
     };
 
     update();
@@ -209,7 +220,7 @@ export function Hero() {
         </div>
       </Container>
 
-      {/* STAGE */}
+      {/* STAGE (всё, что должно "принадлежать" Hero и его лок-скроллу) */}
       <div ref={stageRef} className="relative mt-12">
         {/* 16:9 */}
         <div className="sticky top-24 z-40">
@@ -217,7 +228,6 @@ export function Hero() {
             <div className="px-1">
               <div ref={measureRef} className="w-full">
                 <div className="flex justify-center">
-                  {/* УБРАЛ фон/бордер/паддинг. Оставил чистую “вставку”. */}
                   <motion.div
                     className="will-change-transform overflow-hidden bg-accent-3"
                     style={{
@@ -225,7 +235,7 @@ export function Hero() {
                       borderRadius: rOuter,
                       scale,
                       y,
-                      transformOrigin: "center center", // ключ: рост равномерно во все стороны
+                      transformOrigin: "center center",
                     }}
                   >
                     <div className="aspect-video w-full" />
@@ -236,7 +246,7 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* НИЗ: храм должен быть привязан к низу композиции, НЕ к спейсеру */}
+        {/* НИЗ */}
         <div className="relative">
           {templeVisible && (
             <img
@@ -326,10 +336,9 @@ export function Hero() {
             </Container>
           </div>
         </div>
-
-        {/* Спейсер вынесен отдельно: больше не двигает “нижнюю границу” для храма */}
-        <div className="h-[2vh] md:h-[4vh]" />
       </div>
+
+      <div aria-hidden className="pointer-events-none" style={{ height: releaseSpace }} />
     </section>
   );
 }
