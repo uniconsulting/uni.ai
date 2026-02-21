@@ -20,109 +20,193 @@ function clamp(v: number, min: number, max: number) {
 function RotatingWord() {
   const [i, setI] = useState(0);
 
-useEffect(() => {
-  const LOCK_PX = 520; // скорость: меньше = быстрее (попробуй 420–650)
-  let touchStartY = 0;
+  useEffect(() => {
+    const t = setInterval(() => setI((x) => (x + 1) % WORDS.length), 4000);
+    return () => clearInterval(t);
+  }, []);
 
-  const lockYRef = { current: null as number | null };
+  const word = WORDS[i];
 
-  const setHeaderHidden = (hidden: boolean) => {
-    if (hidden) document.documentElement.dataset.headerHidden = "1";
-    else delete document.documentElement.dataset.headerHidden;
-  };
+  return (
+    <span className="relative inline-flex align-baseline">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={word}
+          className="inline-block"
+          initial={{ opacity: 0, filter: "blur(10px)", y: 2 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          exit={{ opacity: 0, filter: "blur(10px)", y: -2 }}
+          transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {word}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
-  const heroActive = () => {
-    const el = stageRef.current;
-    if (!el) return false;
-    const r = el.getBoundingClientRect();
-    // hero "активен", пока стейдж на экране (с запасом)
-    return r.top < window.innerHeight * 0.8 && r.bottom > 0;
-  };
+export function Hero() {
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const measureRef = useRef<HTMLDivElement | null>(null);
 
-  const ensureLocked = () => {
-    if (lockYRef.current == null) lockYRef.current = window.scrollY;
-    window.scrollTo({ top: lockYRef.current });
-  };
+  const [endScale, setEndScale] = useState(1);
+  const [templeVisible, setTempleVisible] = useState(true);
 
-  const consume = (deltaY: number) => {
-    const p = progressRaw.get();
-    const next = clamp(p + deltaY / LOCK_PX, 0, 1);
-    progressRaw.set(next);
+  // 16:9 базовая ширина как в макете
+  const BASE_W = 420;
 
-    ensureLocked();
+  // ручной прогресс (0..1), который крутим wheel/touch
+  const progressRaw = useMotionValue(0);
+  const progress = useSpring(progressRaw, {
+    stiffness: 260,
+    damping: 38,
+    mass: 0.7,
+  });
 
-    if (next > 0) setHeaderHidden(true);
-    if (next === 0) setHeaderHidden(false);
-  };
+  // scale / y
+  const scale = useTransform(progress, [0, 1], [1, endScale]);
+  const y = useTransform(progress, [0, 1], [0, -64]);
 
-  const onWheel = (e: WheelEvent) => {
-    const p = progressRaw.get();
-    const down = e.deltaY > 0;
-    const up = e.deltaY < 0;
+  // радиусы: чем больше scale, тем меньше радиус
+  const rOuter = useTransform(progress, [0, 1], [28, 14]);
+  const rInner = useTransform(rOuter, (v) => Math.max(0, v - 4));
 
-    // Лочим, если:
-    // 1) прогресс в процессе (0..1)
-    // 2) мы в hero и начинаем скроллить вниз при p===0 (старт разворота)
-    // 3) мы в hero и скроллим вверх при p===1 (старт сворачивания назад)
-    const shouldLock =
-      (p > 0 && p < 1) ||
-      (heroActive() && p === 0 && down) ||
-      (heroActive() && p === 1 && up);
+  const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
-    if (!shouldLock) {
-      lockYRef.current = null; // отпускаем якорь, если вышли из режима
-      return;
-    }
+  // endScale: упираемся в ширину контейнера (внутри Container)
+  useLayoutEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
 
-    e.preventDefault();
-    consume(e.deltaY);
+    const update = () => {
+      const cw = el.getBoundingClientRect().width;
+      const target = cw / BASE_W;
+      setEndScale(Math.max(1, target));
+    };
 
-    // если дошли до края прогресса, отпускать якорь можно,
-    // но только когда пользователь продолжит скроллить "в ту же сторону"
-    if (progressRaw.get() === 1 && down) lockYRef.current = null;
-    if (progressRaw.get() === 0 && up) lockYRef.current = null;
-  };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  const onTouchStart = (e: TouchEvent) => {
-    touchStartY = e.touches[0]?.clientY ?? 0;
-  };
+  // Лок-скролл: пока progress не дошёл до 1, “скролл” крутит прогресс, а страница стоит на месте.
+  useEffect(() => {
+    const LOCK_PX = 760; // скорость (меньше = быстрее)
+    const lockYRef = { current: null as number | null };
 
-  const onTouchMove = (e: TouchEvent) => {
-    const p = progressRaw.get();
-    const yNow = e.touches[0]?.clientY ?? touchStartY;
-    const delta = touchStartY - yNow; // свайп вверх = delta>0 (как scroll down)
-    touchStartY = yNow;
+    let touchStartY = 0;
 
-    const down = delta > 0;
-    const up = delta < 0;
+    const setHeaderHidden = (hidden: boolean) => {
+      if (hidden) document.documentElement.dataset.headerHidden = "1";
+      else delete document.documentElement.dataset.headerHidden;
+    };
 
-    const shouldLock =
-      (p > 0 && p < 1) ||
-      (heroActive() && p === 0 && down) ||
-      (heroActive() && p === 1 && up);
+    const heroActive = () => {
+      const el = stageRef.current;
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      // Важно: хотим стартовать лок без “подъезда”, поэтому зона довольно широкая.
+      // При первом экране stage обычно уже в видимой области.
+      return r.top < window.innerHeight * 0.85 && r.bottom > 0;
+    };
 
-    if (!shouldLock) {
-      lockYRef.current = null;
-      return;
-    }
+    const ensureLocked = () => {
+      if (lockYRef.current == null) lockYRef.current = window.scrollY;
+      window.scrollTo({ top: lockYRef.current });
+    };
 
-    e.preventDefault();
-    consume(delta);
+    const consume = (deltaY: number) => {
+      const p = progressRaw.get();
+      const next = clamp(p + deltaY / LOCK_PX, 0, 1);
+      progressRaw.set(next);
 
-    if (progressRaw.get() === 1 && down) lockYRef.current = null;
-    if (progressRaw.get() === 0 && up) lockYRef.current = null;
-  };
+      // пока прогресс “в работе” — фиксируем страницу
+      ensureLocked();
 
-  window.addEventListener("wheel", onWheel, { passive: false });
-  window.addEventListener("touchstart", onTouchStart, { passive: true });
-  window.addEventListener("touchmove", onTouchMove, { passive: false });
+      // хеддер:
+      // - вниз (deltaY>0) скрываем сразу
+      // - вверх (deltaY<0) показываем сразу (по требованию)
+      if (deltaY > 0 && next > 0) setHeaderHidden(true);
+      if (deltaY < 0) setHeaderHidden(false);
+      if (next === 0) setHeaderHidden(false);
+    };
 
-  return () => {
-    window.removeEventListener("wheel", onWheel as any);
-    window.removeEventListener("touchstart", onTouchStart as any);
-    window.removeEventListener("touchmove", onTouchMove as any);
-  };
-}, [progressRaw]);
+    const onWheel = (e: WheelEvent) => {
+      const p = progressRaw.get();
+      const down = e.deltaY > 0;
+      const up = e.deltaY < 0;
+
+      // Не лочим:
+      // - если уже полностью раскрыли (p===1) и продолжают вниз -> отдаём скролл странице
+      if (p === 1 && down) {
+        lockYRef.current = null;
+        return;
+      }
+      // - если полностью свернули (p===0) и продолжают вверх -> отдаём скролл странице
+      if (p === 0 && up) {
+        lockYRef.current = null;
+        setHeaderHidden(false);
+        return;
+      }
+
+      // Лочим, если:
+      // - прогресс в процессе, или
+      // - hero активен и пользователь начинает движение (вниз/вверх)
+      const shouldLock = (p > 0 && p < 1) || heroActive();
+
+      if (!shouldLock) {
+        lockYRef.current = null;
+        return;
+      }
+
+      e.preventDefault();
+      consume(e.deltaY);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY ?? 0;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const p = progressRaw.get();
+      const yNow = e.touches[0]?.clientY ?? touchStartY;
+      const delta = touchStartY - yNow; // свайп вверх = delta>0 (как scroll down)
+      touchStartY = yNow;
+
+      const down = delta > 0;
+      const up = delta < 0;
+
+      if (p === 1 && down) {
+        lockYRef.current = null;
+        return;
+      }
+      if (p === 0 && up) {
+        lockYRef.current = null;
+        setHeaderHidden(false);
+        return;
+      }
+
+      const shouldLock = (p > 0 && p < 1) || heroActive();
+      if (!shouldLock) {
+        lockYRef.current = null;
+        return;
+      }
+
+      e.preventDefault();
+      consume(delta);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      window.removeEventListener("wheel", onWheel as any);
+      window.removeEventListener("touchstart", onTouchStart as any);
+      window.removeEventListener("touchmove", onTouchMove as any);
+    };
+  }, [progressRaw]);
 
   return (
     <section id="hero" className="relative overflow-x-clip">
@@ -153,22 +237,25 @@ useEffect(() => {
         <div className="sticky top-24 z-40">
           <Container>
             <div className="px-1">
-              <div ref={measureRef} className="flex justify-center">
-                <motion.div
-                  className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
-                  style={{
-                    width: BASE_W,
-                    borderRadius: rOuter,
-                    scale,
-                    y,
-                    transformOrigin: "center top",
-                  }}
-                >
+              {/* ВАЖНО: меряем реальную доступную ширину контейнера */}
+              <div ref={measureRef} className="w-full">
+                <div className="flex justify-center">
                   <motion.div
-                    className="aspect-video w-full bg-accent-3"
-                    style={{ borderRadius: rInner }}
-                  />
-                </motion.div>
+                    className="border border-text/10 bg-accent-3/70 p-1 will-change-transform"
+                    style={{
+                      width: BASE_W,
+                      borderRadius: rOuter,
+                      scale,
+                      y,
+                      transformOrigin: "center top",
+                    }}
+                  >
+                    <motion.div
+                      className="aspect-video w-full bg-accent-3"
+                      style={{ borderRadius: rInner }}
+                    />
+                  </motion.div>
+                </div>
               </div>
             </div>
           </Container>
@@ -199,8 +286,12 @@ useEffect(() => {
 
                       <div className="col-span-12 md:col-span-5 relative z-20 flex h-full flex-col">
                         <div className="pt-2">
-                          <div className="text-lg font-normal leading-none opacity-40">наш telegram</div>
-                          <div className="mt-3 text-3xl font-normal leading-none">@uni_smb</div>
+                          <div className="text-lg font-normal leading-none opacity-40">
+                            наш telegram
+                          </div>
+                          <div className="mt-3 text-3xl font-normal leading-none">
+                            @uni_smb
+                          </div>
                         </div>
 
                         <div className="flex-1 flex items-center">
@@ -208,8 +299,12 @@ useEffect(() => {
                         </div>
 
                         <div>
-                          <div className="text-lg font-normal leading-none opacity-40">email для связи</div>
-                          <div className="mt-3 text-3xl font-normal leading-none">uni.kit@mail.ru</div>
+                          <div className="text-lg font-normal leading-none opacity-40">
+                            email для связи
+                          </div>
+                          <div className="mt-3 text-3xl font-normal leading-none">
+                            uni.kit@mail.ru
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -253,7 +348,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* пространство для дальнейшего скролла после того, как “лок” отпустит */}
                 <div className="h-[110vh]" />
               </div>
             </Container>
