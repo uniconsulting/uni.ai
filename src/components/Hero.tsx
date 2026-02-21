@@ -322,4 +322,3 @@ export function Hero() {
     </section>
   );
 }
-
