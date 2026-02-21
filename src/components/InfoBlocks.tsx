@@ -76,13 +76,13 @@ export function InfoBlocks() {
                     <motion.div style={{ opacity: left1Opacity, x: left1X }} className="absolute inset-0">
                       <div className="flex h-full items-start justify-center">
                         <div className="w-full max-w-[360px] text-left">
-                          <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
+                          <div className="bg-accent text-[32px] font-extrabold leading-[1.08] tracking-tight">
                             Не знаете,
                             <br />
                             с чего начать?
                           </div>
 
-                          <div className="mt-9 text-[18px] leading-snug opacity-85">
+                          <div className="bg-accent mt-9 text-[18px] leading-snug opacity-85">
                             Представьте, что Вам
                             <br />
                             необходимо составить
@@ -108,13 +108,13 @@ export function InfoBlocks() {
                     <motion.div style={{ opacity: left3Opacity, x: left3X }} className="absolute inset-0">
                       <div className="flex h-full items-start justify-center">
                         <div className="w-full max-w-[380px] text-left">
-                          <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
+                          <div className="bg-accent text-[32px] font-extrabold leading-[1.08] tracking-tight">
                             Больше, чем кабинет
                             <br />
                             Это - виртуальный офис
                           </div>
 
-                          <div className="mt-9 text-[18px] leading-snug opacity-85">
+                          <div className="bg-accent mt-9 text-[18px] leading-snug opacity-85">
                             Управляйте ботами для
                             <br />
                             Telegram, VK и Avito из
@@ -144,13 +144,13 @@ export function InfoBlocks() {
                       <div className="flex h-full items-start justify-center">
                         {/* ВАЖНО: фиксируем “целевую” ширину и центрируем в правой колонке */}
                         <div className="w-full max-w-[360px] text-right">
-                          <div className="text-[32px] font-extrabold leading-[1.08] tracking-tight">
+                          <div className="bg-accent text-[32px] font-extrabold leading-[1.08] tracking-tight">
                             Простые, понятные,
                             <br />
                             бесплатные уроки
                           </div>
 
-                          <div className="mt-9 text-[18px] leading-snug opacity-85">
+                          <div className="bg-accent mt-9 text-[18px] leading-snug opacity-85">
                             Мы позаботились о том,
                             <br />
                             чтобы Ваш опыт построения
