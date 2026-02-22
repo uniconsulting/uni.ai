@@ -26,7 +26,7 @@ export function Packages() {
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
           {/* LEFT */}
           <div className="md:pr-12">
-            <div className="text-[18px] font-semibold text-accent-1">Сделай выбор</div>
+            <div className="text-[22px] md:text-[26px] lg:text-[28px] font-semibold text-accent-1">Сделай выбор</div>
 
             <h2 className="mt-3 font-extrabold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
               <span className="block">Прозрачные условия,</span>
