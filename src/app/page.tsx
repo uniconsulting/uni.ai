@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { InfoBlocks } from "@/components/InfoBlocks";
 import { DemoChat } from "@/components/DemoChat";
+import { Packages } from "@/components/Packages";
 import { Container } from "@/components/Container";
 import { BentoTile } from "@/components/BentoTile";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -15,9 +16,8 @@ export default function Page() {
       <main className="pb-12 md:pb-20">
         <Hero />
         <InfoBlocks />
-
-        {/* DemoChat (этап 1: шапка) */}
         <DemoChat />
+        <Packages />
 
         <Container className="mt-20 space-y-20">
           <section id="composition" className="space-y-6">
