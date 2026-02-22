@@ -26,9 +26,9 @@ export function Packages() {
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
           {/* LEFT */}
           <div className="md:pr-12">
-            <div className="text-[22px] md:text-[26px] lg:text-[28px] font-semibold text-accent-1">Сделай выбор</div>
+            <div className="text-[22px] md:text-[26px] lg:text-[28px] font-extrabold text-accent-1">Сделай выбор</div>
 
-            <h2 className="mt-3 font-extrabold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
+            <h2 className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
               <span className="block">Прозрачные условия,</span>
               <span className="block">никаких скрытых платежей.</span>
             </h2>
@@ -62,7 +62,7 @@ export function Packages() {
                       className={
                         billing === "yearly"
                           ? "rounded-xl bg-accent-3 px-8 py-4 text-[16px] font-semibold text-text"
-                          : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/90"
+                          : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/70"
                       }
                       aria-pressed={billing === "yearly"}
                     >
