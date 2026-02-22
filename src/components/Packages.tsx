@@ -133,7 +133,7 @@ export function Packages() {
   };
 
   // фиксированные высоты секций, чтобы divider-ы везде были на одной высоте
-  const ROWS = "grid-rows-[220px_140px_140px_140px]";
+  const ROWS = "grid-rows-[220px_140px_120px_120px]";
 
   // один-единственный интервал для пунктов 1-8
   const INTERVAL = "28px";
