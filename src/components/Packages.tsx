@@ -1,4 +1,3 @@
-/* components/Packages.tsx */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -14,7 +13,7 @@ type Plan = {
   tone: "neutral" | "blue" | "green" | "red";
   desc4: [string, string, string, string];
   monthly: number; // ₽/мес (базовая)
-  integrations2: [string, string]; // оставляем тип как был, но используем только [0]
+  integrations2: [string, string]; // используем только [0]
   params3: [string, string, string];
   cta: string;
   ctaStyle: "outline" | "fill";
@@ -93,10 +92,13 @@ export function Packages() {
     return Math.round(p.monthly * 0.8);
   };
 
-  // колода: базовые колонки по 25%, активная шире и чуть “заезжает” на соседей
+  // 1) выше карточки
+  const CARD_H = 820;
+
+  // 2) активная ширина меньше
   const W_INACTIVE = "25%";
-  const W_ACTIVE = "34%";
-  const ACTIVE_SHIFT = "4.5%";
+  const W_ACTIVE = "30%";
+  const ACTIVE_SHIFT = "2.5%";
 
   const leftFor = (i: number) => {
     if (i !== activeIdx) return `${i * 25}%`;
@@ -105,18 +107,20 @@ export function Packages() {
     return `calc(${i * 25}% - ${ACTIVE_SHIFT})`;
   };
 
-  // фиксированная сетка секций, чтобы разделители не “плясали”
-  const ROWS = "grid-rows-[235px_170px_170px_145px]";
+  // фиксированная сетка секций
+  const ROWS = "grid-rows-[250px_190px_190px_190px]";
+
+  const radiusForInactive = (i: number) => {
+    if (i === 0) return "rounded-l-[30px] rounded-r-none";
+    if (i === plans.length - 1) return "rounded-r-[30px] rounded-l-none";
+    return "rounded-none";
+  };
+
+  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
   return (
     <section id="pricing" className="relative">
-      {/* horizontal divider */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10"
-      />
-
-      {/* vertical divider */}
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10" />
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[260px] lg:h-[300px] w-px -translate-x-1/2 bg-text/10"
@@ -124,7 +128,6 @@ export function Packages() {
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-          {/* LEFT */}
           <div className="md:pr-12">
             <div className="text-[22px] md:text-[26px] lg:text-[28px] font-extrabold text-accent-1">Сделай выбор</div>
 
@@ -134,13 +137,11 @@ export function Packages() {
             </h2>
           </div>
 
-          {/* RIGHT */}
           <div className="md:pl-12">
             <div className="flex flex-col items-start md:items-end">
               <div className="hover-accent text-[18px] font-medium opacity-70">стоимость | пакеты</div>
 
               <div className="mt-6">
-                {/* toggle */}
                 <div className="rounded-2xl bg-accent-1 p-[3px]">
                   <div className="flex rounded-2xl bg-accent-1 p-1">
                     <button
@@ -175,7 +176,6 @@ export function Packages() {
                 </div>
               </div>
 
-              {/* (пустое место справа оставляем как в макете) */}
               <div className="mt-10 min-h-[40px] w-full" />
             </div>
           </div>
@@ -201,14 +201,13 @@ export function Packages() {
                     }
                     style={{ ["--plan" as any]: tone.hex }}
                   >
-                    <div className={`grid h-full ${ROWS} divide-y divide-text/10`}>
-                      {/* 1 */}
-                      <div className="px-7 pt-8 pb-7">
+                    <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
+                      <div className="p-8">
                         <div
                           className={
                             isActive
                               ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
-                              : "text-[34px] font-extrabold leading-none text-text/15"
+                              : "text-[28px] font-extrabold leading-none text-text/15"
                           }
                         >
                           {p.title}
@@ -223,8 +222,7 @@ export function Packages() {
                         </div>
                       </div>
 
-                      {/* 2 */}
-                      <div className="px-7 py-7">
+                      <div className="p-8">
                         <div className={isActive ? "opacity-100" : "opacity-0"}>
                           <div className="flex items-end gap-3">
                             <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
@@ -232,15 +230,13 @@ export function Packages() {
                             </div>
                             <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
                           </div>
-
                           <div className="mt-3 text-[13px] font-semibold text-text/45">
                             <div>{p.integrations2[0]}</div>
                           </div>
                         </div>
                       </div>
 
-                      {/* 3 */}
-                      <div className="px-7 py-7">
+                      <div className="p-8">
                         <div className={isActive ? "opacity-100" : "opacity-0"}>
                           <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
                           <div className="mt-4 space-y-1 text-[16px] font-medium text-text/90">
@@ -253,8 +249,7 @@ export function Packages() {
                         </div>
                       </div>
 
-                      {/* 4 */}
-                      <div className="px-7 py-7">
+                      <div className="p-8">
                         <div className={isActive ? "opacity-100" : "opacity-0"}>
                           <div className="flex items-center gap-3 text-[18px] font-extrabold text-text">
                             <span>Изучить возможности</span>
@@ -282,9 +277,9 @@ export function Packages() {
             })}
           </div>
 
-          {/* desktop: 4 отдельные карточки, наслаивание как в макете */}
+          {/* desktop deck */}
           <div className="relative hidden md:block">
-            <div className="relative h-[720px]">
+            <div className="relative" style={{ height: CARD_H }}>
               {plans.map((p, i) => {
                 const isActive = p.id === active;
                 const tone = TONE[p.tone];
@@ -299,13 +294,19 @@ export function Packages() {
 
                 const bgClass = isActive ? "bg-accent-3" : "bg-bg";
 
+                // 5) у неактивных внутренних стыков без скругления
+                const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+
+                // 6 + 8) размер 28px в неактиве + выравнивание
+                const inactiveTitleAlign = titleAlignForInactive(i);
+
                 return (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setActive(p.id)}
                     aria-pressed={isActive}
-                    className="absolute top-0 h-full text-left"
+                    className="absolute top-0 h-full"
                     style={{
                       left: leftFor(i),
                       width: isActive ? W_ACTIVE : W_INACTIVE,
@@ -314,15 +315,16 @@ export function Packages() {
                       ["--plan" as any]: tone.hex,
                     }}
                   >
-                    <div className={`h-full overflow-hidden rounded-[30px] ${bgClass} ${ringClass} shadow-[0_18px_50px_rgba(0,0,0,0.06)]`}>
-                      <div className={`grid h-full ${ROWS} divide-y divide-text/10`}>
+                    <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} shadow-[0_18px_50px_rgba(0,0,0,0.06)]`}>
+                      {/* 3) активные разделители насыщеннее */}
+                      <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
                         {/* Section 1 */}
-                        <div className="px-10 pt-12 pb-10">
+                        <div className="p-10">
                           <div
                             className={
                               isActive
                                 ? `text-[44px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
-                                : "text-[44px] font-extrabold leading-none text-text/15"
+                                : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
                             }
                           >
                             {p.title}
@@ -338,7 +340,7 @@ export function Packages() {
                         </div>
 
                         {/* Section 2 */}
-                        <div className="px-10 py-10">
+                        <div className="p-10">
                           <div className={isActive ? "opacity-100" : "opacity-0"}>
                             <div className="flex items-end gap-4">
                               <div
@@ -360,7 +362,7 @@ export function Packages() {
                         </div>
 
                         {/* Section 3 */}
-                        <div className="px-10 py-10">
+                        <div className="p-10">
                           <div className={isActive ? "opacity-100" : "opacity-0"}>
                             <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
                             <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
@@ -374,7 +376,7 @@ export function Packages() {
                         </div>
 
                         {/* Section 4 */}
-                        <div className="px-10 py-10">
+                        <div className="p-10">
                           <div className={isActive ? "opacity-100" : "opacity-0"}>
                             <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
                               <span>Изучить возможности</span>
