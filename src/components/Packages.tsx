@@ -120,7 +120,7 @@ export function Packages() {
   };
 
   // геометрия
-  const CARD_H = 820;
+  const CARD_H = 740;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
