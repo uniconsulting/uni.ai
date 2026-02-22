@@ -320,11 +320,12 @@ export function Packages() {
                           </div>
 
                           <div
-                            className={
-                              p.ctaStyle === "fill"
-                                ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
-                                : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]"
-                            }
+className={[
+  isActive ? "btn-lift-outline" : "",
+  p.ctaStyle === "fill"
+    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
+    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]",
+].join(" ")}
                             style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
                           >
                             {p.cta}
@@ -450,11 +451,12 @@ export function Packages() {
                             </div>
 
                             <div
-                              className={
-                                p.ctaStyle === "fill"
-                                  ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
-                                  : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
-                              }
+className={[
+  isActive ? "btn-lift-outline" : "",
+  p.ctaStyle === "fill"
+    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
+    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]",
+].join(" ")}
                               style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
                             >
                               {p.cta}
