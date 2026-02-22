@@ -14,7 +14,7 @@ type Plan = {
   tone: "neutral" | "blue" | "green" | "red";
   desc4: [string, string, string, string];
   monthly: number; // ₽/мес (базовая)
-  integrations2: [string, string];
+  integrations2: [string, string]; // оставляем тип как был, но используем только [0]
   params3: [string, string, string];
   cta: string;
   ctaStyle: "outline" | "fill";
@@ -43,7 +43,7 @@ export function Packages() {
         tone: "neutral",
         desc4: ["Соберите первых", "ассистентов и оцените", "интерфейс, аналитику", "и логику работы."],
         monthly: 0,
-        integrations2: ["нет интеграции от ЮНИ", "самостоятельная настройка"],
+        integrations2: ["нет интеграции от ЮНИ", ""],
         params3: ["2 кастомных агента", "2 готовых агента", "До 1 000 сообщений / мес"],
         cta: "Попробовать",
         ctaStyle: "outline",
@@ -54,7 +54,7 @@ export function Packages() {
         tone: "blue",
         desc4: ["Для небольших команд:", "быстрый запуск по", "инструкциям ЮНИ + лёгкая", "помощь эксперта."],
         monthly: 9900,
-        integrations2: ["интеграции: от 179 900₽ / разово *", "подключение и настройка"],
+        integrations2: ["интеграции: от 179 900₽ / разово", ""],
         params3: ["5 кастомных агентов", "+ вся библиотека готовых", "До 5 000 сообщений / мес"],
         cta: "Попробовать",
         ctaStyle: "outline",
@@ -65,7 +65,7 @@ export function Packages() {
         tone: "green",
         desc4: ["Для масштабирования", "действующих процессов.", "Полноценная интеграция", "под ключ командой ЮНИ."],
         monthly: 39900,
-        integrations2: ["интеграции: от 179 900₽ / разово *", "подключение и настройка"],
+        integrations2: ["интеграции: от 179 900₽ / разово", ""],
         params3: ["10 кастомных агентов", "+ вся библиотека готовых", "До 30 000 сообщений / мес"],
         cta: "Подключить сейчас",
         ctaStyle: "fill",
@@ -76,7 +76,7 @@ export function Packages() {
         tone: "red",
         desc4: ["Для крупных компаний:", "макс. персонализации,", "SLA и постоянное", "вовлечение команды ЮНИ."],
         monthly: 99900,
-        integrations2: ["интеграции: от 179 900₽ / разово *", "подключение и настройка"],
+        integrations2: ["интеграции: от 179 900₽ / разово", ""],
         params3: ["индивидуальные лимиты", "Максимум персонализации", "Без ограничений"],
         cta: "Заказать звонок",
         ctaStyle: "fill",
@@ -104,6 +104,9 @@ export function Packages() {
     if (activeIdx === 3) return `calc(100% - ${W_ACTIVE})`;
     return `calc(${i * 25}% - ${ACTIVE_SHIFT})`;
   };
+
+  // фиксированная сетка секций, чтобы разделители не “плясали”
+  const ROWS = "grid-rows-[235px_170px_170px_145px]";
 
   return (
     <section id="pricing" className="relative">
@@ -178,9 +181,9 @@ export function Packages() {
           </div>
         </div>
 
-        {/* === Пакеты (колода карточек) === */}
+        {/* === Пакеты === */}
         <div className="mt-12 md:mt-14">
-          {/* mobile fallback: обычный список */}
+          {/* mobile fallback */}
           <div className="grid gap-6 md:hidden">
             {plans.map((p) => {
               const isActive = p.id === active;
@@ -190,73 +193,85 @@ export function Packages() {
 
               return (
                 <button key={p.id} type="button" onClick={() => setActive(p.id)} className="text-left" aria-pressed={isActive}>
-                  <div className="overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15" style={{ ["--plan" as any]: tone.hex }}>
-                    <div className="px-7 pt-8 pb-7">
-                      <div
-                        className={
-                          isActive
-                            ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
-                            : "text-[34px] font-extrabold leading-none text-text/15"
-                        }
-                      >
-                        {p.title}
-                      </div>
-
-                      <div className={isActive ? "mt-4 space-y-1 text-[16px] font-medium text-text/90" : "mt-4 space-y-1 opacity-0"}>
-                        {p.desc4.map((l) => (
-                          <div key={l}>{l}</div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-text/10" />
-
-                    <div className="px-7 py-7">
-                      <div className={isActive ? "opacity-100" : "opacity-0"}>
-                        <div className="flex items-end gap-3">
-                          <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
-                            {formatRub(price)}
-                          </div>
-                          <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
+                  <div
+                    className={
+                      isActive
+                        ? "overflow-hidden rounded-[28px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
+                        : "overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15"
+                    }
+                    style={{ ["--plan" as any]: tone.hex }}
+                  >
+                    <div className={`grid h-full ${ROWS} divide-y divide-text/10`}>
+                      {/* 1 */}
+                      <div className="px-7 pt-8 pb-7">
+                        <div
+                          className={
+                            isActive
+                              ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                              : "text-[34px] font-extrabold leading-none text-text/15"
+                          }
+                        >
+                          {p.title}
                         </div>
-                        <div className="mt-3 space-y-1 text-[13px] font-semibold text-text/45">
-                          <div>{p.integrations2[0]}</div>
-                          <div>{p.integrations2[1]}</div>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="h-px bg-text/10" />
-
-                    <div className="px-7 py-7">
-                      <div className={isActive ? "opacity-100" : "opacity-0"}>
-                        <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
-                        <div className="mt-4 space-y-1 text-[16px] font-medium text-text/90">
-                          {p.params3.map((l) => (
-                            <div key={l}>{l}</div>
+                        <div className={isActive ? "mt-4 space-y-1 text-[16px] font-medium text-text/90" : "mt-4 opacity-0"}>
+                          {p.desc4.map((l) => (
+                            <div key={l} className="whitespace-nowrap">
+                              {l}
+                            </div>
                           ))}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="h-px bg-text/10" />
+                      {/* 2 */}
+                      <div className="px-7 py-7">
+                        <div className={isActive ? "opacity-100" : "opacity-0"}>
+                          <div className="flex items-end gap-3">
+                            <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
+                              {formatRub(price)}
+                            </div>
+                            <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
+                          </div>
 
-                    <div className="px-7 py-7">
-                      <div className={isActive ? "opacity-100" : "opacity-0"}>
-                        <div className="flex items-center gap-3 text-[18px] font-extrabold text-text">
-                          <span>Изучить возможности</span>
-                          <Eye className="h-6 w-6" />
+                          <div className="mt-3 text-[13px] font-semibold text-text/45">
+                            <div>{p.integrations2[0]}</div>
+                          </div>
                         </div>
+                      </div>
 
-                        <div className="mt-5">
-                          <div
-                            className={
-                              p.ctaStyle === "fill"
-                                ? `w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg`
-                                : `w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]`
-                            }
-                          >
-                            {p.cta}
+                      {/* 3 */}
+                      <div className="px-7 py-7">
+                        <div className={isActive ? "opacity-100" : "opacity-0"}>
+                          <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
+                          <div className="mt-4 space-y-1 text-[16px] font-medium text-text/90">
+                            {p.params3.map((l) => (
+                              <div key={l} className="whitespace-nowrap">
+                                {l}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4 */}
+                      <div className="px-7 py-7">
+                        <div className={isActive ? "opacity-100" : "opacity-0"}>
+                          <div className="flex items-center gap-3 text-[18px] font-extrabold text-text">
+                            <span>Изучить возможности</span>
+                            <Eye className="h-6 w-6" />
+                          </div>
+
+                          <div className="mt-5">
+                            <div
+                              className={
+                                p.ctaStyle === "fill"
+                                  ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
+                                  : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]"
+                              }
+                              style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
+                            >
+                              {p.cta}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -267,206 +282,125 @@ export function Packages() {
             })}
           </div>
 
-          {/* desktop: подложка-колода + активная карточка поверх */}
-          <div className="hidden md:block">
-            <div className="relative">
-              {/* подложка (общий “фрейм” ощущением одной рамки) */}
-              <div className="h-[720px] overflow-hidden rounded-[30px] bg-accent-3 ring-1 ring-text/15">
-                <div className="grid h-full grid-cols-4 divide-x divide-text/10">
-                  {plans.map((p) => {
-                    const isColumnActive = p.id === active;
+          {/* desktop: 4 отдельные карточки, наслаивание как в макете */}
+          <div className="relative hidden md:block">
+            <div className="relative h-[720px]">
+              {plans.map((p, i) => {
+                const isActive = p.id === active;
+                const tone = TONE[p.tone];
+                const price = priceFor(p);
+                const isNeutral = p.tone === "neutral";
 
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setActive(p.id)}
-                        aria-pressed={isColumnActive}
-                        className="h-full text-left"
-                      >
-                        {/* секции + разделители, чтобы линии были на одной высоте */}
-                        <div className="flex h-full flex-col">
-                          <div className="px-10 pt-12 pb-10">
-                            <div
-                              className={
-                                isColumnActive
-                                  ? "text-[44px] font-extrabold leading-none text-transparent"
-                                  : "text-[44px] font-extrabold leading-none text-text/15"
-                              }
-                            >
-                              {p.title}
+                const ringClass = isActive
+                  ? isNeutral
+                    ? "ring-2 ring-text/60"
+                    : "ring-2 ring-[color:var(--plan)]"
+                  : "ring-1 ring-text/15";
+
+                const bgClass = isActive ? "bg-accent-3" : "bg-bg";
+
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setActive(p.id)}
+                    aria-pressed={isActive}
+                    className="absolute top-0 h-full text-left"
+                    style={{
+                      left: leftFor(i),
+                      width: isActive ? W_ACTIVE : W_INACTIVE,
+                      zIndex: isActive ? 50 : 10 + i,
+                      transition: "left 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+                      ["--plan" as any]: tone.hex,
+                    }}
+                  >
+                    <div className={`h-full overflow-hidden rounded-[30px] ${bgClass} ${ringClass} shadow-[0_18px_50px_rgba(0,0,0,0.06)]`}>
+                      <div className={`grid h-full ${ROWS} divide-y divide-text/10`}>
+                        {/* Section 1 */}
+                        <div className="px-10 pt-12 pb-10">
+                          <div
+                            className={
+                              isActive
+                                ? `text-[44px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                                : "text-[44px] font-extrabold leading-none text-text/15"
+                            }
+                          >
+                            {p.title}
+                          </div>
+
+                          <div className={isActive ? "mt-6 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90" : "mt-6 opacity-0"}>
+                            {p.desc4.map((l) => (
+                              <div key={l} className="whitespace-nowrap">
+                                {l}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Section 2 */}
+                        <div className="px-10 py-10">
+                          <div className={isActive ? "opacity-100" : "opacity-0"}>
+                            <div className="flex items-end gap-4">
+                              <div
+                                className={
+                                  isNeutral
+                                    ? "text-[44px] font-extrabold leading-none text-text"
+                                    : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
+                                }
+                              >
+                                {formatRub(price)}
+                              </div>
+                              <div className="pb-[2px] text-[34px] font-semibold leading-none text-text/35">/ мес</div>
                             </div>
 
-                            {/* плейсхолдер 4 строк (невидимый, чтобы держать высоту) */}
-                            <div className="mt-6 space-y-1 opacity-0">
-                              {p.desc4.map((l) => (
-                                <div key={l} className="text-[20px] font-medium leading-[1.15]">
+                            <div className="mt-4 text-[14px] font-semibold text-text/45">
+                              <div>{p.integrations2[0]}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 3 */}
+                        <div className="px-10 py-10">
+                          <div className={isActive ? "opacity-100" : "opacity-0"}>
+                            <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
+                            <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
+                              {p.params3.map((l) => (
+                                <div key={l} className="whitespace-nowrap">
                                   {l}
                                 </div>
                               ))}
                             </div>
                           </div>
+                        </div>
 
-                          <div className="h-px bg-text/10" />
+                        {/* Section 4 */}
+                        <div className="px-10 py-10">
+                          <div className={isActive ? "opacity-100" : "opacity-0"}>
+                            <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
+                              <span>Изучить возможности</span>
+                              <Eye className="h-7 w-7" />
+                            </div>
 
-                          <div className="px-10 py-10">
-                            <div className="opacity-0">
-                              <div className="flex items-end gap-4">
-                                <div className="text-[44px] font-extrabold leading-none">{formatRub(priceFor(p))}</div>
-                                <div className="pb-[2px] text-[34px] font-semibold leading-none">/ мес</div>
-                              </div>
-                              <div className="mt-4 space-y-1 text-[14px] font-semibold">
-                                <div>{p.integrations2[0]}</div>
-                                <div>{p.integrations2[1]}</div>
+                            <div className="mt-6">
+                              <div
+                                className={
+                                  p.ctaStyle === "fill"
+                                    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
+                                    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
+                                }
+                                style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
+                              >
+                                {p.cta}
                               </div>
                             </div>
-                          </div>
-
-                          <div className="h-px bg-text/10" />
-
-                          <div className="px-10 py-10">
-                            <div className="opacity-0">
-                              <div className="text-[20px] font-extrabold">Ключевые параметры</div>
-                              <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15]">
-                                {p.params3.map((l) => (
-                                  <div key={l}>{l}</div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="h-px bg-text/10" />
-
-                          <div className="px-10 py-10">
-                            <div className="opacity-0">
-                              <div className="flex items-center gap-4 text-[20px] font-extrabold">
-                                <span>Изучить возможности</span>
-                                <Eye className="h-7 w-7" />
-                              </div>
-                              <div className="mt-6">
-                                <div className="w-full rounded-xl px-6 py-4 text-center text-[20px] font-extrabold">
-                                  {p.cta}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* активная карточка поверх подложки */}
-              {(() => {
-                const p = plans[activeIdx];
-                const tone = TONE[p.tone];
-                const price = priceFor(p);
-                const isNeutral = p.tone === "neutral";
-
-                return (
-                  <div
-                    className="absolute top-0 h-[720px]"
-                    style={{
-                      left: leftFor(activeIdx),
-                      width: W_ACTIVE,
-                      zIndex: 50,
-                      transition:
-                        "left 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
-                      ["--plan" as any]: tone.hex,
-                    }}
-                  >
-                    <div
-                      className={
-                        isNeutral
-                          ? "h-full overflow-hidden rounded-[30px] bg-bg ring-2 ring-text/60 shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
-                          : "h-full overflow-hidden rounded-[30px] bg-bg ring-2 ring-[color:var(--plan)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
-                      }
-                    >
-                      {/* Section 1 */}
-                      <div className="px-10 pt-12 pb-10">
-                        <div
-                          className={
-                            isNeutral
-                              ? "text-[44px] font-extrabold leading-none text-text"
-                              : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
-                          }
-                        >
-                          {p.title}
-                        </div>
-
-                        <div className="mt-6 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
-                          {p.desc4.map((l) => (
-                            <div key={l}>{l}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-text/10" />
-
-                      {/* Section 2 */}
-                      <div className="px-10 py-10">
-                        <div className="flex items-end gap-4">
-                          <div
-                            className={
-                              isNeutral
-                                ? "text-[44px] font-extrabold leading-none text-text"
-                                : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
-                            }
-                          >
-                            {formatRub(price)}
-                          </div>
-                          <div className="pb-[2px] text-[34px] font-semibold leading-none text-text/35">/ мес</div>
-                        </div>
-
-                        <div className="mt-4 space-y-1 text-[14px] font-semibold text-text/45">
-                          <div>{p.integrations2[0]}</div>
-                          <div>{p.integrations2[1]}</div>
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-text/10" />
-
-                      {/* Section 3 */}
-                      <div className="px-10 py-10">
-                        <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
-                        <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
-                          {p.params3.map((l) => (
-                            <div key={l}>{l}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-text/10" />
-
-                      {/* Section 4 */}
-                      <div className="px-10 py-10">
-                        <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
-                          <span>Изучить возможности</span>
-                          <Eye className="h-7 w-7" />
-                        </div>
-
-                        <div className="mt-6">
-                          <div
-                            className={
-                              p.ctaStyle === "fill"
-                                ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
-                                : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
-                            }
-                          >
-                            {p.cta}
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
-              })()}
+              })}
             </div>
-          </div>
-
-          <div className="mt-6 text-[12px] font-medium text-text/45">
-            * Интеграция и подключение оплачиваются отдельно. Скидка -20% применяется при выборе годового формата.
           </div>
         </div>
       </Container>
