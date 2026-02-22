@@ -119,7 +119,7 @@ export function Packages() {
     return Math.round(p.monthly * 0.8);
   };
 
-  // размеры / геометрия
+  // геометрия
   const CARD_H = 820;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
@@ -132,7 +132,11 @@ export function Packages() {
     return `calc(${i * 25}% - ${ACTIVE_SHIFT})`;
   };
 
+  // фиксированные высоты секций, чтобы divider-ы везде были на одной высоте
   const ROWS = "grid-rows-[250px_190px_190px_190px]";
+
+  // один-единственный интервал для пунктов 1-8
+  const INTERVAL = "28px";
 
   const radiusForInactive = (i: number) => {
     if (i === 0) return "rounded-l-[30px] rounded-r-none";
@@ -142,15 +146,13 @@ export function Packages() {
 
   const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
-  // унифицированные отступы секций (чтобы не было “пляски воздуха”)
-  const S = {
-    pad: "px-10 py-9", // одинаково для всех секций
-    fade: "transition-opacity duration-500 ease-out motion-reduce:transition-none",
-  };
-
-  // премиальная анимация перелистывания
+  // новая анимация “перелистывания”: без scale/translate карточки
   const CARD_MOTION =
-    "transform-gpu will-change-transform transition-[left,width,transform,box-shadow,background-color] duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
+    "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
+
+  // премиальный показ/скрытие контента (отдельно от движения карточки)
+  const CONTENT_MOTION =
+    "will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
   const REVEAL_BASE =
     "transform-gpu transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
@@ -161,7 +163,6 @@ export function Packages() {
       id="pricing"
       className={`relative ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
     >
-      {/* линии тоже мягко проявляем */}
       <div
         aria-hidden
         className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
@@ -177,7 +178,6 @@ export function Packages() {
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-          {/* LEFT */}
           <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} md:pr-12`}>
             <div className="text-[22px] md:text-[26px] lg:text-[28px] font-extrabold text-accent-1">Сделай выбор</div>
 
@@ -187,7 +187,6 @@ export function Packages() {
             </h2>
           </div>
 
-          {/* RIGHT */}
           <div
             className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} md:pl-12`}
             style={{ transitionDelay: "80ms" }}
@@ -235,12 +234,11 @@ export function Packages() {
           </div>
         </div>
 
-        {/* === Пакеты === */}
         <div
           className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-12 md:mt-14`}
           style={{ transitionDelay: "140ms" }}
         >
-          {/* mobile fallback */}
+          {/* mobile */}
           <div className="grid gap-6 md:hidden">
             {plans.map((p) => {
               const isActive = p.id === active;
@@ -256,47 +254,54 @@ export function Packages() {
                         ? "overflow-hidden rounded-[28px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
                         : "overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15"
                     }
-                    style={{ ["--plan" as any]: tone.hex }}
+                    style={{ ["--plan" as any]: tone.hex, ["--i" as any]: INTERVAL }}
                   >
                     <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
-                      <div className={S.pad}>
-                        <div
-                          className={
-                            isActive
-                              ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
-                              : "text-[28px] font-extrabold leading-none text-text/15"
-                          }
-                        >
-                          {p.title}
-                        </div>
+                      {/* 1 */}
+                      <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                        <div className="flex h-full flex-col justify-between">
+                          <div
+                            className={
+                              isActive
+                                ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                                : "text-[28px] font-extrabold leading-none text-text/15"
+                            }
+                          >
+                            {p.title}
+                          </div>
 
-                        <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"} mt-5 space-y-1 text-[16px] font-medium text-text/90`}>
-                          {p.desc4.map((l) => (
-                            <div key={l} className="whitespace-nowrap">
-                              {l}
+                          <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"}`}>
+                            <div className="space-y-1 text-[16px] font-medium text-text/90">
+                              {p.desc4.map((l) => (
+                                <div key={l} className="whitespace-nowrap">
+                                  {l}
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
                         </div>
                       </div>
 
-                      <div className={S.pad}>
-                        <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                      {/* 2 */}
+                      <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                        <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
                           <div className="flex items-baseline gap-3">
                             <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
                               {formatRub(price)}
                             </div>
                             <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
                           </div>
-                          <div className="mt-4 text-[13px] font-semibold text-text/45">
-                            <div>{p.integrations2[0]}</div>
-                          </div>
+
+                          <div className="text-[13px] font-semibold text-text/45">{p.integrations2[0]}</div>
                         </div>
                       </div>
 
-                      <div className={S.pad}>
-                        <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                      {/* 3 */}
+                      <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                        <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
                           <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
-                          <div className="mt-4 space-y-1 text-[16px] font-medium text-text/90">
+
+                          <div className="space-y-1 text-[16px] font-medium text-text/90">
                             {p.params3.map((l) => (
                               <div key={l} className="whitespace-nowrap">
                                 {l}
@@ -306,24 +311,23 @@ export function Packages() {
                         </div>
                       </div>
 
-                      <div className={S.pad}>
-                        <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                      {/* 4 */}
+                      <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                        <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
                           <div className="flex items-center gap-3 text-[18px] font-extrabold text-text">
                             <span>Изучить возможности</span>
                             <Eye className="h-6 w-6" />
                           </div>
 
-                          <div className="mt-5">
-                            <div
-                              className={
-                                p.ctaStyle === "fill"
-                                  ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
-                                  : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]"
-                              }
-                              style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
-                            >
-                              {p.cta}
-                            </div>
+                          <div
+                            className={
+                              p.ctaStyle === "fill"
+                                ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
+                                : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]"
+                            }
+                            style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
+                          >
+                            {p.cta}
                           </div>
                         </div>
                       </div>
@@ -334,7 +338,7 @@ export function Packages() {
             })}
           </div>
 
-          {/* desktop deck */}
+          {/* desktop */}
           <div className="relative hidden md:block">
             <div className="relative" style={{ height: CARD_H }}>
               {plans.map((p, i) => {
@@ -353,10 +357,12 @@ export function Packages() {
                 const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
                 const inactiveTitleAlign = titleAlignForInactive(i);
 
-                const lift = isActive ? "scale-[1.01] -translate-y-[2px]" : "scale-100 translate-y-0";
                 const shadow = isActive
                   ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
                   : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
+
+                const contentState = isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]";
+                const contentDelay = isActive ? "140ms" : "0ms";
 
                 return (
                   <button
@@ -364,40 +370,45 @@ export function Packages() {
                     type="button"
                     onClick={() => setActive(p.id)}
                     aria-pressed={isActive}
-                    className={`absolute top-0 h-full text-left ${CARD_MOTION} ${lift}`}
+                    className={`absolute top-0 h-full text-left ${CARD_MOTION}`}
                     style={{
                       left: leftFor(i),
                       width: isActive ? W_ACTIVE : W_INACTIVE,
                       zIndex: isActive ? 50 : 10 + i,
                       ["--plan" as any]: tone.hex,
+                      ["--i" as any]: INTERVAL,
                     }}
                   >
                     <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
                       <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
                         {/* Section 1 */}
-                        <div className={S.pad}>
-                          <div
-                            className={
-                              isActive
-                                ? `text-[44px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
-                                : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
-                            }
-                          >
-                            {p.title}
-                          </div>
+                        <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                          <div className="flex h-full flex-col justify-between">
+                            <div
+                              className={
+                                isActive
+                                  ? `text-[44px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                                  : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
+                              }
+                            >
+                              {p.title}
+                            </div>
 
-                          <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"} mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90`}>
-                            {p.desc4.map((l) => (
-                              <div key={l} className="whitespace-nowrap">
-                                {l}
+                            <div className={`${CONTENT_MOTION} ${contentState}`} style={{ transitionDelay: contentDelay }}>
+                              <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
+                                {p.desc4.map((l) => (
+                                  <div key={l} className="whitespace-nowrap">
+                                    {l}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            </div>
                           </div>
                         </div>
 
                         {/* Section 2 */}
-                        <div className={S.pad}>
-                          <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                        <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                          <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
                             <div className="flex items-baseline gap-4">
                               <div
                                 className={
@@ -411,17 +422,16 @@ export function Packages() {
                               <div className="text-[34px] font-semibold leading-none text-text/35">/ мес</div>
                             </div>
 
-                            <div className="mt-4 text-[14px] font-semibold text-text/45">
-                              <div>{p.integrations2[0]}</div>
-                            </div>
+                            <div className="text-[14px] font-semibold text-text/45">{p.integrations2[0]}</div>
                           </div>
                         </div>
 
                         {/* Section 3 */}
-                        <div className={S.pad}>
-                          <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                        <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                          <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
                             <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
-                            <div className="mt-4 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
+
+                            <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
                               {p.params3.map((l) => (
                                 <div key={l} className="whitespace-nowrap">
                                   {l}
@@ -432,24 +442,22 @@ export function Packages() {
                         </div>
 
                         {/* Section 4 */}
-                        <div className={S.pad}>
-                          <div className={`${S.fade} ${isActive ? "opacity-100" : "opacity-0"}`}>
+                        <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                          <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
                             <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
                               <span>Изучить возможности</span>
                               <Eye className="h-7 w-7" />
                             </div>
 
-                            <div className="mt-5">
-                              <div
-                                className={
-                                  p.ctaStyle === "fill"
-                                    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
-                                    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
-                                }
-                                style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
-                              >
-                                {p.cta}
-                              </div>
+                            <div
+                              className={
+                                p.ctaStyle === "fill"
+                                  ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
+                                  : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
+                              }
+                              style={isNeutral && p.ctaStyle === "outline" ? { borderColor: "var(--text)", color: "var(--text)" } : undefined}
+                            >
+                              {p.cta}
                             </div>
                           </div>
                         </div>
