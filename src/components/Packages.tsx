@@ -20,11 +20,11 @@ type Plan = {
   ctaStyle: "outline" | "fill";
 };
 
-const TONE: Record<Plan["tone"], { hex: string; softHex: string }> = {
-  neutral: { hex: "#111827", softHex: "#111827" }, // near text
-  blue: { hex: "#5B86C6", softHex: "#5B86C6" },
-  green: { hex: "#49C874", softHex: "#49C874" },
-  red: { hex: "#C94444", softHex: "#C94444" },
+const TONE: Record<Plan["tone"], { hex: string }> = {
+  neutral: { hex: "#111827" },
+  blue: { hex: "#5B86C6" },
+  green: { hex: "#49C874" },
+  red: { hex: "#C94444" },
 };
 
 function formatRub(n: number) {
@@ -93,10 +93,10 @@ export function Packages() {
     return Math.round(p.monthly * 0.8);
   };
 
-  // колода: базовые колонки по 25%, активная шире и слегка смещается влево
+  // колода: базовые колонки по 25%, активная шире и чуть “заезжает” на соседей
   const W_INACTIVE = "25%";
   const W_ACTIVE = "34%";
-  const ACTIVE_SHIFT = "4.5%"; // половина «расширения» (примерно)
+  const ACTIVE_SHIFT = "4.5%";
 
   const leftFor = (i: number) => {
     if (i !== activeIdx) return `${i * 25}%`;
@@ -186,25 +186,17 @@ export function Packages() {
               const isActive = p.id === active;
               const tone = TONE[p.tone];
               const price = priceFor(p);
+              const isNeutral = p.tone === "neutral";
 
               return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setActive(p.id)}
-                  className="text-left"
-                  aria-pressed={isActive}
-                >
-                  <div
-                    className="overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15"
-                    style={{ ["--plan" as any]: tone.hex }}
-                  >
+                <button key={p.id} type="button" onClick={() => setActive(p.id)} className="text-left" aria-pressed={isActive}>
+                  <div className="overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15" style={{ ["--plan" as any]: tone.hex }}>
                     <div className="px-7 pt-8 pb-7">
                       <div
                         className={
                           isActive
-                            ? "text-[34px] font-extrabold leading-none text-[color:var(--plan)]"
-                            : "text-[34px] font-extrabold leading-none text-text/20"
+                            ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                            : "text-[34px] font-extrabold leading-none text-text/15"
                         }
                       >
                         {p.title}
@@ -222,7 +214,7 @@ export function Packages() {
                     <div className="px-7 py-7">
                       <div className={isActive ? "opacity-100" : "opacity-0"}>
                         <div className="flex items-end gap-3">
-                          <div className="text-[36px] font-extrabold leading-none text-[color:var(--plan)]">
+                          <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
                             {formatRub(price)}
                           </div>
                           <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
@@ -260,8 +252,8 @@ export function Packages() {
                           <div
                             className={
                               p.ctaStyle === "fill"
-                                ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
-                                : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]"
+                                ? `w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg`
+                                : `w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]`
                             }
                           >
                             {p.cta}
@@ -275,50 +267,135 @@ export function Packages() {
             })}
           </div>
 
-          {/* desktop: колода с наложением */}
-          <div className="relative hidden md:block">
-            <div className="relative h-[720px]">
-              {plans.map((p, i) => {
-                const isActive = p.id === active;
+          {/* desktop: подложка-колода + активная карточка поверх */}
+          <div className="hidden md:block">
+            <div className="relative">
+              {/* подложка (общий “фрейм” ощущением одной рамки) */}
+              <div className="h-[720px] overflow-hidden rounded-[30px] bg-accent-3 ring-1 ring-text/15">
+                <div className="grid h-full grid-cols-4 divide-x divide-text/10">
+                  {plans.map((p) => {
+                    const isColumnActive = p.id === active;
+
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setActive(p.id)}
+                        aria-pressed={isColumnActive}
+                        className="h-full text-left"
+                      >
+                        {/* секции + разделители, чтобы линии были на одной высоте */}
+                        <div className="flex h-full flex-col">
+                          <div className="px-10 pt-12 pb-10">
+                            <div
+                              className={
+                                isColumnActive
+                                  ? "text-[44px] font-extrabold leading-none text-transparent"
+                                  : "text-[44px] font-extrabold leading-none text-text/15"
+                              }
+                            >
+                              {p.title}
+                            </div>
+
+                            {/* плейсхолдер 4 строк (невидимый, чтобы держать высоту) */}
+                            <div className="mt-6 space-y-1 opacity-0">
+                              {p.desc4.map((l) => (
+                                <div key={l} className="text-[20px] font-medium leading-[1.15]">
+                                  {l}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="h-px bg-text/10" />
+
+                          <div className="px-10 py-10">
+                            <div className="opacity-0">
+                              <div className="flex items-end gap-4">
+                                <div className="text-[44px] font-extrabold leading-none">{formatRub(priceFor(p))}</div>
+                                <div className="pb-[2px] text-[34px] font-semibold leading-none">/ мес</div>
+                              </div>
+                              <div className="mt-4 space-y-1 text-[14px] font-semibold">
+                                <div>{p.integrations2[0]}</div>
+                                <div>{p.integrations2[1]}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="h-px bg-text/10" />
+
+                          <div className="px-10 py-10">
+                            <div className="opacity-0">
+                              <div className="text-[20px] font-extrabold">Ключевые параметры</div>
+                              <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15]">
+                                {p.params3.map((l) => (
+                                  <div key={l}>{l}</div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="h-px bg-text/10" />
+
+                          <div className="px-10 py-10">
+                            <div className="opacity-0">
+                              <div className="flex items-center gap-4 text-[20px] font-extrabold">
+                                <span>Изучить возможности</span>
+                                <Eye className="h-7 w-7" />
+                              </div>
+                              <div className="mt-6">
+                                <div className="w-full rounded-xl px-6 py-4 text-center text-[20px] font-extrabold">
+                                  {p.cta}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* активная карточка поверх подложки */}
+              {(() => {
+                const p = plans[activeIdx];
                 const tone = TONE[p.tone];
                 const price = priceFor(p);
+                const isNeutral = p.tone === "neutral";
 
                 return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setActive(p.id)}
-                    aria-pressed={isActive}
-                    className="absolute top-0 h-full text-left"
+                  <div
+                    className="absolute top-0 h-[720px]"
                     style={{
-                      left: leftFor(i),
-                      width: isActive ? W_ACTIVE : W_INACTIVE,
-                      zIndex: isActive ? 50 : 10 + i,
-                      transition: "left 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+                      left: leftFor(activeIdx),
+                      width: W_ACTIVE,
+                      zIndex: 50,
+                      transition:
+                        "left 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
                       ["--plan" as any]: tone.hex,
                     }}
                   >
                     <div
                       className={
-                        isActive
-                          ? "h-full overflow-hidden rounded-[30px] bg-bg ring-2 ring-[color:var(--plan)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
-                          : "h-full overflow-hidden rounded-[30px] bg-bg ring-1 ring-text/15"
+                        isNeutral
+                          ? "h-full overflow-hidden rounded-[30px] bg-bg ring-2 ring-text/60 shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
+                          : "h-full overflow-hidden rounded-[30px] bg-bg ring-2 ring-[color:var(--plan)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
                       }
                     >
                       {/* Section 1 */}
                       <div className="px-10 pt-12 pb-10">
                         <div
                           className={
-                            isActive
-                              ? "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
-                              : "text-[44px] font-extrabold leading-none text-text/18"
+                            isNeutral
+                              ? "text-[44px] font-extrabold leading-none text-text"
+                              : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
                           }
-                          style={p.tone === "neutral" && isActive ? { color: "var(--text)" } : undefined}
                         >
                           {p.title}
                         </div>
 
-                        <div className={isActive ? "mt-6 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90" : "mt-6 space-y-1 opacity-0"}>
+                        <div className="mt-6 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
                           {p.desc4.map((l) => (
                             <div key={l}>{l}</div>
                           ))}
@@ -329,18 +406,22 @@ export function Packages() {
 
                       {/* Section 2 */}
                       <div className="px-10 py-10">
-                        <div className={isActive ? "opacity-100" : "opacity-0"}>
-                          <div className="flex items-end gap-4">
-                            <div className="text-[44px] font-extrabold leading-none text-[color:var(--plan)]">
-                              {formatRub(price)}
-                            </div>
-                            <div className="pb-[2px] text-[34px] font-semibold leading-none text-text/35">/ мес</div>
+                        <div className="flex items-end gap-4">
+                          <div
+                            className={
+                              isNeutral
+                                ? "text-[44px] font-extrabold leading-none text-text"
+                                : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
+                            }
+                          >
+                            {formatRub(price)}
                           </div>
+                          <div className="pb-[2px] text-[34px] font-semibold leading-none text-text/35">/ мес</div>
+                        </div>
 
-                          <div className="mt-4 space-y-1 text-[14px] font-semibold text-text/45">
-                            <div>{p.integrations2[0]}</div>
-                            <div>{p.integrations2[1]}</div>
-                          </div>
+                        <div className="mt-4 space-y-1 text-[14px] font-semibold text-text/45">
+                          <div>{p.integrations2[0]}</div>
+                          <div>{p.integrations2[1]}</div>
                         </div>
                       </div>
 
@@ -348,13 +429,11 @@ export function Packages() {
 
                       {/* Section 3 */}
                       <div className="px-10 py-10">
-                        <div className={isActive ? "opacity-100" : "opacity-0"}>
-                          <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
-                          <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
-                            {p.params3.map((l) => (
-                              <div key={l}>{l}</div>
-                            ))}
-                          </div>
+                        <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
+                        <div className="mt-5 space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
+                          {p.params3.map((l) => (
+                            <div key={l}>{l}</div>
+                          ))}
                         </div>
                       </div>
 
@@ -362,29 +441,27 @@ export function Packages() {
 
                       {/* Section 4 */}
                       <div className="px-10 py-10">
-                        <div className={isActive ? "opacity-100" : "opacity-0"}>
-                          <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
-                            <span>Изучить возможности</span>
-                            <Eye className="h-7 w-7" />
-                          </div>
+                        <div className="flex items-center gap-4 text-[20px] font-extrabold text-text">
+                          <span>Изучить возможности</span>
+                          <Eye className="h-7 w-7" />
+                        </div>
 
-                          <div className="mt-6">
-                            <div
-                              className={
-                                p.ctaStyle === "fill"
-                                  ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
-                                  : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
-                              }
-                            >
-                              {p.cta}
-                            </div>
+                        <div className="mt-6">
+                          <div
+                            className={
+                              p.ctaStyle === "fill"
+                                ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
+                                : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]"
+                            }
+                          >
+                            {p.cta}
                           </div>
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
-              })}
+              })()}
             </div>
           </div>
 
