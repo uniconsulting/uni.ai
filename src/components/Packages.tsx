@@ -171,7 +171,7 @@ export function Packages() {
       />
       <div
         aria-hidden
-        className={`pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[260px] lg:h-[300px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
+        className={`pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[200px] lg:h-[240px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
           inView ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -179,7 +179,7 @@ export function Packages() {
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
           <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} md:pr-12`}>
-            <div className="text-[22px] md:text-[26px] lg:text-[28px] font-extrabold text-accent-1">Сделай выбор</div>
+            <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">Сделай выбор</div>
 
             <h2 className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
               <span className="block">Прозрачные условия,</span>
