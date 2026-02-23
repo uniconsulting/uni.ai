@@ -9,21 +9,26 @@ type ServiceId = "consulting" | "custom" | "turnkey";
 
 type Service = {
   id: ServiceId;
-  title: string; // для tabs/фрейма
-  title2: [string, string]; // для карточки (ровно 2 строки)
   tone: "blue" | "green" | "red";
 
-  lead: string; // для фрейма
-  lead3: [string, string, string]; // для карточки (ровно 3 строки)
+  // карточка: всегда 2 строки
+  title2: [string, string];
 
-  tags: string;
+  // карточка: всегда 3 строки
+  lead3: [string, string, string];
 
-  shortTitle: string; // “Коротко” блок (1 строка)
-  shortSub: string; // (1 строка)
+  // строка под описанием (в одну строку)
+  tagsLine: string;
 
-  preview3: [string, string, string]; // 3 пункта в одну строку
-  cta: string;
-  ctaHref: string;
+  // блок "Коротко": 1 строка + 1 строка
+  shortTitle: string;
+  shortSub: string;
+
+  // 3 пункта: каждый в одну строку
+  preview3: [string, string, string];
+
+  // CTA
+  ctaHref: string; // Telegram
 };
 
 type ServiceDetails = {
@@ -38,7 +43,10 @@ const TONE: Record<Service["tone"], { hex: string }> = {
   red: { hex: "#C94444" },
 };
 
-function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0px 0px -12% 0px") {
+function useOnceInView<T extends HTMLElement>(
+  threshold = 0.12,
+  rootMargin = "0px 0px -12% 0px",
+) {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -63,7 +71,13 @@ function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0p
   return { ref, inView };
 }
 
-const fixLine = (s: string) => (s && s.length ? s : "\u00A0");
+function titleFull(s: Service) {
+  return `${s.title2[0]} ${s.title2[1]}`.replace(/\s+/g, " ").trim();
+}
+
+function openExternal(href: string) {
+  window.open(href, "_blank", "noopener,noreferrer");
+}
 
 function DetailsFrame({
   service,
@@ -107,11 +121,18 @@ function DetailsFrame({
         {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
-            <div className="text-[40px] font-extrabold leading-none text-text">{service.title}</div>
+            <div className="text-[36px] font-extrabold leading-[1.05] text-text">
+              <span className="block">{service.title2[0]}</span>
+              <span className="block">{service.title2[1]}</span>
+            </div>
 
-            <div className="mt-4 text-[18px] font-medium text-text/85">{details.lead}</div>
+            <div className="mt-4 text-[18px] font-medium text-text/85">
+              {details.lead}
+            </div>
 
-            <div className="mt-4 text-[14px] font-semibold text-text/55">{details.tags}</div>
+            <div className="mt-4 text-[14px] font-semibold text-text/55">
+              {details.tags}
+            </div>
           </div>
 
           <div className="ml-auto flex shrink-0 items-start gap-2">
@@ -166,13 +187,15 @@ function DetailsFrame({
                 onClick={() => onSelect(t.id)}
                 className={[
                   "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
-                  isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
+                  isOn
+                    ? "bg-bg/65 border-2"
+                    : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
                 ].join(" ")}
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
               >
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.hex }} />
-                <span>{t.title}</span>
+                <span className="truncate">{t.title}</span>
               </button>
             );
           })}
@@ -197,15 +220,15 @@ function DetailsFrame({
             ))}
           </div>
 
-          {/* CTA */}
+          {/* CTA (внизу) */}
           <div className="mt-10">
             <a
               href={service.ctaHref}
               target="_blank"
               rel="noreferrer"
-              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
+              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--tone)] backdrop-blur"
             >
-              {service.cta}
+              Написать нам
             </a>
           </div>
         </div>
@@ -225,13 +248,22 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
   ];
 
   return (
-    <div className="h-full w-full overflow-hidden rounded-3xl bg-accent-3 border border-text/10" style={{ ["--tone" as any]: toneHex }}>
+    <div
+      className="h-full w-full overflow-hidden rounded-3xl bg-accent-3 border border-text/10"
+      style={{ ["--tone" as any]: toneHex }}
+    >
       <div className="h-full px-10 py-8">
         <div className="flex items-start gap-4">
           <div className="min-w-0">
-            <div className="text-[32px] font-extrabold leading-[1.05] text-text">Интеграции под ключ</div>
-            <div className="mt-3 text-[16px] font-medium text-text/70">Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.</div>
-            <div className="mt-3 text-[13px] font-semibold text-text/55">Примечание: стоимость интеграций зависит от состава систем и глубины сценариев.</div>
+            <div className="text-[32px] font-extrabold leading-[1.05] text-text">
+              Интеграции под ключ
+            </div>
+            <div className="mt-3 text-[16px] font-medium text-text/70">
+              Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
+            </div>
+            <div className="mt-3 text-[13px] font-semibold text-text/55">
+              Примечание: стоимость интеграций зависит от состава систем и глубины сценариев.
+            </div>
           </div>
 
           <div className="ml-auto flex shrink-0 items-start">
@@ -264,7 +296,7 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
               href="https://t.me/uni_smb"
               target="_blank"
               rel="noreferrer"
-              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
+              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--tone)] backdrop-blur"
             >
               Написать нам
             </a>
@@ -286,68 +318,59 @@ export function ServicesIntegrations() {
     () => [
       {
         id: "consulting",
-        title: "Обучение команд и консалтинг",
-        title2: ["Обучение команд", "и консалтинг"],
         tone: "blue",
-
-        lead: "Обучаем руководителей и команды тому, как применять нейросети в ежедневной работе и получать измеримый эффект.",
+        title2: ["Обучение команд", "и консалтинг"],
         lead3: [
           "Обучаем руководителей и команды тому,",
           "как применять нейросети в ежедневной работе",
           "и получать измеримый эффект.",
         ],
-
-        tags: "Руководители • Команды • Практика • Результат",
-
+        tagsLine: "Руководители • Команды • Практика • Результат",
         shortTitle: "Учим работать с",
         shortSub: "ChatGPT, Claude, Notion, NotebookLM и др.",
-
-        preview3: ["Документация и регламенты", "Отчёты, KPI, управленческие сводки", "Таблицы, расчёты, финмодели"],
-        cta: "Написать нам",
+        preview3: [
+          "Документация, регламенты, база знаний",
+          "Отчёты, аналитика, KPI, управленческие сводки",
+          "Таблицы, расчёты, финмодели, Excel-рутины",
+        ],
         ctaHref: "https://t.me/uni_smb",
       },
       {
         id: "custom",
-        title: "Индивидуальная разработка",
-        title2: ["Индивидуальная", "разработка"],
         tone: "green",
-
-        lead: "Проектная разработка решений под вашу задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
+        title2: ["Индивидуальная", "разработка"],
         lead3: [
           "Проектная разработка решений под вашу",
           "",
           "задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
         ],
-
-        tags: "Проектно • Под ключ • Интеграции • Сопровождение",
-
+        tagsLine: "Проектно • Под ключ • Интеграции • Сопровождение",
         shortTitle: "Делаем",
         shortSub: "ИИ-инструменты, сайты и интернет-магазины и др.",
-
-        preview3: ["Сбор требований и формализация", "Разработка MVP и доведение до версии", "Запуск, контроль качества, улучшения"],
-        cta: "Написать нам",
+        preview3: [
+          "Сбор требований и формализация",
+          "Разработка MVP и доведение до версии",
+          "Запуск, контроль качества, улучшения",
+        ],
         ctaHref: "https://t.me/uni_smb",
       },
       {
         id: "turnkey",
-        title: "Интеграции под Ваши задачи и инфраструктуру",
-        title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
         tone: "red",
-
-        lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему",
+        title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
         lead3: [
           "Мы знаем, насколько важно сохранить",
           "удобство пользования инструментами для команды, поэтому",
           "интегрируем наши решения в Вашу экосистему",
         ],
-
-        tags: "Аудит Подготовка требований Интеграция Сопровождение",
-
+        tagsLine: "Аудит Подготовка требований Интеграция Сопровождение",
         shortTitle: "Интеграции с",
         shortSub: "AmoCRM Битрикс24 1С трекеры и ERP и др.",
-
-        preview3: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
-        cta: "Написать нам",
+        preview3: [
+          "Аудит и метрики результата",
+          "База знаний, промпты, MVP",
+          "Интеграции, права, события",
+        ],
         ctaHref: "https://t.me/uni_smb",
       },
     ],
@@ -372,7 +395,11 @@ export function ServicesIntegrations() {
           },
           {
             title: "Формат",
-            items: ["Сессии с практикой на ваших задачах", "Шаблоны и стандарты для команды", "Фиксация результата в документах"],
+            items: [
+              "Сессии с практикой на ваших задачах",
+              "Шаблоны и стандарты для команды",
+              "Фиксация результата в документах",
+            ],
           },
         ],
       },
@@ -393,29 +420,64 @@ export function ServicesIntegrations() {
           },
           {
             title: "Как ведём проект",
-            items: ["Прозрачные статусы и контроль качества", "Проверка гипотез по данным", "Доработки без хаоса"],
+            items: [
+              "Прозрачные статусы и контроль качества",
+              "Проверка гипотез по данным",
+              "Доработки без хаоса",
+            ],
           },
         ],
       },
 
       turnkey: {
-        lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему",
+        lead: "Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.",
         tags: "Аудит Подготовка требований Интеграция Сопровождение",
         sections: [
           { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
           { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
-          { title: "Знания и промпты", items: ["Адаптация документов и информации для базы знаний", "Упаковка базы знаний", "Написание промптов"] },
-          { title: "Сборка и запуск", items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"] },
-          { title: "Интеграции", items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"] },
-          { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
-          { title: "Примечание", items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."] },
+          {
+            title: "Знания и промпты",
+            items: [
+              "Адаптация документов и информации для базы знаний",
+              "Упаковка базы знаний",
+              "Написание промптов",
+            ],
+          },
+          {
+            title: "Сборка и запуск",
+            items: [
+              "Разработка MVP-версии",
+              "Тестирование",
+              "Внесение правок",
+              "Доработка до итоговой версии",
+            ],
+          },
+          {
+            title: "Интеграции",
+            items: [
+              "Интеграции с сервисами/площадками/платформами, CRM, ERP",
+              "Права, маршрутизация, события",
+            ],
+          },
+          {
+            title: "Сопровождение",
+            items: [
+              "Контроль качества",
+              "Улучшения по аналитике и данным",
+              "План развития (roadmap)",
+            ],
+          },
+          {
+            title: "Примечание",
+            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
+          },
         ],
       },
     }),
     [],
   );
 
-  // меньше воздуха
+  // ниже пакетов: делаем карточки ниже по высоте
   const CARD_H = 660;
   const INTERVAL = "24px";
 
@@ -423,7 +485,7 @@ export function ServicesIntegrations() {
     () =>
       services.map((s) => ({
         id: s.id,
-        title: s.title,
+        title: titleFull(s),
         hex: TONE[s.tone].hex,
       })),
     [services],
@@ -499,11 +561,14 @@ export function ServicesIntegrations() {
   const PANEL_MOTION =
     "will-change-[opacity,transform,filter] transition-[opacity,transform,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
-  const expandedToneHex = expandedService ? TONE[expandedService.tone].hex : TONE[activeService.tone].hex;
+  const expandedToneHex = expandedService
+    ? TONE[expandedService.tone].hex
+    : TONE[activeService.tone].hex;
+
   const expandedBorderClass = expandedService ? "border-[color:var(--tone)]" : "border-text/10";
 
-  // карточка услуг: 4 ряда (desktop)
-  const ROWS_SERVICES = "grid-rows-[240px_96px_110px_214px]";
+  // карточка услуг: фиксируем 4 ряда (desktop)
+  const ROWS_SERVICES = "grid-rows-[240px_110px_190px_120px]";
 
   return (
     <section
@@ -567,7 +632,10 @@ export function ServicesIntegrations() {
         </div>
 
         {/* main zone */}
-        <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-10`} style={{ transitionDelay: "80ms" }}>
+        <div
+          className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-10`}
+          style={{ transitionDelay: "80ms" }}
+        >
           {/* SERVICES MODE */}
           {mode === "services" ? (
             <>
@@ -607,55 +675,63 @@ export function ServicesIntegrations() {
                           <div
                             className={[
                               "overflow-hidden rounded-[28px]",
-                              isActive ? "bg-accent-3 ring-2 ring-[color:var(--tone)]" : "bg-bg ring-1 ring-text/15",
+                              isActive
+                                ? "bg-accent-3 ring-2 ring-[color:var(--tone)]"
+                                : "bg-bg ring-1 ring-text/15",
                             ].join(" ")}
                             style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
                           >
                             <div className="p-8">
-                              {/* title (2 lines) */}
-                              <div className={["text-[26px] font-extrabold leading-[1.05]", isActive ? "text-[color:var(--tone)]" : "text-text/25"].join(" ")}>
-                                {s.title2.map((l, idx) => (
-                                  <span key={idx} className="block truncate whitespace-nowrap">
-                                    {fixLine(l)}
-                                  </span>
-                                ))}
+                              {/* title: 2 строки */}
+                              <div
+                                className={[
+                                  "text-[26px] font-extrabold leading-[1.05]",
+                                  isActive ? "text-[color:var(--tone)]" : "text-text/25",
+                                ].join(" ")}
+                              >
+                                <span className="block truncate">{s.title2[0]}</span>
+                                <span className="block truncate">{s.title2[1]}</span>
                               </div>
 
-                              {/* lead (3 lines) */}
+                              {/* lead: 3 строки */}
                               <div className="mt-4 text-[15px] font-medium leading-[1.25] text-text/80">
                                 {s.lead3.map((l, idx) => (
-                                  <div key={idx} className="truncate whitespace-nowrap">
-                                    {fixLine(l)}
+                                  <div key={idx} className="truncate">
+                                    {l || "\u00A0"}
                                   </div>
                                 ))}
                               </div>
 
-                              {/* tags */}
-                              <div className="mt-3 text-[13px] font-semibold text-text/55 truncate whitespace-nowrap">{s.tags}</div>
+                              {/* tags: 1 строка */}
+                              <div className="mt-3 text-[13px] font-semibold text-text/55 truncate">
+                                {s.tagsLine}
+                              </div>
 
-                              {/* short */}
+                              {/* short: 1 + 1 */}
                               <div className="mt-6">
-                                <div className="text-[16px] font-extrabold text-text truncate whitespace-nowrap">{s.shortTitle}</div>
-                                <div className="mt-2 text-[13px] font-medium text-text/70 truncate whitespace-nowrap">{s.shortSub}</div>
+                                <div className="text-[16px] font-extrabold text-text truncate">
+                                  {s.shortTitle}
+                                </div>
+                                <div className="mt-2 text-[14px] font-medium text-text/70 truncate">
+                                  {s.shortSub}
+                                </div>
                               </div>
 
-                              {/* 3 items (one row) */}
-                              <div className="mt-6 grid grid-cols-3 gap-3">
+                              {/* 3 пункта: по 1 строке */}
+                              <ul className="mt-6 space-y-2 text-[15px] font-medium text-text/85">
                                 {s.preview3.map((it) => (
-                                  <div key={it} className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                      <span className="min-w-0 truncate whitespace-nowrap text-[13px] font-semibold text-text/80">{it}</span>
-                                    </div>
-                                  </div>
+                                  <li key={it} className="flex gap-3">
+                                    <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                    <span className="min-w-0 truncate">{it}</span>
+                                  </li>
                                 ))}
-                              </div>
+                              </ul>
 
-                              {/* CTA row */}
+                              {/* CTA: одна строка (Eye + Написать нам) */}
                               <div className="mt-8 flex items-center gap-3">
                                 <button
                                   type="button"
-                                  className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+                                  className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 text-[color:var(--tone)] backdrop-blur"
                                   aria-label="Изучить возможности"
                                   title="Изучить возможности"
                                   onClick={(e) => {
@@ -667,15 +743,17 @@ export function ServicesIntegrations() {
                                   <Eye className="h-5 w-5" />
                                 </button>
 
-                                <a
-                                  href={s.ctaHref}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="btn-lift-outline inline-flex flex-1 items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[16px] font-extrabold text-text backdrop-blur"
-                                  onClick={(e) => e.stopPropagation()}
+                                <button
+                                  type="button"
+                                  className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-5 text-[16px] font-extrabold text-[color:var(--tone)] backdrop-blur"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openExternal(s.ctaHref);
+                                  }}
                                 >
-                                  {s.cta}
-                                </a>
+                                  Написать нам
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -712,61 +790,75 @@ export function ServicesIntegrations() {
                             <div
                               className={[
                                 "h-full overflow-hidden rounded-[30px]",
-                                isActive ? "bg-accent-3 ring-2 ring-[color:var(--tone)]" : "bg-bg ring-1 ring-text/15",
-                                isActive ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]" : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]",
+                                isActive
+                                  ? "bg-accent-3 ring-2 ring-[color:var(--tone)]"
+                                  : "bg-bg ring-1 ring-text/15",
+                                isActive
+                                  ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
+                                  : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]",
                               ].join(" ")}
                             >
-                              <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
-                                {/* 1: title (2 lines) + lead (3 lines) + tags */}
+                              <div
+                                className={`grid h-full ${ROWS_SERVICES} ${
+                                  isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
+                                }`}
+                              >
+                                {/* 1: title (2) + lead (3) + tags (1) */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="flex h-full flex-col justify-between">
-                                    <div className={["text-[26px] font-extrabold leading-[1.05]", isActive ? "text-[color:var(--tone)]" : "text-text/25"].join(" ")}>
-                                      {s.title2.map((l, idx) => (
-                                        <span key={idx} className="block truncate whitespace-nowrap">
-                                          {fixLine(l)}
-                                        </span>
-                                      ))}
+                                  <div className="flex h-full flex-col">
+                                    <div
+                                      className={[
+                                        "text-[26px] font-extrabold leading-[1.05]",
+                                        isActive ? "text-[color:var(--tone)]" : "text-text/25",
+                                      ].join(" ")}
+                                    >
+                                      <span className="block truncate">{s.title2[0]}</span>
+                                      <span className="block truncate">{s.title2[1]}</span>
                                     </div>
 
-                                    <div className="mt-5 text-[16px] font-medium leading-[1.25] text-text/80">
+                                    <div className="mt-5 text-[15px] font-medium leading-[1.25] text-text/80">
                                       {s.lead3.map((l, idx) => (
-                                        <div key={idx} className="truncate whitespace-nowrap">
-                                          {fixLine(l)}
+                                        <div key={idx} className="truncate">
+                                          {l || "\u00A0"}
                                         </div>
                                       ))}
                                     </div>
 
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate whitespace-nowrap">{s.tags}</div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
+                                      {s.tagsLine}
+                                    </div>
                                   </div>
                                 </div>
 
-                                {/* 2: short (1 line + 1 line) */}
+                                {/* 2: shortTitle (1) + shortSub (1) */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="text-[18px] font-extrabold text-text truncate whitespace-nowrap">{s.shortTitle}</div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate whitespace-nowrap">{s.shortSub}</div>
+                                  <div className="text-[18px] font-extrabold text-text truncate">
+                                    {s.shortTitle}
+                                  </div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
+                                    {s.shortSub}
+                                  </div>
                                 </div>
 
-                                {/* 3: 3 items in one row */}
+                                {/* 3: 3 пункта по 1 строке */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="grid grid-cols-3 gap-4">
+                                  <ul className="space-y-2 text-[16px] font-medium text-text/85">
                                     {s.preview3.map((it) => (
-                                      <div key={it} className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                          <span className="min-w-0 truncate whitespace-nowrap text-[14px] font-semibold text-text/80">{it}</span>
-                                        </div>
-                                      </div>
+                                      <li key={it} className="flex gap-3">
+                                        <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                        <span className="min-w-0 truncate">{it}</span>
+                                      </li>
                                     ))}
-                                  </div>
+                                  </ul>
                                 </div>
 
-                                {/* 4: CTA row (eye + write) */}
+                                {/* 4: CTA row */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                   <div className="flex h-full items-end">
                                     <div className="flex w-full items-center gap-3">
                                       <button
                                         type="button"
-                                        className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+                                        className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 text-[color:var(--tone)] backdrop-blur"
                                         aria-label="Изучить возможности"
                                         title="Изучить возможности"
                                         onClick={(e) => {
@@ -775,18 +867,20 @@ export function ServicesIntegrations() {
                                           openDetails(s.id);
                                         }}
                                       >
-                                        <Eye className="h-5 w-5" />
+                                        <Eye className="h-6 w-6" />
                                       </button>
 
-                                      <a
-                                        href={s.ctaHref}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn-lift-outline inline-flex flex-1 items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
-                                        onClick={(e) => e.stopPropagation()}
+                                      <button
+                                        type="button"
+                                        className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-5 text-[16px] font-extrabold text-[color:var(--tone)] backdrop-blur"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          openExternal(s.ctaHref);
+                                        }}
                                       >
-                                        {s.cta}
-                                      </a>
+                                        Написать нам
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
@@ -801,7 +895,9 @@ export function ServicesIntegrations() {
                   {/* PANEL */}
                   <div
                     className={`absolute inset-0 ${PANEL_MOTION} ${
-                      expandedService ? "opacity-100 translate-y-0 blur-0 pointer-events-auto" : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
+                      expandedService
+                        ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
+                        : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
                     }`}
                   >
                     {expandedService ? (
