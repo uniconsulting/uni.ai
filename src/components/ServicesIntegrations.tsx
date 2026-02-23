@@ -9,25 +9,13 @@ type ServiceId = "consulting" | "custom" | "turnkey";
 
 type Service = {
   id: ServiceId;
+  navTitle: string; // для табов в фрейме
+  title2: [string, string]; // заголовок: 2 строки (вторая может быть пустой, но место сохраняем)
   tone: "blue" | "green" | "red";
-
-  // карточка: всегда 2 строки
-  title2: [string, string];
-
-  // карточка: всегда 3 строки
-  lead3: [string, string, string];
-
-  // строка под описанием (в одну строку)
-  tagsLine: string;
-
-  // блок "Коротко": 1 строка + 1 строка
-  shortTitle: string;
-  shortSub: string;
-
-  // 3 пункта: каждый в одну строку
-  preview3: [string, string, string];
-
-  // CTA
+  lead3: [string, string, string]; // описание: 3 строки
+  tags: string; // 1 строка
+  brief2: [string, string]; // блок “Коротко”: 1 строка + 1 строка
+  points3: [string, string, string]; // 3 пункта, 1 строка каждый
   ctaHref: string; // Telegram
 };
 
@@ -42,6 +30,8 @@ const TONE: Record<Service["tone"], { hex: string }> = {
   green: { hex: "#49C874" },
   red: { hex: "#C94444" },
 };
+
+const TELEGRAM_HREF = "https://t.me/uni_smb";
 
 function useOnceInView<T extends HTMLElement>(
   threshold = 0.12,
@@ -69,14 +59,6 @@ function useOnceInView<T extends HTMLElement>(
   }, [inView, threshold, rootMargin]);
 
   return { ref, inView };
-}
-
-function titleFull(s: Service) {
-  return `${s.title2[0]} ${s.title2[1]}`.replace(/\s+/g, " ").trim();
-}
-
-function openExternal(href: string) {
-  window.open(href, "_blank", "noopener,noreferrer");
 }
 
 function DetailsFrame({
@@ -121,12 +103,12 @@ function DetailsFrame({
         {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
-            <div className="text-[36px] font-extrabold leading-[1.05] text-text">
-              <span className="block">{service.title2[0]}</span>
-              <span className="block">{service.title2[1]}</span>
+            <div className="text-[36px] md:text-[40px] font-extrabold leading-[1.05] text-text">
+              {service.title2[0]}
+              {service.title2[1] ? <span className="block">{service.title2[1]}</span> : null}
             </div>
 
-            <div className="mt-4 text-[18px] font-medium text-text/85">
+            <div className="mt-4 text-[16px] md:text-[18px] font-medium text-text/85">
               {details.lead}
             </div>
 
@@ -195,7 +177,7 @@ function DetailsFrame({
                 aria-pressed={isOn}
               >
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.hex }} />
-                <span className="truncate">{t.title}</span>
+                <span>{t.title}</span>
               </button>
             );
           })}
@@ -220,13 +202,13 @@ function DetailsFrame({
             ))}
           </div>
 
-          {/* CTA (внизу) */}
+          {/* CTA */}
           <div className="mt-10">
             <a
               href={service.ctaHref}
               target="_blank"
               rel="noreferrer"
-              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--tone)] backdrop-blur"
+              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
             >
               Написать нам
             </a>
@@ -241,8 +223,14 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
   const steps = [
     { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
     { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
-    { title: "Знания и промпты", items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"] },
-    { title: "Сборка и запуск", items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"] },
+    {
+      title: "Знания и промпты",
+      items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"],
+    },
+    {
+      title: "Сборка и запуск",
+      items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"],
+    },
     { title: "Интеграции", items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"] },
     { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
   ];
@@ -255,10 +243,10 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
       <div className="h-full px-10 py-8">
         <div className="flex items-start gap-4">
           <div className="min-w-0">
-            <div className="text-[32px] font-extrabold leading-[1.05] text-text">
+            <div className="text-[30px] md:text-[32px] font-extrabold leading-[1.05] text-text">
               Интеграции под ключ
             </div>
-            <div className="mt-3 text-[16px] font-medium text-text/70">
+            <div className="mt-3 text-[15px] md:text-[16px] font-medium text-text/70">
               Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
             </div>
             <div className="mt-3 text-[13px] font-semibold text-text/55">
@@ -293,10 +281,10 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
 
           <div className="mt-6">
             <a
-              href="https://t.me/uni_smb"
+              href={TELEGRAM_HREF}
               target="_blank"
               rel="noreferrer"
-              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--tone)] backdrop-blur"
+              className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
             >
               Написать нам
             </a>
@@ -318,60 +306,56 @@ export function ServicesIntegrations() {
     () => [
       {
         id: "consulting",
-        tone: "blue",
+        navTitle: "Обучение и консалтинг",
         title2: ["Обучение команд", "и консалтинг"],
+        tone: "blue",
         lead3: [
           "Обучаем руководителей и команды тому,",
           "как применять нейросети в ежедневной работе",
           "и получать измеримый эффект.",
         ],
-        tagsLine: "Руководители • Команды • Практика • Результат",
-        shortTitle: "Учим работать с",
-        shortSub: "ChatGPT, Claude, Notion, NotebookLM и др.",
-        preview3: [
+        tags: "Руководители • Команды • Практика • Результат",
+        brief2: ["Учим работать с", "ChatGPT, Claude, Notion, NotebookLM и др."],
+        points3: [
           "Документация, регламенты, база знаний",
           "Отчёты, аналитика, KPI, управленческие сводки",
           "Таблицы, расчёты, финмодели, Excel-рутины",
         ],
-        ctaHref: "https://t.me/uni_smb",
+        ctaHref: TELEGRAM_HREF,
       },
       {
         id: "custom",
-        tone: "green",
+        navTitle: "Индивидуальная разработка",
         title2: ["Индивидуальная", "разработка"],
+        tone: "green",
         lead3: [
           "Проектная разработка решений под вашу",
-          "",
-          "задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
+          "задачу: от идеи и ТЗ до готового внедрения",
+          "и сопровождения.",
         ],
-        tagsLine: "Проектно • Под ключ • Интеграции • Сопровождение",
-        shortTitle: "Делаем",
-        shortSub: "ИИ-инструменты, сайты и интернет-магазины и др.",
-        preview3: [
-          "Сбор требований и формализация",
-          "Разработка MVP и доведение до версии",
-          "Запуск, контроль качества, улучшения",
+        tags: "Проектно • Под ключ • Интеграции • Сопровождение",
+        brief2: ["Делаем", "ИИ-инструменты, сайты и интернет-магазины и др."],
+        points3: [
+          "Сбор требований и формализация задачи",
+          "Разработка MVP и доведение до итоговой версии",
+          "Запуск, контроль качества, улучшения по данным",
         ],
-        ctaHref: "https://t.me/uni_smb",
+        ctaHref: TELEGRAM_HREF,
       },
       {
         id: "turnkey",
-        tone: "red",
+        navTitle: "Интеграции под ключ",
         title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
+        tone: "red",
         lead3: [
           "Мы знаем, насколько важно сохранить",
           "удобство пользования инструментами для команды, поэтому",
           "интегрируем наши решения в Вашу экосистему",
         ],
-        tagsLine: "Аудит Подготовка требований Интеграция Сопровождение",
-        shortTitle: "Интеграции с",
-        shortSub: "AmoCRM Битрикс24 1С трекеры и ERP и др.",
-        preview3: [
-          "Аудит и метрики результата",
-          "База знаний, промпты, MVP",
-          "Интеграции, права, события",
-        ],
-        ctaHref: "https://t.me/uni_smb",
+        tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
+        brief2: ["Интеграции с", "AmoCRM, Битрикс24, 1С, трекеры и ERP и др."],
+        points3: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
+        ctaHref: TELEGRAM_HREF,
       },
     ],
     [],
@@ -395,11 +379,7 @@ export function ServicesIntegrations() {
           },
           {
             title: "Формат",
-            items: [
-              "Сессии с практикой на ваших задачах",
-              "Шаблоны и стандарты для команды",
-              "Фиксация результата в документах",
-            ],
+            items: ["Сессии с практикой на ваших задачах", "Шаблоны и стандарты для команды", "Фиксация результата в документах"],
           },
         ],
       },
@@ -420,18 +400,15 @@ export function ServicesIntegrations() {
           },
           {
             title: "Как ведём проект",
-            items: [
-              "Прозрачные статусы и контроль качества",
-              "Проверка гипотез по данным",
-              "Доработки без хаоса",
-            ],
+            items: ["Прозрачные статусы и контроль качества", "Проверка гипотез по данным", "Доработки без хаоса"],
           },
         ],
       },
 
       turnkey: {
-        lead: "Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.",
-        tags: "Аудит Подготовка требований Интеграция Сопровождение",
+        lead:
+          "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему.",
+        tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         sections: [
           { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
           { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
@@ -445,47 +422,50 @@ export function ServicesIntegrations() {
           },
           {
             title: "Сборка и запуск",
-            items: [
-              "Разработка MVP-версии",
-              "Тестирование",
-              "Внесение правок",
-              "Доработка до итоговой версии",
-            ],
+            items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"],
           },
           {
             title: "Интеграции",
-            items: [
-              "Интеграции с сервисами/площадками/платформами, CRM, ERP",
-              "Права, маршрутизация, события",
-            ],
+            items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"],
           },
-          {
-            title: "Сопровождение",
-            items: [
-              "Контроль качества",
-              "Улучшения по аналитике и данным",
-              "План развития (roadmap)",
-            ],
-          },
-          {
-            title: "Примечание",
-            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
-          },
+          { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
+          { title: "Примечание", items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."] },
         ],
       },
     }),
     [],
   );
 
-  // ниже пакетов: делаем карточки ниже по высоте
-  const CARD_H = 660;
+  const CARD_H = 620;
   const INTERVAL = "24px";
+
+  // колода: 3 карты
+  const W_INACTIVE = "33.333%";
+  const W_ACTIVE = "44%";
+  const ACTIVE_SHIFT = "3%";
+
+  const activeIdx = services.findIndex((s) => s.id === active);
+
+  const leftFor = (i: number) => {
+    if (i !== activeIdx) return `${i * 33.333}%`;
+    if (activeIdx === 0) return "0%";
+    if (activeIdx === services.length - 1) return `calc(100% - ${W_ACTIVE})`;
+    return `calc(${i * 33.333}% - ${ACTIVE_SHIFT})`;
+  };
+
+  const radiusForInactive = (i: number) => {
+    if (i === 0) return "rounded-l-[30px] rounded-r-none";
+    if (i === services.length - 1) return "rounded-r-[30px] rounded-l-none";
+    return "rounded-none";
+  };
+
+  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
   const tabs = useMemo(
     () =>
       services.map((s) => ({
         id: s.id,
-        title: titleFull(s),
+        title: s.navTitle,
         hex: TONE[s.tone].hex,
       })),
     [services],
@@ -561,14 +541,17 @@ export function ServicesIntegrations() {
   const PANEL_MOTION =
     "will-change-[opacity,transform,filter] transition-[opacity,transform,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
-  const expandedToneHex = expandedService
-    ? TONE[expandedService.tone].hex
-    : TONE[activeService.tone].hex;
+  const CARD_MOTION =
+    "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
 
+  const CONTENT_MOTION =
+    "will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+
+  const expandedToneHex = expandedService ? TONE[expandedService.tone].hex : TONE[activeService.tone].hex;
   const expandedBorderClass = expandedService ? "border-[color:var(--tone)]" : "border-text/10";
 
-  // карточка услуг: фиксируем 4 ряда (desktop)
-  const ROWS_SERVICES = "grid-rows-[240px_110px_190px_120px]";
+  // карточка услуг: 4 секции, фикс-строки, компактнее
+  const ROWS_SERVICES = "grid-rows-[210px_110px_170px_130px]";
 
   return (
     <section
@@ -660,104 +643,128 @@ export function ServicesIntegrations() {
                   </div>
                 ) : (
                   <div className="grid gap-6">
-                    {services.map((s) => {
+                    {services.map((s, i) => {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
+                      const contentState = isActive
+                        ? "opacity-100 translate-y-0 blur-0"
+                        : "opacity-0 translate-y-1 blur-[2px]";
+
                       return (
-                        <button
+                        <div
                           key={s.id}
-                          type="button"
-                          onClick={() => setActive(s.id)}
-                          className="text-left"
+                          role="button"
+                          tabIndex={0}
                           aria-pressed={isActive}
+                          onClick={() => setActive(s.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setActive(s.id);
+                            }
+                          }}
+                          className="text-left outline-none"
                         >
                           <div
                             className={[
                               "overflow-hidden rounded-[28px]",
-                              isActive
-                                ? "bg-accent-3 ring-2 ring-[color:var(--tone)]"
-                                : "bg-bg ring-1 ring-text/15",
+                              isActive ? "bg-accent-3 ring-2 ring-[color:var(--tone)]" : "bg-bg ring-1 ring-text/15",
                             ].join(" ")}
                             style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
                           >
-                            <div className="p-8">
-                              {/* title: 2 строки */}
-                              <div
-                                className={[
-                                  "text-[26px] font-extrabold leading-[1.05]",
-                                  isActive ? "text-[color:var(--tone)]" : "text-text/25",
-                                ].join(" ")}
-                              >
-                                <span className="block truncate">{s.title2[0]}</span>
-                                <span className="block truncate">{s.title2[1]}</span>
-                              </div>
-
-                              {/* lead: 3 строки */}
-                              <div className="mt-4 text-[15px] font-medium leading-[1.25] text-text/80">
-                                {s.lead3.map((l, idx) => (
-                                  <div key={idx} className="truncate">
-                                    {l || "\u00A0"}
+                            <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
+                              {/* 1 */}
+                              <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                                <div className="flex h-full flex-col justify-between">
+                                  <div
+                                    className={[
+                                      "text-[26px] font-extrabold leading-[1.05]",
+                                      isActive ? "text-[color:var(--tone)]" : `text-text/20 ${titleAlignForInactive(i)}`,
+                                    ].join(" ")}
+                                  >
+                                    <div className="min-h-[56px]">
+                                      <div className="truncate">{s.title2[0]}</div>
+                                      <div className="truncate">{s.title2[1] || <span className="opacity-0">.</span>}</div>
+                                    </div>
                                   </div>
-                                ))}
-                              </div>
 
-                              {/* tags: 1 строка */}
-                              <div className="mt-3 text-[13px] font-semibold text-text/55 truncate">
-                                {s.tagsLine}
-                              </div>
-
-                              {/* short: 1 + 1 */}
-                              <div className="mt-6">
-                                <div className="text-[16px] font-extrabold text-text truncate">
-                                  {s.shortTitle}
-                                </div>
-                                <div className="mt-2 text-[14px] font-medium text-text/70 truncate">
-                                  {s.shortSub}
+                                  <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
+                                    <div className="space-y-1 text-[14px] font-medium leading-[1.25] text-text/80">
+                                      {s.lead3.map((l) => (
+                                        <div key={l} className="truncate">
+                                          {l}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">{s.tags}</div>
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* 3 пункта: по 1 строке */}
-                              <ul className="mt-6 space-y-2 text-[15px] font-medium text-text/85">
-                                {s.preview3.map((it) => (
-                                  <li key={it} className="flex gap-3">
-                                    <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                    <span className="min-w-0 truncate">{it}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                              {/* 2 */}
+                              <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
+                                  <div className="text-[16px] font-extrabold text-text truncate">{s.brief2[0]}</div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">{s.brief2[1]}</div>
+                                </div>
+                              </div>
 
-                              {/* CTA: одна строка (Eye + Написать нам) */}
-                              <div className="mt-8 flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 text-[color:var(--tone)] backdrop-blur"
-                                  aria-label="Изучить возможности"
-                                  title="Изучить возможности"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    openDetails(s.id);
-                                  }}
-                                >
-                                  <Eye className="h-5 w-5" />
-                                </button>
+                              {/* 3 */}
+                              <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
+                                  <ul className="space-y-2 text-[15px] font-medium text-text/85">
+                                    {s.points3.map((it) => (
+                                      <li key={it} className="flex gap-3">
+                                        <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                        <span className="min-w-0 truncate">{it}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
 
-                                <button
-                                  type="button"
-                                  className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-5 text-[16px] font-extrabold text-[color:var(--tone)] backdrop-blur"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    openExternal(s.ctaHref);
-                                  }}
-                                >
-                                  Написать нам
-                                </button>
+                              {/* 4 */}
+                              <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"} flex h-full items-end`}>
+                                  <div className="flex w-full items-center gap-3">
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      aria-label="Изучить возможности"
+                                      title="Изучить возможности"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openDetails(s.id);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          openDetails(s.id);
+                                        }
+                                      }}
+                                      className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/35 text-[color:var(--tone)] backdrop-blur"
+                                    >
+                                      <Eye className="h-5 w-5" />
+                                    </div>
+
+                                    <a
+                                      href={s.ctaHref}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[color:var(--tone)] px-5 text-[16px] font-extrabold text-bg"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Написать нам
+                                    </a>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -773,77 +780,88 @@ export function ServicesIntegrations() {
                       expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
                     }`}
                   >
-                    <div className="grid h-full grid-cols-3 gap-4">
-                      {services.map((s) => {
-                        const isActive = s.id === active;
-                        const toneHex = TONE[s.tone].hex;
+                    {services.map((s, i) => {
+                      const isActive = s.id === active;
+                      const toneHex = TONE[s.tone].hex;
 
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setActive(s.id)}
-                            aria-pressed={isActive}
-                            className="h-full text-left"
-                            style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
-                          >
-                            <div
-                              className={[
-                                "h-full overflow-hidden rounded-[30px]",
-                                isActive
-                                  ? "bg-accent-3 ring-2 ring-[color:var(--tone)]"
-                                  : "bg-bg ring-1 ring-text/15",
-                                isActive
-                                  ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
-                                  : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]",
-                              ].join(" ")}
-                            >
-                              <div
-                                className={`grid h-full ${ROWS_SERVICES} ${
-                                  isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
-                                }`}
-                              >
-                                {/* 1: title (2) + lead (3) + tags (1) */}
-                                <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="flex h-full flex-col">
-                                    <div
-                                      className={[
-                                        "text-[26px] font-extrabold leading-[1.05]",
-                                        isActive ? "text-[color:var(--tone)]" : "text-text/25",
-                                      ].join(" ")}
-                                    >
-                                      <span className="block truncate">{s.title2[0]}</span>
-                                      <span className="block truncate">{s.title2[1]}</span>
+                      const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
+                      const bgClass = isActive ? "bg-accent-3" : "bg-bg";
+                      const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                      const inactiveTitleAlign = titleAlignForInactive(i);
+
+                      const shadow = isActive
+                        ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
+                        : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
+
+                      const contentState = isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]";
+                      const contentDelay = isActive ? "140ms" : "0ms";
+
+                      return (
+                        <div
+                          key={s.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={isActive}
+                          onClick={() => setActive(s.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setActive(s.id);
+                            }
+                          }}
+                          className={`absolute top-0 h-full text-left outline-none ${CARD_MOTION}`}
+                          style={{
+                            left: leftFor(i),
+                            width: isActive ? W_ACTIVE : W_INACTIVE,
+                            zIndex: isActive ? 50 : 10 + i,
+                            ["--tone" as any]: toneHex,
+                            ["--i" as any]: INTERVAL,
+                          }}
+                        >
+                          <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
+                            <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
+                              {/* 1: title (always visible) + lead/tags (active only) */}
+                              <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                                <div className="flex h-full flex-col justify-between">
+                                  <div
+                                    className={
+                                      isActive
+                                        ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
+                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign}`
+                                    }
+                                  >
+                                    <div className="min-h-[56px]">
+                                      <div className="truncate">{s.title2[0]}</div>
+                                      <div className="truncate">{s.title2[1] || <span className="opacity-0">.</span>}</div>
                                     </div>
+                                  </div>
 
-                                    <div className="mt-5 text-[15px] font-medium leading-[1.25] text-text/80">
-                                      {s.lead3.map((l, idx) => (
-                                        <div key={idx} className="truncate">
-                                          {l || "\u00A0"}
+                                  <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`} style={{ transitionDelay: contentDelay }}>
+                                    <div className="space-y-1 text-[15px] font-medium leading-[1.25] text-text/80">
+                                      {s.lead3.map((l) => (
+                                        <div key={l} className="truncate">
+                                          {l}
                                         </div>
                                       ))}
                                     </div>
-
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
-                                      {s.tagsLine}
-                                    </div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">{s.tags}</div>
                                   </div>
                                 </div>
+                              </div>
 
-                                {/* 2: shortTitle (1) + shortSub (1) */}
-                                <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="text-[18px] font-extrabold text-text truncate">
-                                    {s.shortTitle}
-                                  </div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
-                                    {s.shortSub}
-                                  </div>
+                              {/* 2: brief */}
+                              <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`} style={{ transitionDelay: contentDelay }}>
+                                  <div className="text-[18px] font-extrabold text-text truncate">{s.brief2[0]}</div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">{s.brief2[1]}</div>
                                 </div>
+                              </div>
 
-                                {/* 3: 3 пункта по 1 строке */}
-                                <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                              {/* 3: points (3) */}
+                              <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`} style={{ transitionDelay: contentDelay }}>
                                   <ul className="space-y-2 text-[16px] font-medium text-text/85">
-                                    {s.preview3.map((it) => (
+                                    {s.points3.map((it) => (
                                       <li key={it} className="flex gap-3">
                                         <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
                                         <span className="min-w-0 truncate">{it}</span>
@@ -851,45 +869,51 @@ export function ServicesIntegrations() {
                                     ))}
                                   </ul>
                                 </div>
+                              </div>
 
-                                {/* 4: CTA row */}
-                                <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="flex h-full items-end">
-                                    <div className="flex w-full items-center gap-3">
-                                      <button
-                                        type="button"
-                                        className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 text-[color:var(--tone)] backdrop-blur"
-                                        aria-label="Изучить возможности"
-                                        title="Изучить возможности"
-                                        onClick={(e) => {
+                              {/* 4: CTA row */}
+                              <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"} flex h-full items-end`} style={{ transitionDelay: contentDelay }}>
+                                  <div className="flex w-full items-center gap-3">
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      aria-label="Изучить возможности"
+                                      title="Изучить возможности"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openDetails(s.id);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
                                           e.preventDefault();
                                           e.stopPropagation();
                                           openDetails(s.id);
-                                        }}
-                                      >
-                                        <Eye className="h-6 w-6" />
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/40 px-5 text-[16px] font-extrabold text-[color:var(--tone)] backdrop-blur"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          openExternal(s.ctaHref);
-                                        }}
-                                      >
-                                        Написать нам
-                                      </button>
+                                        }
+                                      }}
+                                      className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/35 text-[color:var(--tone)] backdrop-blur"
+                                    >
+                                      <Eye className="h-5 w-5" />
                                     </div>
+
+                                    <a
+                                      href={s.ctaHref}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[color:var(--tone)] px-5 text-[16px] font-extrabold text-bg"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Написать нам
+                                    </a>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* PANEL */}
@@ -923,7 +947,7 @@ export function ServicesIntegrations() {
           ) : (
             /* PROCESS MODE */
             <div className="relative" style={{ height: CARD_H }}>
-              <ProcessFrame toneHex={TONE[activeService.tone].hex} />
+              <ProcessFrame toneHex={TONE.red.hex} />
             </div>
           )}
         </div>
