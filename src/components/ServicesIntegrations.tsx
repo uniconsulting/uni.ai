@@ -9,11 +9,19 @@ type ServiceId = "consulting" | "custom" | "turnkey";
 
 type Service = {
   id: ServiceId;
-  title: string;
+  title: string; // для tabs/фрейма
+  title2: [string, string]; // для карточки (ровно 2 строки)
   tone: "blue" | "green" | "red";
-  lead: string;
+
+  lead: string; // для фрейма
+  lead3: [string, string, string]; // для карточки (ровно 3 строки)
+
   tags: string;
-  preview: string[]; // короткий список в карточке
+
+  shortTitle: string; // “Коротко” блок (1 строка)
+  shortSub: string; // (1 строка)
+
+  preview3: [string, string, string]; // 3 пункта в одну строку
   cta: string;
   ctaHref: string;
 };
@@ -55,6 +63,8 @@ function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0p
   return { ref, inView };
 }
 
+const fixLine = (s: string) => (s && s.length ? s : "\u00A0");
+
 function DetailsFrame({
   service,
   details,
@@ -89,7 +99,10 @@ function DetailsFrame({
   }, [service.id]);
 
   return (
-    <div className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`} style={{ ["--tone" as any]: toneHex }}>
+    <div
+      className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
+      style={{ ["--tone" as any]: toneHex }}
+    >
       <div className="h-full px-10 py-8">
         {/* top */}
         <div className="flex items-start gap-6">
@@ -184,7 +197,7 @@ function DetailsFrame({
             ))}
           </div>
 
-          {/* CTA (внизу списка, чтобы не мешал чтению) */}
+          {/* CTA */}
           <div className="mt-10">
             <a
               href={service.ctaHref}
@@ -203,30 +216,12 @@ function DetailsFrame({
 
 function ProcessFrame({ toneHex }: { toneHex: string }) {
   const steps = [
-    {
-      title: "Диагностика",
-      items: ["Аудит", "Фиксация целей и метрик результата"],
-    },
-    {
-      title: "Проектирование",
-      items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"],
-    },
-    {
-      title: "Знания и промпты",
-      items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"],
-    },
-    {
-      title: "Сборка и запуск",
-      items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"],
-    },
-    {
-      title: "Интеграции",
-      items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"],
-    },
-    {
-      title: "Сопровождение",
-      items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"],
-    },
+    { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
+    { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
+    { title: "Знания и промпты", items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"] },
+    { title: "Сборка и запуск", items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"] },
+    { title: "Интеграции", items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"] },
+    { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
   ];
 
   return (
@@ -235,12 +230,8 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
         <div className="flex items-start gap-4">
           <div className="min-w-0">
             <div className="text-[32px] font-extrabold leading-[1.05] text-text">Интеграции под ключ</div>
-            <div className="mt-3 text-[16px] font-medium text-text/70">
-              Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
-            </div>
-            <div className="mt-3 text-[13px] font-semibold text-text/55">
-              Примечание: стоимость интеграций зависит от состава систем и глубины сценариев.
-            </div>
+            <div className="mt-3 text-[16px] font-medium text-text/70">Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.</div>
+            <div className="mt-3 text-[13px] font-semibold text-text/55">Примечание: стоимость интеграций зависит от состава систем и глубины сценариев.</div>
           </div>
 
           <div className="ml-auto flex shrink-0 items-start">
@@ -275,7 +266,7 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
               rel="noreferrer"
               className="btn-lift-outline inline-flex w-full items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
             >
-              Написать в Telegram
+              Написать нам
             </a>
           </div>
         </div>
@@ -295,32 +286,68 @@ export function ServicesIntegrations() {
     () => [
       {
         id: "consulting",
-        title: "Обучение команд / Консалтинг",
+        title: "Обучение команд и консалтинг",
+        title2: ["Обучение команд", "и консалтинг"],
         tone: "blue",
+
         lead: "Обучаем руководителей и команды тому, как применять нейросети в ежедневной работе и получать измеримый эффект.",
+        lead3: [
+          "Обучаем руководителей и команды тому,",
+          "как применять нейросети в ежедневной работе",
+          "и получать измеримый эффект.",
+        ],
+
         tags: "Руководители • Команды • Практика • Результат",
-        preview: ["Документация и регламенты", "Отчёты, KPI, управленческие сводки", "Таблицы, расчёты, финмодели"],
-        cta: "Написать в Telegram",
+
+        shortTitle: "Учим работать с",
+        shortSub: "ChatGPT, Claude, Notion, NotebookLM и др.",
+
+        preview3: ["Документация и регламенты", "Отчёты, KPI, управленческие сводки", "Таблицы, расчёты, финмодели"],
+        cta: "Написать нам",
         ctaHref: "https://t.me/uni_smb",
       },
       {
         id: "custom",
         title: "Индивидуальная разработка",
+        title2: ["Индивидуальная", "разработка"],
         tone: "green",
+
         lead: "Проектная разработка решений под вашу задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
+        lead3: [
+          "Проектная разработка решений под вашу",
+          "",
+          "задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
+        ],
+
         tags: "Проектно • Под ключ • Интеграции • Сопровождение",
-        preview: ["Сбор требований и формализация", "Разработка MVP и доведение до версии", "Запуск, контроль качества, улучшения"],
-        cta: "Написать в Telegram",
+
+        shortTitle: "Делаем",
+        shortSub: "ИИ-инструменты, сайты и интернет-магазины и др.",
+
+        preview3: ["Сбор требований и формализация", "Разработка MVP и доведение до версии", "Запуск, контроль качества, улучшения"],
+        cta: "Написать нам",
         ctaHref: "https://t.me/uni_smb",
       },
       {
         id: "turnkey",
-        title: "Интеграции под ключ",
+        title: "Интеграции под Ваши задачи и инфраструктуру",
+        title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
         tone: "red",
-        lead: "Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.",
-        tags: "Аудит • ТЗ • База знаний • MVP • Интеграции • Сопровождение",
-        preview: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
-        cta: "Написать в Telegram",
+
+        lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему",
+        lead3: [
+          "Мы знаем, насколько важно сохранить",
+          "удобство пользования инструментами для команды, поэтому",
+          "интегрируем наши решения в Вашу экосистему",
+        ],
+
+        tags: "Аудит Подготовка требований Интеграция Сопровождение",
+
+        shortTitle: "Интеграции с",
+        shortSub: "AmoCRM Битрикс24 1С трекеры и ERP и др.",
+
+        preview3: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
+        cta: "Написать нам",
         ctaHref: "https://t.me/uni_smb",
       },
     ],
@@ -372,45 +399,25 @@ export function ServicesIntegrations() {
       },
 
       turnkey: {
-        lead: "Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.",
-        tags: "Аудит • ТЗ • База знаний • MVP • Интеграции • Сопровождение",
+        lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему",
+        tags: "Аудит Подготовка требований Интеграция Сопровождение",
         sections: [
-          {
-            title: "Диагностика",
-            items: ["Аудит", "Фиксация целей и метрик результата"],
-          },
-          {
-            title: "Проектирование",
-            items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"],
-          },
-          {
-            title: "Знания и промпты",
-            items: ["Адаптация документов и информации для базы знаний", "Упаковка базы знаний", "Написание промптов"],
-          },
-          {
-            title: "Сборка и запуск",
-            items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"],
-          },
-          {
-            title: "Интеграции",
-            items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"],
-          },
-          {
-            title: "Сопровождение",
-            items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"],
-          },
-          {
-            title: "Примечание",
-            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
-          },
+          { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
+          { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
+          { title: "Знания и промпты", items: ["Адаптация документов и информации для базы знаний", "Упаковка базы знаний", "Написание промптов"] },
+          { title: "Сборка и запуск", items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"] },
+          { title: "Интеграции", items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"] },
+          { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
+          { title: "Примечание", items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."] },
         ],
       },
     }),
     [],
   );
 
-  const CARD_H = 740;
-  const INTERVAL = "28px";
+  // меньше воздуха
+  const CARD_H = 660;
+  const INTERVAL = "24px";
 
   const tabs = useMemo(
     () =>
@@ -495,8 +502,8 @@ export function ServicesIntegrations() {
   const expandedToneHex = expandedService ? TONE[expandedService.tone].hex : TONE[activeService.tone].hex;
   const expandedBorderClass = expandedService ? "border-[color:var(--tone)]" : "border-text/10";
 
-  // карточка услуг: фиксируем 4 ряда (desktop)
-  const ROWS_SERVICES = "grid-rows-[220px_120px_240px_160px]";
+  // карточка услуг: 4 ряда (desktop)
+  const ROWS_SERVICES = "grid-rows-[240px_96px_110px_214px]";
 
   return (
     <section
@@ -605,40 +612,66 @@ export function ServicesIntegrations() {
                             style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
                           >
                             <div className="p-8">
-                              <div className={`text-[26px] font-extrabold leading-[1.05] ${isActive ? "text-[color:var(--tone)]" : "text-text/25"}`}>
-                                {s.title}
+                              {/* title (2 lines) */}
+                              <div className={["text-[26px] font-extrabold leading-[1.05]", isActive ? "text-[color:var(--tone)]" : "text-text/25"].join(" ")}>
+                                {s.title2.map((l, idx) => (
+                                  <span key={idx} className="block truncate whitespace-nowrap">
+                                    {fixLine(l)}
+                                  </span>
+                                ))}
                               </div>
 
-                              <div className="mt-4 text-[15px] font-medium text-text/80">{s.lead}</div>
-                              <div className="mt-3 text-[13px] font-semibold text-text/55">{s.tags}</div>
-
-                              <ul className="mt-6 space-y-2 text-[15px] font-medium text-text/85">
-                                {s.preview.map((it) => (
-                                  <li key={it} className="flex gap-3">
-                                    <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                    <span className="min-w-0">{it}</span>
-                                  </li>
+                              {/* lead (3 lines) */}
+                              <div className="mt-4 text-[15px] font-medium leading-[1.25] text-text/80">
+                                {s.lead3.map((l, idx) => (
+                                  <div key={idx} className="truncate whitespace-nowrap">
+                                    {fixLine(l)}
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
 
-                              <div className="mt-8 flex flex-col gap-3">
-                                <div
-                                  className="flex items-center gap-3 text-[16px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
+                              {/* tags */}
+                              <div className="mt-3 text-[13px] font-semibold text-text/55 truncate whitespace-nowrap">{s.tags}</div>
+
+                              {/* short */}
+                              <div className="mt-6">
+                                <div className="text-[16px] font-extrabold text-text truncate whitespace-nowrap">{s.shortTitle}</div>
+                                <div className="mt-2 text-[13px] font-medium text-text/70 truncate whitespace-nowrap">{s.shortSub}</div>
+                              </div>
+
+                              {/* 3 items (one row) */}
+                              <div className="mt-6 grid grid-cols-3 gap-3">
+                                {s.preview3.map((it) => (
+                                  <div key={it} className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                      <span className="min-w-0 truncate whitespace-nowrap text-[13px] font-semibold text-text/80">{it}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* CTA row */}
+                              <div className="mt-8 flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+                                  aria-label="Изучить возможности"
+                                  title="Изучить возможности"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     openDetails(s.id);
                                   }}
                                 >
-                                  <span>Изучить возможности</span>
                                   <Eye className="h-5 w-5" />
-                                </div>
+                                </button>
 
                                 <a
                                   href={s.ctaHref}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="btn-lift-outline w-full rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
+                                  className="btn-lift-outline inline-flex flex-1 items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[16px] font-extrabold text-text backdrop-blur"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {s.cta}
@@ -684,70 +717,77 @@ export function ServicesIntegrations() {
                               ].join(" ")}
                             >
                               <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
-                                {/* 1 */}
+                                {/* 1: title (2 lines) + lead (3 lines) + tags */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                   <div className="flex h-full flex-col justify-between">
-                                    <div
-                                      className={[
-                                        "text-[26px] font-extrabold leading-[1.05]",
-                                        isActive ? "text-[color:var(--tone)]" : "text-text/25",
-                                      ].join(" ")}
-                                    >
-                                      {s.title}
+                                    <div className={["text-[26px] font-extrabold leading-[1.05]", isActive ? "text-[color:var(--tone)]" : "text-text/25"].join(" ")}>
+                                      {s.title2.map((l, idx) => (
+                                        <span key={idx} className="block truncate whitespace-nowrap">
+                                          {fixLine(l)}
+                                        </span>
+                                      ))}
                                     </div>
 
-                                    <div className="mt-6 text-[16px] font-medium leading-[1.25] text-text/80">
-                                      {s.lead}
+                                    <div className="mt-5 text-[16px] font-medium leading-[1.25] text-text/80">
+                                      {s.lead3.map((l, idx) => (
+                                        <div key={idx} className="truncate whitespace-nowrap">
+                                          {fixLine(l)}
+                                        </div>
+                                      ))}
                                     </div>
 
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55">{s.tags}</div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate whitespace-nowrap">{s.tags}</div>
                                   </div>
                                 </div>
 
-                                {/* 2 */}
+                                {/* 2: short (1 line + 1 line) */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="text-[18px] font-extrabold text-text">Коротко</div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70">
-                                    3 пункта, чтобы сразу понять смысл.
-                                  </div>
+                                  <div className="text-[18px] font-extrabold text-text truncate whitespace-nowrap">{s.shortTitle}</div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate whitespace-nowrap">{s.shortSub}</div>
                                 </div>
 
-                                {/* 3 */}
+                                {/* 3: 3 items in one row */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <ul className="space-y-2 text-[16px] font-medium text-text/85">
-                                    {s.preview.map((it) => (
-                                      <li key={it} className="flex gap-3">
-                                        <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                        <span className="min-w-0">{it}</span>
-                                      </li>
+                                  <div className="grid grid-cols-3 gap-4">
+                                    {s.preview3.map((it) => (
+                                      <div key={it} className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                          <span className="min-w-0 truncate whitespace-nowrap text-[14px] font-semibold text-text/80">{it}</span>
+                                        </div>
+                                      </div>
                                     ))}
-                                  </ul>
+                                  </div>
                                 </div>
 
-                                {/* 4 */}
+                                {/* 4: CTA row (eye + write) */}
                                 <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                  <div className="flex h-full flex-col justify-between">
-                                    <div
-                                      className="flex items-center gap-3 text-[18px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        openDetails(s.id);
-                                      }}
-                                    >
-                                      <span>Изучить возможности</span>
-                                      <Eye className="h-6 w-6" />
-                                    </div>
+                                  <div className="flex h-full items-end">
+                                    <div className="flex w-full items-center gap-3">
+                                      <button
+                                        type="button"
+                                        className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+                                        aria-label="Изучить возможности"
+                                        title="Изучить возможности"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          openDetails(s.id);
+                                        }}
+                                      >
+                                        <Eye className="h-5 w-5" />
+                                      </button>
 
-                                    <a
-                                      href={s.ctaHref}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="btn-lift-outline w-full rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {s.cta}
-                                    </a>
+                                      <a
+                                        href={s.ctaHref}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn-lift-outline inline-flex flex-1 items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-4 text-center text-[18px] font-extrabold text-text backdrop-blur"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {s.cta}
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -795,4 +835,3 @@ export function ServicesIntegrations() {
     </section>
   );
 }
-
