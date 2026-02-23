@@ -4,6 +4,7 @@ import { Hero } from "@/components/Hero";
 import { InfoBlocks } from "@/components/InfoBlocks";
 import { DemoChat } from "@/components/DemoChat";
 import { Packages } from "@/components/Packages";
+import { ServicesIntegrations } from "@/components/ServicesIntegrations";
 
 export default function Page() {
   return (
@@ -15,6 +16,7 @@ export default function Page() {
         <InfoBlocks />
         <DemoChat />
         <Packages />
+        <ServicesIntegrations />
       </main>
     </div>
   );
