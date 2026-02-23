@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +30,13 @@ const TONE: Record<Plan["tone"], { hex: string }> = {
   blue: { hex: "#5B86C6" },
   green: { hex: "#49C874" },
   red: { hex: "#C94444" },
+};
+
+const CTA_LINKS: Record<PlanId, string> = {
+  test: "https://uni-ai.online/register",
+  small: "https://t.me/uni_smb",
+  mid: "https://t.me/uni_smb",
+  ent: "https://t.me/uni_smb",
 };
 
 function formatRub(n: number) {
@@ -78,6 +84,7 @@ function DetailsFrame({
   canPrev,
   canNext,
   onClose,
+  ctaHref,
 }: {
   plan: Plan;
   details: PlanDetails;
@@ -91,11 +98,12 @@ function DetailsFrame({
   canPrev: boolean;
   canNext: boolean;
   onClose: () => void;
+  ctaHref: string;
 }) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const isNeutral = plan.tone === "neutral";
 
   useEffect(() => {
-    // при перелистывании пакета в фрейме скролл возвращаем вверх
     bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [plan.id]);
 
@@ -104,7 +112,7 @@ function DetailsFrame({
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--plan" as any]: planHex }}
     >
-      <div className="h-full px-10 py-8">
+      <div className="h-full px-10 py-8 flex flex-col">
         {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
@@ -162,7 +170,7 @@ function DetailsFrame({
           </div>
         </div>
 
-        {/* tabs (подсветка активного названия пакета) */}
+        {/* tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
@@ -173,15 +181,14 @@ function DetailsFrame({
                 onClick={() => onSelectPlan(t.id)}
                 className={[
                   "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
-                  isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
+                  isOn
+                    ? "bg-bg/65 border-2"
+                    : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
                 ].join(" ")}
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
               >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: t.hex }}
-                />
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.hex }} />
                 <span>{t.title}</span>
               </button>
             );
@@ -189,10 +196,7 @@ function DetailsFrame({
         </div>
 
         {/* body */}
-        <div
-          ref={bodyRef}
-          className="mt-8 h-[calc(100%-188px)] overflow-auto pr-2"
-        >
+        <div ref={bodyRef} className="mt-8 flex-1 overflow-auto pr-2">
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
               <div key={s.title} className="min-w-0">
@@ -212,6 +216,29 @@ function DetailsFrame({
             ))}
           </div>
         </div>
+
+        {/* CTA */}
+        <div className="mt-8">
+          <a
+            href={ctaHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={[
+              "btn-lift-outline block w-full rounded-xl px-6 py-4 text-center font-extrabold",
+              plan.ctaStyle === "fill"
+                ? "bg-[color:var(--plan)] text-bg text-[18px]"
+                : "border-2 border-[color:var(--plan)] text-[color:var(--plan)] text-[18px]",
+            ].join(" ")}
+            style={
+              isNeutral && plan.ctaStyle === "outline"
+                ? { borderColor: "var(--text)", color: "var(--text)" }
+                : undefined
+            }
+            aria-label={`CTA: ${plan.cta}`}
+          >
+            {plan.cta}
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -223,6 +250,11 @@ export function Packages() {
   const [expanded, setExpanded] = useState<PlanId | null>(null);
 
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
+
+  const openCta = (id: PlanId) => {
+    const href = CTA_LINKS[id];
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
 
   const plans: Plan[] = useMemo(
     () => [
@@ -459,7 +491,8 @@ export function Packages() {
     return "rounded-none";
   };
 
-  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
+  const titleAlignForInactive = (i: number) =>
+    i < activeIdx ? "text-left" : "text-right";
 
   const CARD_MOTION =
     "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
@@ -548,7 +581,9 @@ export function Packages() {
     <section
       ref={sectionRef as any}
       id="pricing"
-      className={`relative ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
+      className={`relative ${
+        inView ? "opacity-100" : "opacity-0"
+      } transition-opacity duration-700 ease-out`}
     >
       <div
         aria-hidden
@@ -565,8 +600,16 @@ export function Packages() {
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-          <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} md:pr-12`}>
-            <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">Сделай выбор</div>
+          <div
+            className={`${REVEAL_BASE} ${
+              inView
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            } md:pr-12`}
+          >
+            <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">
+              Сделай выбор
+            </div>
 
             <h2 className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
               <span className="block">Прозрачные условия,</span>
@@ -575,11 +618,17 @@ export function Packages() {
           </div>
 
           <div
-            className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} md:pl-12`}
+            className={`${REVEAL_BASE} ${
+              inView
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            } md:pl-12`}
             style={{ transitionDelay: "80ms" }}
           >
             <div className="flex flex-col items-start md:items-end">
-              <div className="hover-accent text-[18px] font-medium opacity-70">стоимость | пакеты</div>
+              <div className="hover-accent text-[18px] font-medium opacity-70">
+                стоимость | пакеты
+              </div>
 
               <div className="mt-6">
                 <div className="rounded-2xl bg-accent-1 p-[3px]">
@@ -609,7 +658,15 @@ export function Packages() {
                     >
                       <span className="inline-flex items-center gap-3">
                         <span>Годовой</span>
-                        <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>-20%</span>
+                        <span
+                          className={
+                            billing === "yearly"
+                              ? "text-text/60"
+                              : "text-bg/70"
+                          }
+                        >
+                          -20%
+                        </span>
                       </span>
                     </button>
                   </div>
@@ -622,7 +679,11 @@ export function Packages() {
         </div>
 
         <div
-          className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-12 md:mt-14`}
+          className={`${REVEAL_BASE} ${
+            inView
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-5"
+          } mt-12 md:mt-14`}
           style={{ transitionDelay: "140ms" }}
         >
           {/* mobile */}
@@ -642,6 +703,7 @@ export function Packages() {
                   canPrev={canPrev}
                   canNext={canNext}
                   onClose={closeDetails}
+                  ctaHref={CTA_LINKS[expandedPlan.id]}
                 />
               </div>
             ) : (
@@ -666,22 +728,41 @@ export function Packages() {
                             ? "overflow-hidden rounded-[28px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
                             : "overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15"
                         }
-                        style={{ ["--plan" as any]: tone.hex, ["--i" as any]: INTERVAL }}
+                        style={{
+                          ["--plan" as any]: tone.hex,
+                          ["--i" as any]: INTERVAL,
+                        }}
                       >
-                        <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
+                        <div
+                          className={`grid h-full ${ROWS} ${
+                            isActive
+                              ? "divide-y divide-text/20"
+                              : "divide-y divide-text/10"
+                          }`}
+                        >
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className={
                                   isActive
-                                    ? `text-[34px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                                    ? `text-[34px] font-extrabold leading-none ${
+                                        isNeutral
+                                          ? "text-text"
+                                          : "text-[color:var(--plan)]"
+                                      }`
                                     : "text-[28px] font-extrabold leading-none text-text/15"
                                 }
                               >
                                 {p.title}
                               </div>
 
-                              <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"}`}>
+                              <div
+                                className={`${CONTENT_MOTION} ${
+                                  isActive
+                                    ? "opacity-100 translate-y-0 blur-0"
+                                    : "opacity-0 translate-y-1 blur-[2px]"
+                                }`}
+                              >
                                 <div className="space-y-1 text-[16px] font-medium text-text/90">
                                   {p.desc4.map((l) => (
                                     <div key={l} className="whitespace-nowrap">
@@ -694,21 +775,45 @@ export function Packages() {
                           </div>
 
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
+                            <div
+                              className={`${CONTENT_MOTION} ${
+                                isActive
+                                  ? "opacity-100 translate-y-0 blur-0"
+                                  : "opacity-0 translate-y-1 blur-[2px]"
+                              } flex h-full flex-col justify-between`}
+                            >
                               <div className="flex items-baseline gap-3">
-                                <div className={`text-[36px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`}>
+                                <div
+                                  className={`text-[36px] font-extrabold leading-none ${
+                                    isNeutral
+                                      ? "text-text"
+                                      : "text-[color:var(--plan)]"
+                                  }`}
+                                >
                                   {formatRub(price)}
                                 </div>
-                                <div className="text-[28px] font-semibold leading-none text-text/35">/ мес</div>
+                                <div className="text-[28px] font-semibold leading-none text-text/35">
+                                  / мес
+                                </div>
                               </div>
 
-                              <div className="text-[13px] font-semibold text-text/45">{p.integrations2[0]}</div>
+                              <div className="text-[13px] font-semibold text-text/45">
+                                {p.integrations2[0]}
+                              </div>
                             </div>
                           </div>
 
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
-                              <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
+                            <div
+                              className={`${CONTENT_MOTION} ${
+                                isActive
+                                  ? "opacity-100 translate-y-0 blur-0"
+                                  : "opacity-0 translate-y-1 blur-[2px]"
+                              } flex h-full flex-col justify-between`}
+                            >
+                              <div className="text-[18px] font-extrabold text-text">
+                                Ключевые параметры
+                              </div>
 
                               <div className="space-y-1 text-[16px] font-medium text-text/90">
                                 {p.params3.map((l) => (
@@ -721,7 +826,13 @@ export function Packages() {
                           </div>
 
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
+                            <div
+                              className={`${CONTENT_MOTION} ${
+                                isActive
+                                  ? "opacity-100 translate-y-0 blur-0"
+                                  : "opacity-0 translate-y-1 blur-[2px]"
+                              } flex h-full flex-col justify-between`}
+                            >
                               <div
                                 className="flex items-center gap-3 text-[18px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
                                 onClick={(e) => {
@@ -734,9 +845,26 @@ export function Packages() {
                                 <Eye className="h-6 w-6" />
                               </div>
 
+                              {/* CTA (active) */}
                               <div
+                                role="button"
+                                tabIndex={isActive ? 0 : -1}
+                                aria-label={`CTA: ${p.cta}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  openCta(p.id);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (!isActive) return;
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openCta(p.id);
+                                  }
+                                }}
                                 className={[
-                                  isActive ? "btn-lift-outline" : "",
+                                  isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
                                   p.ctaStyle === "fill"
                                     ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
                                     : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]",
@@ -766,7 +894,9 @@ export function Packages() {
               {/* DECK */}
               <div
                 className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
-                  expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
+                  expanded
+                    ? "opacity-0 blur-[1px] pointer-events-none"
+                    : "opacity-100 blur-0"
                 }`}
               >
                 {plans.map((p, i) => {
@@ -782,14 +912,18 @@ export function Packages() {
                     : "ring-1 ring-text/15";
 
                   const bgClass = isActive ? "bg-accent-3" : "bg-bg";
-                  const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                  const radiusClass = isActive
+                    ? "rounded-[30px]"
+                    : radiusForInactive(i);
                   const inactiveTitleAlign = titleAlignForInactive(i);
 
                   const shadow = isActive
                     ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
                     : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
 
-                  const contentState = isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]";
+                  const contentState = isActive
+                    ? "opacity-100 translate-y-0 blur-0"
+                    : "opacity-0 translate-y-1 blur-[2px]";
                   const contentDelay = isActive ? "140ms" : "0ms";
 
                   return (
@@ -807,21 +941,36 @@ export function Packages() {
                         ["--i" as any]: INTERVAL,
                       }}
                     >
-                      <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
-                        <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
+                      <div
+                        className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}
+                      >
+                        <div
+                          className={`grid h-full ${ROWS} ${
+                            isActive
+                              ? "divide-y divide-text/25"
+                              : "divide-y divide-text/10"
+                          }`}
+                        >
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className={
                                   isActive
-                                    ? `text-[44px] font-extrabold leading-none ${isNeutral ? "text-text" : "text-[color:var(--plan)]"}`
+                                    ? `text-[44px] font-extrabold leading-none ${
+                                        isNeutral
+                                          ? "text-text"
+                                          : "text-[color:var(--plan)]"
+                                      }`
                                     : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
                                 }
                               >
                                 {p.title}
                               </div>
 
-                              <div className={`${CONTENT_MOTION} ${contentState}`} style={{ transitionDelay: contentDelay }}>
+                              <div
+                                className={`${CONTENT_MOTION} ${contentState}`}
+                                style={{ transitionDelay: contentDelay }}
+                              >
                                 <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
                                   {p.desc4.map((l) => (
                                     <div key={l} className="whitespace-nowrap">
@@ -834,7 +983,10 @@ export function Packages() {
                           </div>
 
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
+                            <div
+                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
+                              style={{ transitionDelay: contentDelay }}
+                            >
                               <div className="flex items-baseline gap-4">
                                 <div
                                   className={
@@ -845,16 +997,25 @@ export function Packages() {
                                 >
                                   {formatRub(price)}
                                 </div>
-                                <div className="text-[34px] font-semibold leading-none text-text/35">/ мес</div>
+                                <div className="text-[34px] font-semibold leading-none text-text/35">
+                                  / мес
+                                </div>
                               </div>
 
-                              <div className="text-[14px] font-semibold text-text/45">{p.integrations2[0]}</div>
+                              <div className="text-[14px] font-semibold text-text/45">
+                                {p.integrations2[0]}
+                              </div>
                             </div>
                           </div>
 
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
-                              <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
+                            <div
+                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
+                              style={{ transitionDelay: contentDelay }}
+                            >
+                              <div className="text-[20px] font-extrabold text-text">
+                                Ключевые параметры
+                              </div>
 
                               <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
                                 {p.params3.map((l) => (
@@ -867,7 +1028,10 @@ export function Packages() {
                           </div>
 
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
+                            <div
+                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
+                              style={{ transitionDelay: contentDelay }}
+                            >
                               <div
                                 className="flex items-center gap-4 text-[20px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
                                 onClick={(e) => {
@@ -880,9 +1044,26 @@ export function Packages() {
                                 <Eye className="h-7 w-7" />
                               </div>
 
+                              {/* CTA (active) */}
                               <div
+                                role="button"
+                                tabIndex={isActive ? 0 : -1}
+                                aria-label={`CTA: ${p.cta}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  openCta(p.id);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (!isActive) return;
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openCta(p.id);
+                                  }
+                                }}
                                 className={[
-                                  isActive ? "btn-lift-outline" : "",
+                                  isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
                                   p.ctaStyle === "fill"
                                     ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
                                     : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]",
@@ -907,7 +1088,9 @@ export function Packages() {
               {/* PANEL */}
               <div
                 className={`absolute inset-0 ${PANEL_MOTION} ${
-                  expandedPlan ? "opacity-100 translate-y-0 blur-0 pointer-events-auto" : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
+                  expandedPlan
+                    ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
+                    : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
                 }`}
               >
                 {expandedPlan ? (
@@ -924,6 +1107,7 @@ export function Packages() {
                     canPrev={canPrev}
                     canNext={canNext}
                     onClose={closeDetails}
+                    ctaHref={CTA_LINKS[expandedPlan.id]}
                   />
                 ) : null}
               </div>
