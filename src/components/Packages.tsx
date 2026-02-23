@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
-import { Eye, X } from "lucide-react";
+import { Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Billing = "monthly" | "yearly";
 type PlanId = "test" | "small" | "mid" | "ent";
@@ -70,20 +69,42 @@ function DetailsFrame({
   details,
   borderClass,
   planHex,
+  tabs,
+  activeId,
+  onSelectPlan,
+  onPrev,
+  onNext,
+  canPrev,
+  canNext,
   onClose,
 }: {
   plan: Plan;
   details: PlanDetails;
   borderClass: string;
   planHex: string;
+  tabs: Array<{ id: PlanId; title: string; hex: string }>;
+  activeId: PlanId;
+  onSelectPlan: (id: PlanId) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
   onClose: () => void;
 }) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // при перелистывании пакета в фрейме скролл возвращаем вверх
+    bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [plan.id]);
+
   return (
     <div
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--plan" as any]: planHex }}
     >
       <div className="h-full px-10 py-8">
+        {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
             <div className="text-[40px] font-extrabold leading-none text-text">
@@ -99,20 +120,78 @@ function DetailsFrame({
             </div>
           </div>
 
-          <div className="ml-auto flex shrink-0 items-start">
+          <div className="ml-auto flex shrink-0 items-start gap-2">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!canPrev}
+              className={[
+                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Предыдущий пакет"
+              title="Предыдущий пакет (←)"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!canNext}
+              className={[
+                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Следующий пакет"
+              title="Следующий пакет (→)"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+
             <button
               type="button"
               onClick={onClose}
               className="btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
               aria-label="Закрыть описание"
+              title="Закрыть (Esc)"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
+        {/* tabs (подсветка активного названия пакета) */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          {tabs.map((t) => {
+            const isOn = t.id === activeId;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onSelectPlan(t.id)}
+                className={[
+                  "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
+                  isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
+                ].join(" ")}
+                style={isOn ? { borderColor: t.hex } : undefined}
+                aria-pressed={isOn}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: t.hex }}
+                />
+                <span>{t.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* body */}
-        <div className="mt-8 h-[calc(100%-152px)] overflow-auto pr-2">
+        <div
+          ref={bodyRef}
+          className="mt-8 h-[calc(100%-188px)] overflow-auto pr-2"
+        >
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
               <div key={s.title} className="min-w-0">
@@ -341,19 +420,18 @@ export function Packages() {
     [],
   );
 
-  const activeIdx = plans.findIndex((p) => p.id === active);
-
   const priceFor = (p: Plan) => {
     if (p.monthly === 0) return 0;
     if (billing === "monthly") return p.monthly;
     return Math.round(p.monthly * 0.8);
   };
 
-  const openDetails = (id: PlanId) => {
+  const setExpandedTo = (id: PlanId) => {
     setActive(id);
     setExpanded(id);
   };
 
+  const openDetails = (id: PlanId) => setExpandedTo(id);
   const closeDetails = () => setExpanded(null);
 
   // геометрия
@@ -362,6 +440,8 @@ export function Packages() {
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
 
+  const activeIdx = plans.findIndex((p) => p.id === active);
+
   const leftFor = (i: number) => {
     if (i !== activeIdx) return `${i * 25}%`;
     if (activeIdx === 0) return "0%";
@@ -369,10 +449,7 @@ export function Packages() {
     return `calc(${i * 25}% - ${ACTIVE_SHIFT})`;
   };
 
-  // фиксированные высоты секций, чтобы divider-ы везде были на одной высоте
   const ROWS = "grid-rows-[220px_140px_180px_190px]";
-
-  // один-единственный интервал
   const INTERVAL = "28px";
 
   const radiusForInactive = (i: number) => {
@@ -383,7 +460,6 @@ export function Packages() {
 
   const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
-  // анимации
   const CARD_MOTION =
     "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
 
@@ -393,7 +469,6 @@ export function Packages() {
   const REVEAL_BASE =
     "transform-gpu transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
 
-  // overlay panel motion
   const PANEL_MOTION =
     "will-change-[opacity,transform,filter] transition-[opacity,transform,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
@@ -407,6 +482,66 @@ export function Packages() {
       ? "border-text/60"
       : "border-[color:var(--plan)]"
     : "border-text/10";
+
+  // tabs для фрейма
+  const planTabs = useMemo(
+    () =>
+      plans.map((p) => ({
+        id: p.id,
+        title: p.title,
+        hex: TONE[p.tone].hex,
+      })),
+    [plans],
+  );
+
+  const expandedIdx = expanded ? plans.findIndex((p) => p.id === expanded) : -1;
+  const canPrev = expandedIdx > 0;
+  const canNext = expandedIdx >= 0 && expandedIdx < plans.length - 1;
+
+  const goPrev = () => {
+    if (!expanded || !canPrev) return;
+    setExpandedTo(plans[expandedIdx - 1].id);
+  };
+
+  const goNext = () => {
+    if (!expanded || !canNext) return;
+    setExpandedTo(plans[expandedIdx + 1].id);
+  };
+
+  // клавиатура: ← → и Esc
+  useEffect(() => {
+    if (!expanded) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const isTyping =
+        !!t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          (t as any).isContentEditable);
+
+      if (isTyping) return;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeDetails();
+      }
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [expanded, expandedIdx, canPrev, canNext, plans]);
 
   return (
     <section
@@ -498,6 +633,13 @@ export function Packages() {
                   details={DETAILS[expandedPlan.id]}
                   borderClass={expandedBorderClass}
                   planHex={expandedTone?.hex ?? "#111827"}
+                  tabs={planTabs}
+                  activeId={expandedPlan.id}
+                  onSelectPlan={setExpandedTo}
+                  onPrev={goPrev}
+                  onNext={goNext}
+                  canPrev={canPrev}
+                  canNext={canNext}
                   onClose={closeDetails}
                 />
               </div>
@@ -526,7 +668,6 @@ export function Packages() {
                         style={{ ["--plan" as any]: tone.hex, ["--i" as any]: INTERVAL }}
                       >
                         <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
-                          {/* 1 */}
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                             <div className="flex h-full flex-col justify-between">
                               <div
@@ -551,7 +692,6 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 2 */}
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
                               <div className="flex items-baseline gap-3">
@@ -565,7 +705,6 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 3 */}
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
                               <div className="text-[18px] font-extrabold text-text">Ключевые параметры</div>
@@ -580,10 +719,8 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 4 */}
                           <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]"} flex h-full flex-col justify-between`}>
-                              {/* “Изучить возможности” -> раскрыть */}
                               <div
                                 className="flex items-center gap-3 text-[18px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
                                 onClick={(e) => {
@@ -671,7 +808,6 @@ export function Packages() {
                     >
                       <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
                         <div className={`grid h-full ${ROWS} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
-                          {/* 1 */}
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                             <div className="flex h-full flex-col justify-between">
                               <div
@@ -696,7 +832,6 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 2 */}
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
                               <div className="flex items-baseline gap-4">
@@ -716,7 +851,6 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 3 */}
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
                               <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
@@ -731,10 +865,8 @@ export function Packages() {
                             </div>
                           </div>
 
-                          {/* 4 */}
                           <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                             <div className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`} style={{ transitionDelay: contentDelay }}>
-                              {/* “Изучить возможности” -> раскрыть */}
                               <div
                                 className="flex items-center gap-4 text-[20px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
                                 onClick={(e) => {
@@ -783,6 +915,13 @@ export function Packages() {
                     details={DETAILS[expandedPlan.id]}
                     borderClass={expandedBorderClass}
                     planHex={expandedTone?.hex ?? "#111827"}
+                    tabs={planTabs}
+                    activeId={expandedPlan.id}
+                    onSelectPlan={setExpandedTo}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                    canPrev={canPrev}
+                    canNext={canNext}
                     onClose={closeDetails}
                   />
                 ) : null}
