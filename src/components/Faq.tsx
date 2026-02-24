@@ -197,7 +197,7 @@ export function Faq() {
   const [closingIdx, setClosingIdx] = useState<number | null>(null);
 
   // геометрия “колоды” (desktop)
-  const COLLAPSED_H = 92;
+  const COLLAPSED_H = 98;
   const OVERLAP = 20;
   const STEP = COLLAPSED_H - OVERLAP;
 
