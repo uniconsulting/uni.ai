@@ -1,3 +1,4 @@
+/* src/components/Footer.tsx */
 "use client";
 
 import type { ReactNode } from "react";
@@ -61,38 +62,32 @@ function IntLink({
 }
 
 function RuBadge() {
+  const a1 = "rgb(var(--accent-1, 122 114 233))";
+  const a2 = "rgb(var(--accent-2, 198 207 19))";
+
   return (
     <div className="inline-flex">
-      <div className="group relative inline-flex rounded-full p-[2.5px]">
-        {/* glow layer */}
+      <div className="relative inline-flex overflow-hidden rounded-full p-[3px]">
+        {/* dynamic gradient border (accent-1 -> accent-2) */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-full opacity-45 blur-[10px]"
+          className="pointer-events-none absolute inset-0 rounded-full"
           style={{
-            background:
-              "conic-gradient(from 180deg at 50% 50%, #7a72e9, #c6cf13, #9caf88, #7a72e9)",
+            backgroundImage: `linear-gradient(90deg, ${a1}, ${a2}, ${a1})`,
+            backgroundSize: "220% 100%",
           }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 10, ease: "linear", repeat: Infinity }}
-        />
-        {/* crisp border layer */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-full opacity-95"
-          style={{
-            background:
-              "conic-gradient(from 180deg at 50% 50%, #7a72e9, #c6cf13, #9caf88, #7a72e9)",
+          animate={{
+            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
           }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 7.5, ease: "linear", repeat: Infinity }}
+          transition={{ duration: 4.6, ease: "linear", repeat: Infinity }}
         />
 
-        <div className="relative inline-flex items-center gap-3 rounded-full bg-accent-3 px-7 py-3.5">
-          <span className="text-[15px] md:text-[16px] font-semibold text-text">
+        <div className="relative inline-flex items-center gap-3 rounded-full bg-accent-3 px-9 py-4">
+          <span className="text-[16px] md:text-[17px] font-semibold text-text">
             RU
           </span>
           <span className="text-text/50">•</span>
-          <span className="text-[15px] md:text-[16px] font-semibold text-text">
+          <span className="text-[16px] md:text-[17px] font-semibold text-text">
             Продукт сделан в России
           </span>
         </div>
@@ -107,8 +102,8 @@ export function Footer() {
       id="footer"
       className={[
         "relative w-full bg-text text-bg",
-        // если где-то есть padding-bottom на wrapper'е (например main pb-12),
-        // это аккуратно “дотягивает” футер до низа
+        // если footer рендерится внутри <main className="pb-12 md:pb-20">,
+        // это “съедает” нижний padding, чтобы не было пустоты
         "-mb-12 md:-mb-20",
       ].join(" ")}
     >
@@ -119,12 +114,19 @@ export function Footer() {
       />
 
       <Container className="relative z-10 px-6 md:px-10 lg:px-12">
-        <div className="py-12 md:py-14 pb-16 md:pb-20">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,680px)] lg:items-start">
+        <div className="relative py-12 md:py-14 pb-10 md:pb-12">
+          {/* center vertical divider (longer) */}
+          <div
+            aria-hidden
+            className="pointer-events-none hidden lg:block absolute left-1/2 top-0 h-[640px] w-px -translate-x-1/2 bg-bg/10"
+          />
+
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-0">
             {/* LEFT */}
-            <div className="min-w-0">
+            <div className="min-w-0 lg:pr-10">
               <div className="flex items-center gap-4">
-                <div className="relative h-12 w-12 shrink-0">
+                {/* logo in round mask */}
+                <div className="h-12 w-12 shrink-0 rounded-full overflow-hidden ring-1 ring-bg/15 bg-bg/5 flex items-center justify-center">
                   <img
                     src={withBasePath("/brand/uni-logo.svg")}
                     alt="ЮНИ"
@@ -133,12 +135,12 @@ export function Footer() {
                   />
                 </div>
 
-                {/* выравнивание текста по центральной горизонтали лого */}
+                {/* text aligned to logo center */}
                 <div className="min-w-0 flex flex-col justify-center">
-                  <div className="hover-accent text-[18px] font-semibold leading-none">
+                  <div className="hover-accent text-[18px] font-semibold leading-tight">
                     ЮНИ.ai
                   </div>
-                  <div className="hover-accent mt-1 text-[14px] font-medium text-bg/70">
+                  <div className="hover-accent text-[14px] font-medium leading-tight text-bg/70">
                     Системы для SMB с ИИ японского качества
                   </div>
                 </div>
@@ -161,24 +163,14 @@ export function Footer() {
                   </div>
                 </div>
 
-                <div className="mt-10 flex flex-wrap items-center gap-6">
+                <div className="mt-10">
                   <RuBadge />
-
-                  <a
-                    href="#cta"
-                    className="btn-lift-outline btm-lift-outline rounded-full px-6 py-3 text-[14px] font-semibold"
-                  >
-                    Начать проект
-                  </a>
                 </div>
               </div>
             </div>
 
             {/* RIGHT */}
-            <div className="min-w-0 lg:pl-10 lg:pr-10 lg:border-l lg:border-bg/10">
-              {/* небольшой разделитель сверху, чтобы блок справа “собрался” */}
-              <div className="mb-8 hidden lg:block h-px w-full bg-bg/10" />
-
+            <div className="min-w-0 lg:pl-10">
               <div className="grid gap-10 sm:grid-cols-3 sm:gap-x-10">
                 {/* BLOG */}
                 <div className="min-w-0">
@@ -208,7 +200,10 @@ export function Footer() {
                       <ExtLink href={LINKS.contacts.tg}>Telegram</ExtLink>
                     </div>
                     <div>
-                      <a href={LINKS.contacts.email} className="hover-accent transition-colors">
+                      <a
+                        href={LINKS.contacts.email}
+                        className="hover-accent transition-colors"
+                      >
                         uni.kit@mail.ru
                       </a>
                     </div>
@@ -226,7 +221,9 @@ export function Footer() {
 
                   <div className="mt-5 space-y-3 text-[14px] font-medium text-bg/65">
                     <div>
-                      <IntLink href={LINKS.docs.privacy}>Политика конфиденциальности</IntLink>
+                      <IntLink href={LINKS.docs.privacy}>
+                        Политика конфиденциальности
+                      </IntLink>
                     </div>
                     <div>
                       <IntLink href={LINKS.docs.opd}>Согласие ОПД клиента</IntLink>
@@ -243,11 +240,21 @@ export function Footer() {
 
               {/* divider under columns */}
               <div className="mt-10 h-px w-full bg-bg/10" />
+
+              {/* CTA button under divider */}
+              <div className="mt-6 flex justify-start sm:justify-end">
+                <a
+                  href="#cta"
+                  className="btn-lift-outline btm-lift-outline rounded-full px-7 py-3 text-[14px] font-semibold"
+                >
+                  Начать проект
+                </a>
+              </div>
             </div>
           </div>
 
           {/* bottom */}
-          <div className="mt-10 pt-8">
+          <div className="mt-8 pt-5 border-t border-bg/10">
             <div className="text-center text-[13px] font-medium text-bg/55 hover-accent">
               Copyright © 2026 Uni.ai (ООО "БЭНИФИТ")
             </div>
