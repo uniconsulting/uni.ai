@@ -7,6 +7,7 @@ import { Packages } from "@/components/Packages";
 import { ServicesIntegrations } from "@/components/ServicesIntegrations";
 import { RoiCalculator } from "@/components/RoiCalculator";
 import { Faq } from "@/components/Faq";
+import { Footer } from "@/components/Footer";
 
 export default function Page() {
   return (
@@ -21,6 +22,7 @@ export default function Page() {
         <ServicesIntegrations />
         <RoiCalculator />
         <Faq />
+        <Footer />
       </main>
     </div>
   );
