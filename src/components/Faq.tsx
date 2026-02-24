@@ -1,8 +1,7 @@
-/* src/components/Faq.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Container } from "@/components/Container";
 
 type FaqItem = { q: string; a: string };
@@ -76,19 +75,17 @@ function FaqCard({
   isActive, // активный вид (фон/бордер/жирность вопроса)
   isOpen, // открытость ответа
   onToggle,
-  onCollapseComplete,
+  onAnswerExitComplete,
   mode,
   radiusClass,
-  inactiveOffsetPx = 0, // ⬅️ сдвиг текста вниз, чтобы визуально центрировать “видимую полосу” под overlap
 }: {
   item: FaqItem;
   isActive: boolean;
   isOpen: boolean;
   onToggle?: () => void;
-  onCollapseComplete?: () => void;
+  onAnswerExitComplete?: () => void;
   mode: "desktop" | "mobile" | "measure";
   radiusClass: string;
-  inactiveOffsetPx?: number;
 }) {
   const interactive = mode !== "measure";
   const desktopLayout = mode !== "mobile"; // desktop + measure
@@ -113,60 +110,29 @@ function FaqCard({
     isActive ? "font-semibold text-text" : "font-normal text-text/55",
   ].join(" ");
 
-  // измеряем высоту ответа (чтобы анимация height была числовой, без “auto” и без миганий)
-  const answerInnerRef = useRef<HTMLDivElement | null>(null);
-  const [answerH, setAnswerH] = useState(0);
-
-  useLayoutEffect(() => {
-    if (mode === "measure") return;
-    const el = answerInnerRef.current;
-    if (!el) return;
-
-    const update = () => {
-      const h = el.scrollHeight || 0;
-      if (h > 0) setAnswerH(h);
-    };
-
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [item.a, mode]);
-
-  const AnswerBlock =
-    mode === "measure" ? (
-      // measure: без анимации, чтобы высота мерилась стабильно
-      <div className="pt-5">
-        <div className="h-px w-full bg-text/10" />
-        <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
-          {item.a}
-        </div>
-      </div>
-    ) : (
-      <motion.div
-        className="overflow-hidden"
-        initial={false}
-        animate={
-          isOpen
-            ? { height: answerH, opacity: 1 }
-            : { height: 0, opacity: 0 }
-        }
-        transition={{
-          height: { duration: isOpen ? 0.56 : 0.44, ease: [0.22, 1, 0.36, 1] },
-          opacity: { duration: isOpen ? 0.22 : 0.16, ease: [0.22, 1, 0.36, 1] },
-        }}
-        onAnimationComplete={() => {
-          if (!isOpen) onCollapseComplete?.();
-        }}
-      >
-        <div ref={answerInnerRef} className="pt-5">
-          <div className="h-px w-full bg-text/10" />
+  const AnswerBlock = (
+    <AnimatePresence initial={false} mode="sync" onExitComplete={onAnswerExitComplete}>
+      {isOpen ? (
+        <motion.div
+          key="answer"
+          className="overflow-hidden"
+          initial={{ height: 0, opacity: 0, y: 6 }}
+          animate={{ height: "auto", opacity: 1, y: 0 }}
+          exit={{ height: 0, opacity: 0, y: 4 }}
+          transition={{
+            height: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+            opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+            y: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+          }}
+        >
+          <div className="mt-5 h-px w-full bg-text/10" />
           <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
             {item.a}
           </div>
-        </div>
-      </motion.div>
-    );
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
 
   const body = (
     <div className={shell}>
@@ -175,21 +141,27 @@ function FaqCard({
           <div className={padActiveDesktop}>
             <div className="w-full">
               <div className={qClass}>{item.q}</div>
-              {AnswerBlock}
+
+              {/* measure: без анимации, чтобы высота мерилась стабильно */}
+              {mode === "measure" ? (
+                <>
+                  <div className="mt-5 h-px w-full bg-text/10" />
+                  <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
+                    {item.a}
+                  </div>
+                </>
+              ) : (
+                AnswerBlock
+              )}
             </div>
           </div>
         ) : (
           <div className={padInactiveDesktop}>
-            <div
-              className={qClass}
-              style={inactiveOffsetPx ? { transform: `translateY(${inactiveOffsetPx}px)` } : undefined}
-            >
-              {item.q}
-            </div>
+            <div className={qClass}>{item.q}</div>
           </div>
         )
       ) : (
-        // Mobile
+        // Mobile (здесь mode уже "mobile", поэтому никаких mode==="measure")
         <div className={padMobile}>
           <div className="w-full">
             <div className={qClass}>{item.q}</div>
@@ -218,18 +190,15 @@ export function Faq() {
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
 
   // openIdx = кто реально показывает ответ
-  // layoutIdx = кто держит “активную геометрию/стиль” (и при закрытии тоже, до конца анимации схлопывания)
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const [layoutIdx, setLayoutIdx] = useState<number | null>(null);
+  // layoutIdx = кто держит “активную геометрию/стиль” (и при закрытии тоже, до конца exit)
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const [layoutIdx, setLayoutIdx] = useState<number | null>(0);
   const [closingIdx, setClosingIdx] = useState<number | null>(null);
 
   // геометрия “колоды” (desktop)
   const COLLAPSED_H = 112;
   const OVERLAP = 20;
   const STEP = COLLAPSED_H - OVERLAP;
-
-  // ⬅️ ключ к “визуальному центру” неактивных карточек (кроме первой)
-  const INACTIVE_SHIFT = Math.round(OVERLAP / 2);
 
   const deckRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -294,12 +263,6 @@ export function Faq() {
     return "rounded-none";
   };
 
-  // чтобы onCollapseComplete не ломал состояние, если юзер быстро открыл другой вопрос
-  const stateRef = useRef({ openIdx: null as number | null, layoutIdx: null as number | null, closingIdx: null as number | null });
-  useEffect(() => {
-    stateRef.current = { openIdx, layoutIdx, closingIdx };
-  }, [openIdx, layoutIdx, closingIdx]);
-
   const onToggle = (i: number) => {
     if (openIdx === i) {
       setOpenIdx(null);
@@ -311,10 +274,7 @@ export function Faq() {
     setOpenIdx(i);
   };
 
-  const onCollapseCompleteFor = (i: number) => {
-    const s = stateRef.current;
-    if (s.closingIdx !== i) return;
-    if (s.openIdx != null) return;
+  const onAnswerExitCompleteFor = (i: number) => {
     setLayoutIdx((prev) => (prev === i ? null : prev));
     setClosingIdx((prev) => (prev === i ? null : prev));
   };
@@ -373,7 +333,7 @@ export function Faq() {
           className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-12`}
           style={{ transitionDelay: "80ms" }}
         >
-          {/* Desktop */}
+          {/* Desktop: вертикальная “колода” */}
           <div className="hidden md:block">
             <div ref={deckRef} className="relative w-full" style={{ height: deckH }}>
               {/* hidden measure */}
@@ -416,9 +376,8 @@ export function Faq() {
                       isOpen={isOpen}
                       mode="desktop"
                       radiusClass={radiusFor(i, isActive)}
-                      inactiveOffsetPx={!isActive && i > 0 ? INACTIVE_SHIFT : 0}
                       onToggle={() => onToggle(i)}
-                      onCollapseComplete={closingIdx === i ? () => onCollapseCompleteFor(i) : undefined}
+                      onAnswerExitComplete={closingIdx === i ? () => onAnswerExitCompleteFor(i) : undefined}
                     />
                   </div>
                 );
