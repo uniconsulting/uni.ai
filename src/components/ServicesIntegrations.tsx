@@ -500,7 +500,7 @@ export function ServicesIntegrations() {
   // (2) extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления.
   // Важно: НЕ трогаем middle (custom), чтобы он не "уезжал".
   const inactiveTitleInsetFor = (i: number, isActive: boolean) =>
-    !isActive && i === services.length - 1 ? "pr-12" : "";
+    !isActive && i === services.length - 1 ? "pr-14" : "";
 
   const tabs = useMemo(
     () =>
