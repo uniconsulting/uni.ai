@@ -6,6 +6,7 @@ import { DemoChat } from "@/components/DemoChat";
 import { Packages } from "@/components/Packages";
 import { ServicesIntegrations } from "@/components/ServicesIntegrations";
 import { RoiCalculator } from "@/components/RoiCalculator";
+import { Faq } from "@/components/Faq";
 
 export default function Page() {
   return (
@@ -19,6 +20,7 @@ export default function Page() {
         <Packages />
         <ServicesIntegrations />
         <RoiCalculator />
+        <Faq />
       </main>
     </div>
   );
