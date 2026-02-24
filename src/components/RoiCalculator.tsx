@@ -185,6 +185,12 @@ export function RoiCalculator() {
       isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
     ].join(" ");
 
+  const horizonPillBtn = (isOn: boolean) =>
+    [
+      "btn-lift-outline inline-flex items-center justify-center rounded-xl px-4 py-2 text-[13px] font-semibold border border-text",
+      isOn ? "bg-bg/65 text-text" : "bg-bg/25 text-text/65 hover:text-text",
+    ].join(" ");
+
   return (
     <section
       ref={sectionRef as any}
@@ -214,7 +220,6 @@ export function RoiCalculator() {
               </div>
             </div>
 
-            {/* вместо "Параметры" */}
             <div className="flex items-center md:justify-end">
               <div className="hover-accent text-[18px] font-medium opacity-70">ROI | Калькулятор</div>
             </div>
@@ -234,7 +239,6 @@ export function RoiCalculator() {
               {/* inputs */}
               <div className="p-8 md:p-10">
                 <div className="flex items-center gap-4">
-                  {/* иконка: круглый фрейм bg-text, сама иконка accent-3 */}
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-text">
                     <Calculator className="h-5 w-5 text-accent-3" />
                   </div>
@@ -242,30 +246,18 @@ export function RoiCalculator() {
                   <div className="min-w-0">
                     <div className="text-[18px] font-extrabold text-text">Вводные данные</div>
                   </div>
-
-                  {/* быстрый доступ к параметрам оставляем внутри секции (не в шапке) */}
-                  <button
-                    type="button"
-                    onClick={() => setParamsOpen(true)}
-                    className="ml-auto btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[13px] font-semibold text-text/70 backdrop-blur"
-                    aria-label="Параметры"
-                    title="Параметры"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    <span>Параметры</span>
-                  </button>
                 </div>
 
-                {/* defaults + disclaimer прямо под заголовком */}
+                {/* defaults + disclaimer */}
                 <div className="mt-4">
                   <div className="text-[13px] font-semibold text-text/55">
                     По умолчанию: ФОТ {formatRUB(DEFAULTS.salaryMonthly)}/мес, {DEFAULTS.hoursPerWeek} ч/нед, интеграция{" "}
                     {formatRUB(DEFAULTS.integrationFee)} разово.
                   </div>
 
-                  <div className="mt-4 rounded-2xl bg-text p-5">
-                    <div className="text-[13px] font-extrabold text-accent-3">Дисклеймер</div>
-                    <div className="mt-2 text-[13px] font-medium text-accent-3/85">
+                  <div className="mt-4">
+                    <div className="text-[13px] font-extrabold text-accent-1">Дисклеймер</div>
+                    <div className="mt-2 text-[13px] font-medium text-text">
                       Расчёт упрощённый. Используем средний ФОТ МОП по РФ ({formatRUB(DEFAULTS.salaryMonthly)}/мес) и
                       коэффициент замещения по умолчанию {formatPct(DEFAULTS.replacementFactor * 100)}. В "Параметры" можно
                       подставить твой контекст.
@@ -328,9 +320,9 @@ export function RoiCalculator() {
                       <Minus className="h-5 w-5" />
                     </button>
 
-                    <div className="min-w-[160px] rounded-2xl border border-text/10 bg-bg/25 px-5 py-3 text-center">
-                      <div className="text-[22px] font-extrabold text-text">{fteTotal.toFixed(2).replace(/\.00$/, "")}</div>
-                      <div className="mt-1 text-[12px] font-semibold text-text/55">FTE</div>
+                    <div className="min-w-[160px] rounded-2xl bg-accent-2 px-5 py-3 text-center">
+                      <div className="text-[22px] font-extrabold text-accent-3">{fteTotal.toFixed(2).replace(/\.00$/, "")}</div>
+                      <div className="mt-1 text-[12px] font-semibold text-accent-3">FTE</div>
                     </div>
 
                     <button
@@ -364,16 +356,25 @@ export function RoiCalculator() {
                           key={y}
                           type="button"
                           onClick={() => setYears(y as 1 | 2 | 3)}
-                          className={pillBtn(isOn)}
-                          style={isOn ? { borderColor: toneHex } : undefined}
+                          className={horizonPillBtn(isOn)}
                           aria-pressed={isOn}
                         >
-                          {y} {y === 1 ? "год" : y === 2 ? "года" : "года"}
+                          {y} {y === 1 ? "год" : "года"}
                         </button>
                       );
                     })}
                   </div>
                 </div>
+
+                {/* open params (единственная кнопка слева, внизу) */}
+                <button
+                  type="button"
+                  onClick={() => setParamsOpen(true)}
+                  className="btn-lift-outline mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-2 px-6 py-4 text-center text-[16px] font-extrabold text-accent-3"
+                >
+                  <SlidersHorizontal className="h-5 w-5" />
+                  <span>Открыть параметры</span>
+                </button>
               </div>
 
               {/* results */}
@@ -386,10 +387,7 @@ export function RoiCalculator() {
                     </div>
                   </div>
 
-                  <div
-                    className="shrink-0 inline-flex items-center gap-2 rounded-xl border-2 bg-bg/30 px-4 py-2 text-[13px] font-extrabold"
-                    style={{ borderColor: toneHex, color: toneHex }}
-                  >
+                  <div className="shrink-0 inline-flex items-center gap-2 rounded-xl border-2 border-text bg-bg/30 px-4 py-2 text-[13px] font-extrabold text-text">
                     <span>ROI</span>
                     <span className="text-text/55">·</span>
                     <span>{formatPct(calc.roi)}</span>
@@ -397,7 +395,7 @@ export function RoiCalculator() {
                 </div>
 
                 <div className="mt-8 grid gap-4">
-                  {/* 6) Экономия: bg-accent-1, текст accent-3 */}
+                  {/* Экономия: bg-accent-1, текст accent-3 */}
                   <div className="rounded-2xl bg-accent-1 p-6">
                     <div className="text-[13px] font-semibold text-accent-3">Экономия в месяц</div>
                     <div className="mt-2 text-[26px] font-extrabold text-accent-3">{formatRUB(calc.monthlySavings)}</div>
@@ -408,7 +406,7 @@ export function RoiCalculator() {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    {/* 7) Затраты: bg-text, текст accent-3 */}
+                    {/* Затраты: bg-text, текст accent-3 */}
                     <div className="rounded-2xl bg-text p-6">
                       <div className="text-[13px] font-semibold text-accent-3/80">Затраты (в месяц)</div>
                       <div className="mt-2 text-[22px] font-extrabold text-accent-3">
@@ -420,19 +418,17 @@ export function RoiCalculator() {
                       </div>
                     </div>
 
-                    {/* 7) Окупаемость: bg-text, текст accent-3 */}
+                    {/* Окупаемость: bg-text, текст accent-3 */}
                     <div className="rounded-2xl bg-text p-6">
                       <div className="text-[13px] font-semibold text-accent-3/80">Окупаемость</div>
                       <div className="mt-2 text-[22px] font-extrabold text-accent-3">
                         {calc.paybackMonths ? `${calc.paybackMonths} мес` : `не за ${calc.months} мес`}
                       </div>
-                      <div className="mt-2 text-[13px] font-medium text-accent-3/70">
-                        Интеграция учитывается в начале расчёта.
-                      </div>
+                      <div className="mt-2 text-[13px] font-medium text-accent-3/70">• интеграция учтена</div>
                     </div>
                   </div>
 
-                  {/* 8) Итог: bg-accent-2, весь текст + шкала accent-3 */}
+                  {/* Итог: bg-accent-2, весь текст + шкала accent-3 */}
                   <div className="rounded-2xl bg-accent-2 p-6">
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-[13px] font-semibold text-accent-3/80">Итог за {calc.months} мес</div>
@@ -459,7 +455,6 @@ export function RoiCalculator() {
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      {/* годовые карточки: bg-accent-3, без бордюров, цена accent-2 */}
                       <div className="rounded-2xl bg-accent-3 p-5">
                         <div className="text-[13px] font-semibold text-text/55">Год 1 (с интеграцией)</div>
                         <div className="mt-2 text-[20px] font-extrabold text-accent-2">{formatRUB(calc.year1Net)}</div>
@@ -472,14 +467,7 @@ export function RoiCalculator() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setParamsOpen(true)}
-                    className="btn-lift-outline inline-flex w-full items-center justify-center gap-2 rounded-xl border border-text/15 bg-bg/35 px-6 py-4 text-center text-[16px] font-extrabold text-text backdrop-blur"
-                  >
-                    <SlidersHorizontal className="h-5 w-5" />
-                    <span>Открыть параметры</span>
-                  </button>
+                  {/* кнопка справа убрана по ТЗ */}
                 </div>
               </div>
             </div>
