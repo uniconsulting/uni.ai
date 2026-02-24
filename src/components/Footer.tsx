@@ -216,7 +216,7 @@ export function Footer() {
                     aria-hidden
                     className="pointer-events-none select-none absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2"
                   >
-                    <div className="relative top-[4px] whitespace-nowrap text-bg/18 font-normal leading-none tracking-tight text-[94px]">
+                    <div className="relative top-[8px] whitespace-nowrap text-bg/18 font-normal leading-none tracking-tight text-[98px]">
                       衆志、城を成す
                     </div>
                   </div>
