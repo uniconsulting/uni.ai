@@ -1,3 +1,4 @@
+/* src/components/Footer.tsx */
 "use client";
 
 import type { ReactNode } from "react";
@@ -32,11 +33,12 @@ function ExtLink({
   children: ReactNode;
   className?: string;
 }) {
+  const isHttp = href.startsWith("http");
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noreferrer"
+      target={isHttp ? "_blank" : undefined}
+      rel={isHttp ? "noreferrer" : undefined}
       className={`hover-accent transition-colors ${className}`}
     >
       {children}
@@ -63,19 +65,20 @@ function IntLink({
 function RuBadge() {
   return (
     <div className="inline-flex">
-      <div className="relative inline-flex rounded-[22px] p-[2px]">
-        {/* динамичный градиент-бордюр (accent-1 -> accent-2) */}
+      <div className="relative inline-flex rounded-[26px] p-[2px]">
+        {/* один динамичный градиент-бордюр accent-1 -> accent-2 */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[22px] bg-gradient-to-r from-accent-1 via-accent-2 to-accent-1"
-          style={{ backgroundSize: "240% 240%" }}
+          className="pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-r from-accent-1 via-accent-2 to-accent-1"
+          style={{ backgroundSize: "260% 260%" }}
           animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-          transition={{ duration: 7.5, ease: "linear", repeat: Infinity }}
+          transition={{ duration: 6.8, ease: "linear", repeat: Infinity }}
         />
-        <div className="relative inline-flex items-center gap-3 rounded-[20px] bg-accent-3 px-8 py-5">
-          <span className="text-[16px] font-semibold text-text">RU</span>
+
+        <div className="relative inline-flex items-center gap-3 rounded-[24px] bg-accent-3 px-10 py-6">
+          <span className="text-[18px] font-semibold text-text">RU</span>
           <span className="text-text/45">•</span>
-          <span className="text-[16px] font-semibold text-text">
+          <span className="text-[18px] font-semibold text-text">
             Продукт сделан в России
           </span>
         </div>
@@ -94,15 +97,16 @@ function Col({
   showDivider?: boolean;
 }) {
   return (
-    <div className="relative min-w-0 px-10 lg:px-12 pt-10 lg:pt-12 pb-12">
+    <div className="relative min-w-0 px-10 lg:px-12 pt-10 lg:pt-12">
+      {/* короткий вертикальный делитель, как в макете */}
       {showDivider ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute left-0 top-10 bottom-10 w-px bg-bg/18"
+          className="pointer-events-none absolute left-0 top-14 h-[230px] w-px bg-bg/18"
         />
       ) : null}
 
-      <div className="hover-accent text-[22px] lg:text-[26px] font-extrabold text-bg">
+      <div className="hover-accent text-[26px] lg:text-[30px] font-extrabold text-bg">
         {title}
       </div>
 
@@ -116,9 +120,9 @@ function Col({
 export function Footer() {
   return (
     <footer id="footer" className="w-full">
-      {/* TOP AREA: 620px on lg */}
+      {/* TOP AREA: ровно 620px на lg (как макет 720: 620 + 100) */}
       <div className="w-full lg:h-[620px]">
-        <div className="grid w-full lg:grid-cols-[480px_1px_1fr]">
+        <div className="grid w-full lg:h-full lg:grid-cols-[480px_1px_1fr]">
           {/* LEFT (bg) */}
           <div className="bg-bg text-text">
             <div className="h-full px-10 lg:px-12 pt-10 lg:pt-12">
@@ -145,7 +149,7 @@ export function Footer() {
                 </div>
               </div>
 
-              {/* тонкий разделитель */}
+              {/* разделитель */}
               <div className="mt-8 h-px w-full bg-text/12" />
 
               {/* слоган */}
@@ -168,7 +172,7 @@ export function Footer() {
                 </div>
               </div>
 
-              {/* второй разделитель */}
+              {/* разделитель */}
               <div className="mt-10 h-px w-full bg-text/12" />
 
               {/* RU badge */}
@@ -178,19 +182,19 @@ export function Footer() {
             </div>
           </div>
 
-          {/* MAIN DIVIDER */}
+          {/* MAIN VERTICAL DIVIDER */}
           <div aria-hidden className="hidden lg:block bg-text/12" />
 
           {/* RIGHT (top accent-1 + bottom text) */}
           <div className="min-w-0">
-            {/* TOP RED */}
+            {/* TOP RED: 472px */}
             <div className="relative bg-accent-1 text-bg lg:h-[472px] overflow-hidden">
               {/* watermark */}
               <div
                 aria-hidden
-                className="pointer-events-none select-none absolute inset-x-0 bottom-8 flex justify-center"
+                className="pointer-events-none select-none absolute inset-x-0 bottom-10 flex justify-center"
               >
-                <div className="text-bg/18 font-normal leading-none tracking-tight text-[96px] md:text-[120px] lg:text-[150px]">
+                <div className="whitespace-nowrap text-bg/18 font-normal leading-none tracking-tight text-[140px] md:text-[170px] lg:text-[220px]">
                   衆志、城を成す
                 </div>
               </div>
@@ -220,7 +224,9 @@ export function Footer() {
 
                 <Col title="Документация" showDivider>
                   <div>
-                    <IntLink href={LINKS.docs.privacy}>Политика конфиденциальности</IntLink>
+                    <IntLink href={LINKS.docs.privacy}>
+                      Политика конфиденциальности
+                    </IntLink>
                   </div>
                   <div>
                     <IntLink href={LINKS.docs.opd}>Согласие ОПД клиента</IntLink>
@@ -235,16 +241,16 @@ export function Footer() {
               </div>
             </div>
 
-            {/* BOTTOM DARK */}
+            {/* BOTTOM DARK: 148px */}
             <div className="bg-text text-bg lg:h-[148px]">
               {/* разделитель по границе красного/тёмного */}
               <div aria-hidden className="h-px w-full bg-bg/18" />
 
-              <div className="h-full px-10 lg:px-12 flex items-center gap-10">
+              <div className="h-full px-10 lg:px-12 flex items-center">
                 <div className="h-px flex-1 bg-bg/18" />
                 <a
                   href="#cta"
-                  className="hover-accent text-[22px] md:text-[26px] lg:text-[30px] font-extrabold tracking-tight whitespace-nowrap"
+                  className="ml-10 hover-accent text-[22px] md:text-[26px] lg:text-[30px] font-extrabold tracking-tight whitespace-nowrap"
                 >
                   начать проект
                 </a>
@@ -257,7 +263,7 @@ export function Footer() {
         <div aria-hidden className="h-px w-full bg-text/12" />
       </div>
 
-      {/* BOTTOM BAR (accent-2): 100px on lg */}
+      {/* BOTTOM BAR (accent-2): 100px */}
       <div className="bg-accent-2 text-bg lg:h-[100px]">
         <div className="h-full px-10 lg:px-12 flex items-center justify-between">
           <div className="hover-accent text-[16px] font-medium">
