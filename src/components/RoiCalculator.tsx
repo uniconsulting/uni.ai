@@ -256,7 +256,7 @@ export function RoiCalculator() {
                   </div>
 
                   <div className="mt-4">
-                    <div className="text-[13px] font-extrabold text-accent-1">Дисклеймер</div>
+                    <div className="text-[14px] font-extrabold text-accent-1">Дисклеймер</div>
                     <div className="mt-2 text-[13px] font-medium text-text">
                       Расчёт упрощённый. Используем средний ФОТ МОП по РФ ({formatRUB(DEFAULTS.salaryMonthly)}/мес) и
                       коэффициент замещения по умолчанию {formatPct(DEFAULTS.replacementFactor * 100)}. В "Параметры" можно
@@ -320,9 +320,9 @@ export function RoiCalculator() {
                       <Minus className="h-5 w-5" />
                     </button>
 
-                    <div className="min-w-[160px] rounded-2xl bg-accent-2 px-5 py-3 text-center">
-                      <div className="text-[22px] font-extrabold text-accent-3">{fteTotal.toFixed(2).replace(/\.00$/, "")}</div>
-                      <div className="mt-1 text-[12px] font-semibold text-accent-3">FTE</div>
+                    <div className="min-w-[160px] rounded-2xl bg-accent-3 border border-accent-2 px-5 py-3 text-center">
+                      <div className="text-[22px] font-extrabold text-accent-2">{fteTotal.toFixed(2).replace(/\.00$/, "")}</div>
+                      <div className="mt-1 text-[12px] font-semibold text-accent-2">FTE</div>
                     </div>
 
                     <button
@@ -365,16 +365,6 @@ export function RoiCalculator() {
                     })}
                   </div>
                 </div>
-
-                {/* open params (единственная кнопка слева, внизу) */}
-                <button
-                  type="button"
-                  onClick={() => setParamsOpen(true)}
-                  className="btn-lift-outline mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-2 px-6 py-4 text-center text-[16px] font-extrabold text-accent-3"
-                >
-                  <SlidersHorizontal className="h-5 w-5" />
-                  <span>Открыть параметры</span>
-                </button>
               </div>
 
               {/* results */}
@@ -467,7 +457,15 @@ export function RoiCalculator() {
                     </div>
                   </div>
 
-                  {/* кнопка справа убрана по ТЗ */}
+                  {/* кнопка "Открыть параметры" возвращена под итог */}
+                  <button
+                    type="button"
+                    onClick={() => setParamsOpen(true)}
+                    className="btn-lift-outline inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-2 px-6 py-4 text-center text-[16px] font-extrabold text-accent-3"
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                    <span>Открыть параметры</span>
+                  </button>
                 </div>
               </div>
             </div>
