@@ -1,3 +1,4 @@
+/* src/components/Faq.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -84,21 +85,22 @@ function FaqCard({
   radiusClass: string;
 }) {
   const interactive = mode !== "measure";
+  const desktopLayout = mode !== "mobile"; // desktop + measure
+  const fillHeight = mode === "desktop"; // важно: только в реальном layout, НЕ в measure
 
   const shell = [
-    "w-full overflow-hidden",
-    "ring-inset",
+    "w-full overflow-hidden ring-inset",
+    fillHeight ? "h-full" : "h-auto",
     isActive ? "bg-accent-3 ring-2 ring-accent-2" : "bg-bg ring-1 ring-text/15",
     "transition-[background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none",
     radiusClass,
   ].join(" ");
 
-  const pad =
-    mode === "desktop"
-      ? isActive
-        ? "px-8 lg:px-10 py-8"
-        : "h-full px-8 lg:px-10 flex items-center"
-      : "px-6 md:px-8 py-6";
+  const pad = desktopLayout
+    ? isActive
+      ? "px-8 lg:px-10 py-8"
+      : "h-full px-8 lg:px-10 flex items-center"
+    : "px-6 md:px-8 py-6";
 
   const qClass = [
     "leading-[1.12] tracking-tight",
@@ -136,7 +138,12 @@ function FaqCard({
   if (!interactive) return body;
 
   return (
-    <button type="button" onClick={onToggle} className="w-full text-left" aria-expanded={isActive}>
+    <button
+      type="button"
+      onClick={onToggle}
+      className={fillHeight ? "block h-full w-full text-left" : "block w-full text-left"}
+      aria-expanded={isActive}
+    >
       {body}
     </button>
   );
@@ -155,7 +162,7 @@ export function Faq() {
   const deckRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
   const [deckW, setDeckW] = useState(0);
-  const [activeH, setActiveH] = useState(260); // чуть больше по умолчанию
+  const [activeH, setActiveH] = useState(260);
 
   useLayoutEffect(() => {
     const el = deckRef.current;
@@ -280,12 +287,7 @@ export function Faq() {
                   aria-hidden
                 >
                   <div ref={measureRef}>
-                    <FaqCard
-                      item={FAQ[activeIdx]}
-                      isActive={true}
-                      mode="measure"
-                      radiusClass="rounded-[30px]"
-                    />
+                    <FaqCard item={FAQ[activeIdx]} isActive={true} mode="measure" radiusClass="rounded-[30px]" />
                   </div>
                 </div>
               ) : null}
