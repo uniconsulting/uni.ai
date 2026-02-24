@@ -499,7 +499,7 @@ export function ServicesIntegrations() {
   // (2) уменьшаем “пустоту” под списком: третий ряд ниже + меньше паддинги у 3-го блока
   // + отдельно: "после нижней строчки в первом разделе до разделителя" было мало
   // -> даём чуть больше bottom-padding у 1-го блока.
-  const ROWS_SERVICES = "grid-rows-[220px_110px_140px_120px]";
+  const ROWS_SERVICES = "grid-rows-[220px_110px_140px_100px]";
 
   return (
     <section
