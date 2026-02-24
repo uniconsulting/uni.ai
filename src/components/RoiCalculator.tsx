@@ -3,14 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
-import {
-  Calculator,
-  SlidersHorizontal,
-  X,
-  Plus,
-  Minus,
-  Info,
-} from "lucide-react";
+import { Calculator, SlidersHorizontal, X, Plus, Minus, Info } from "lucide-react";
 
 type PlanId = "small" | "mid" | "enterprise";
 
@@ -36,27 +29,9 @@ const DEFAULTS = {
 };
 
 const PLANS: Plan[] = [
-  {
-    id: "small",
-    title: "Малый",
-    priceMonthly: 9900,
-    tone: "blue",
-    hint: "Чат-боты + аналитика, базовый масштаб",
-  },
-  {
-    id: "mid",
-    title: "Средний",
-    priceMonthly: 39900,
-    tone: "green",
-    hint: "Больше сценариев и глубже аналитика",
-  },
-  {
-    id: "enterprise",
-    title: "Энтерпрайз",
-    priceMonthly: 99900,
-    tone: "red",
-    hint: "Максимальная глубина и масштаб",
-  },
+  { id: "small", title: "Малый", priceMonthly: 9900, tone: "blue", hint: "Чат-боты + аналитика, базовый масштаб" },
+  { id: "mid", title: "Средний", priceMonthly: 39900, tone: "green", hint: "Больше сценариев и глубже аналитика" },
+  { id: "enterprise", title: "Энтерпрайз", priceMonthly: 99900, tone: "red", hint: "Максимальная глубина и масштаб" },
 ];
 
 function formatRUB(n: number) {
@@ -228,27 +203,20 @@ export function RoiCalculator() {
         <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
-              <div className="hover-accent text-[18px] font-medium opacity-70">roi | калькулятор</div>
-              <div className="mt-3 text-[34px] md:text-[40px] font-extrabold leading-[1.05] text-text">
+              <div className="text-[34px] md:text-[40px] font-extrabold leading-[1.05] text-text">
                 Окупаемость через ФОТ
               </div>
+
               <div className="mt-4 text-[15px] md:text-[16px] font-medium text-text/70 max-w-[820px]">
-                Сравниваем стоимость пакета и разовой интеграции с экономией на людях.
-                Интеграция оплачивается один раз, поэтому на второй и последующие годы эффект заметно выше.
+                <span>Сравниваем стоимость пакета и разовой интеграции с экономией на человеко-часах.</span>
+                <br />
+                <span>Интеграция оплачивается один раз, поэтому на второй и последующие годы эффект заметно выше.</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setParamsOpen(true)}
-                className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[13px] font-semibold text-text/70 backdrop-blur"
-                aria-label="Параметры"
-                title="Параметры"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span>Параметры</span>
-              </button>
+            {/* вместо "Параметры" */}
+            <div className="flex items-center md:justify-end">
+              <div className="hover-accent text-[18px] font-medium opacity-70">ROI | Калькулятор</div>
             </div>
           </div>
         </div>
@@ -265,15 +233,42 @@ export function RoiCalculator() {
             <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr] divide-y lg:divide-y-0 lg:divide-x divide-text/10">
               {/* inputs */}
               <div className="p-8 md:p-10">
-                <div className="flex items-start gap-3">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-text/10 bg-bg/25">
-                    <Calculator className="h-5 w-5 text-text/70" />
+                <div className="flex items-center gap-4">
+                  {/* иконка: круглый фрейм bg-text, сама иконка accent-3 */}
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-text">
+                    <Calculator className="h-5 w-5 text-accent-3" />
                   </div>
+
                   <div className="min-w-0">
-                    <div className="text-[18px] font-extrabold text-text">Вводные</div>
-                    <div className="mt-1 text-[13px] font-semibold text-text/55">
-                      По умолчанию: ФОТ {formatRUB(DEFAULTS.salaryMonthly)}/мес, {DEFAULTS.hoursPerWeek} ч/нед, интеграция{" "}
-                      {formatRUB(DEFAULTS.integrationFee)} разово.
+                    <div className="text-[18px] font-extrabold text-text">Вводные данные</div>
+                  </div>
+
+                  {/* быстрый доступ к параметрам оставляем внутри секции (не в шапке) */}
+                  <button
+                    type="button"
+                    onClick={() => setParamsOpen(true)}
+                    className="ml-auto btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[13px] font-semibold text-text/70 backdrop-blur"
+                    aria-label="Параметры"
+                    title="Параметры"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Параметры</span>
+                  </button>
+                </div>
+
+                {/* defaults + disclaimer прямо под заголовком */}
+                <div className="mt-4">
+                  <div className="text-[13px] font-semibold text-text/55">
+                    По умолчанию: ФОТ {formatRUB(DEFAULTS.salaryMonthly)}/мес, {DEFAULTS.hoursPerWeek} ч/нед, интеграция{" "}
+                    {formatRUB(DEFAULTS.integrationFee)} разово.
+                  </div>
+
+                  <div className="mt-4 rounded-2xl bg-text p-5">
+                    <div className="text-[13px] font-extrabold text-accent-3">Дисклеймер</div>
+                    <div className="mt-2 text-[13px] font-medium text-accent-3/85">
+                      Расчёт упрощённый. Используем средний ФОТ МОП по РФ ({formatRUB(DEFAULTS.salaryMonthly)}/мес) и
+                      коэффициент замещения по умолчанию {formatPct(DEFAULTS.replacementFactor * 100)}. В "Параметры" можно
+                      подставить твой контекст.
                     </div>
                   </div>
                 </div>
@@ -379,16 +374,6 @@ export function RoiCalculator() {
                     })}
                   </div>
                 </div>
-
-                {/* disclaimer */}
-                <div className="mt-8 rounded-2xl border border-text/10 bg-bg/20 p-5">
-                  <div className="text-[13px] font-extrabold text-text">Дисклеймер</div>
-                  <div className="mt-2 text-[13px] font-medium text-text/70">
-                    Расчёт упрощённый. Используем средний ФОТ МОП по РФ ({formatRUB(DEFAULTS.salaryMonthly)}/мес) и
-                    коэффициент замещения по умолчанию {formatPct(DEFAULTS.replacementFactor * 100)}.
-                    В "Параметры" можно подставить твой контекст.
-                  </div>
-                </div>
               </div>
 
               {/* results */}
@@ -412,71 +397,77 @@ export function RoiCalculator() {
                 </div>
 
                 <div className="mt-8 grid gap-4">
-                  <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
-                    <div className="text-[13px] font-semibold text-text/55">Экономия в месяц</div>
-                    <div className="mt-2 text-[26px] font-extrabold text-text">{formatRUB(calc.monthlySavings)}</div>
-                    <div className="mt-2 text-[13px] font-medium text-text/70">
+                  {/* 6) Экономия: bg-accent-1, текст accent-3 */}
+                  <div className="rounded-2xl bg-accent-1 p-6">
+                    <div className="text-[13px] font-semibold text-accent-3">Экономия в месяц</div>
+                    <div className="mt-2 text-[26px] font-extrabold text-accent-3">{formatRUB(calc.monthlySavings)}</div>
+                    <div className="mt-2 text-[13px] font-medium text-accent-3/60">
                       ФОТ {formatRUB(salaryMonthly)}/мес · FTE {fteEffective.toFixed(2).replace(/\.00$/, "")} · доля{" "}
                       {formatPct(replacementK * 100)}
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
-                      <div className="text-[13px] font-semibold text-text/55">Затраты (в месяц)</div>
-                      <div className="mt-2 text-[22px] font-extrabold text-text">
+                    {/* 7) Затраты: bg-text, текст accent-3 */}
+                    <div className="rounded-2xl bg-text p-6">
+                      <div className="text-[13px] font-semibold text-accent-3/80">Затраты (в месяц)</div>
+                      <div className="mt-2 text-[22px] font-extrabold text-accent-3">
                         {formatRUB(calc.monthlyCost)}
-                        <span className="text-[13px] font-semibold text-text/55"> /мес</span>
+                        <span className="text-[13px] font-semibold text-accent-3/70"> /мес</span>
                       </div>
-                      <div className="mt-2 text-[13px] font-medium text-text/70">
+                      <div className="mt-2 text-[13px] font-medium text-accent-3/70">
                         + интеграция {includeIntegration ? formatRUB(integrationFee) : formatRUB(0)} разово
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
-                      <div className="text-[13px] font-semibold text-text/55">Окупаемость</div>
-                      <div className="mt-2 text-[22px] font-extrabold text-text">
+                    {/* 7) Окупаемость: bg-text, текст accent-3 */}
+                    <div className="rounded-2xl bg-text p-6">
+                      <div className="text-[13px] font-semibold text-accent-3/80">Окупаемость</div>
+                      <div className="mt-2 text-[22px] font-extrabold text-accent-3">
                         {calc.paybackMonths ? `${calc.paybackMonths} мес` : `не за ${calc.months} мес`}
                       </div>
-                      <div className="mt-2 text-[13px] font-medium text-text/70">
+                      <div className="mt-2 text-[13px] font-medium text-accent-3/70">
                         Интеграция учитывается в начале расчёта.
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                  {/* 8) Итог: bg-accent-2, весь текст + шкала accent-3 */}
+                  <div className="rounded-2xl bg-accent-2 p-6">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-[13px] font-semibold text-text/55">Итог за {calc.months} мес</div>
-                      <div className="text-[13px] font-semibold text-text/55">
+                      <div className="text-[13px] font-semibold text-accent-3/80">Итог за {calc.months} мес</div>
+                      <div className="text-[13px] font-semibold text-accent-3/80">
                         Затраты: {formatRUB(calc.totalCosts)} · Экономия: {formatRUB(calc.totalSavings)}
                       </div>
                     </div>
 
                     <div className="mt-3">
-                      <div className="h-2 w-full rounded-full bg-text/10 overflow-hidden">
+                      <div className="h-2 w-full rounded-full bg-accent-3/25 overflow-hidden">
                         {(() => {
                           const a = calc.totalSavings;
                           const b = calc.totalCosts;
                           const total = Math.max(a + b, 1);
                           const w = clamp((a / total) * 100, 0, 100);
-                          return <div className="h-full" style={{ width: `${w}%`, backgroundColor: toneHex }} />;
+                          return <div className="h-full bg-accent-3" style={{ width: `${w}%` }} />;
                         })()}
                       </div>
+
                       <div className="mt-3 flex items-baseline justify-between gap-3">
-                        <div className="text-[13px] font-semibold text-text/55">Чистый эффект</div>
-                        <div className="text-[22px] font-extrabold text-text">{formatRUB(calc.net)}</div>
+                        <div className="text-[13px] font-semibold text-accent-3/80">Чистый эффект</div>
+                        <div className="text-[22px] font-extrabold text-accent-3">{formatRUB(calc.net)}</div>
                       </div>
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                      {/* годовые карточки: bg-accent-3, без бордюров, цена accent-2 */}
+                      <div className="rounded-2xl bg-accent-3 p-5">
                         <div className="text-[13px] font-semibold text-text/55">Год 1 (с интеграцией)</div>
-                        <div className="mt-2 text-[20px] font-extrabold text-text">{formatRUB(calc.year1Net)}</div>
+                        <div className="mt-2 text-[20px] font-extrabold text-accent-2">{formatRUB(calc.year1Net)}</div>
                       </div>
 
-                      <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                      <div className="rounded-2xl bg-accent-3 p-5">
                         <div className="text-[13px] font-semibold text-text/55">Год 2+ (без интеграции)</div>
-                        <div className="mt-2 text-[20px] font-extrabold text-text">{formatRUB(calc.year2Net)}</div>
+                        <div className="mt-2 text-[20px] font-extrabold text-accent-2">{formatRUB(calc.year2Net)}</div>
                       </div>
                     </div>
                   </div>
@@ -656,9 +647,7 @@ export function RoiCalculator() {
                             </label>
 
                             <div className="text-[13px] font-semibold text-text/70">
-                              Итого FTE: {formatRUB(0).replace(" ₽", "")}
-                              <span className="text-text/55"> · </span>
-                              {fteEffective.toFixed(2).replace(/\.00$/, "")}
+                              Итого FTE: {fteEffective.toFixed(2).replace(/\.00$/, "")}
                             </div>
                           </div>
                         ) : (
