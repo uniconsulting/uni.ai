@@ -445,12 +445,12 @@ export function RoiCalculator() {
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      <div className="rounded-2xl bg-accent-3 p-5">
+                      <div className="rounded-xl bg-accent-3 p-5">
                         <div className="text-[13px] font-semibold text-text/55">Год 1 (с интеграцией)</div>
                         <div className="mt-2 text-[20px] font-extrabold text-accent-2">{formatRUB(calc.year1Net)}</div>
                       </div>
 
-                      <div className="rounded-2xl bg-accent-3 p-5">
+                      <div className="rounded-xl bg-accent-3 p-5">
                         <div className="text-[13px] font-semibold text-text/55">Год 2+ (без интеграции)</div>
                         <div className="mt-2 text-[20px] font-extrabold text-accent-2">{formatRUB(calc.year2Net)}</div>
                       </div>
