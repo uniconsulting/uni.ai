@@ -73,20 +73,24 @@ function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0p
 
 function FaqCard({
   item,
-  isActive,
+  isActive, // отвечает за “активный вид” карточки (фон/бордер/жирность вопроса)
+  isOpen, // отвечает за показ/анимацию ответа
   onToggle,
+  onAnswerExitComplete,
   mode,
   radiusClass,
 }: {
   item: FaqItem;
   isActive: boolean;
+  isOpen: boolean;
   onToggle?: () => void;
+  onAnswerExitComplete?: () => void;
   mode: "desktop" | "mobile" | "measure";
   radiusClass: string;
 }) {
   const interactive = mode !== "measure";
   const desktopLayout = mode !== "mobile"; // desktop + measure
-  const fillHeight = mode === "desktop"; // важно: только в реальном layout, НЕ в measure
+  const fillHeight = mode === "desktop";
 
   const shell = [
     "w-full overflow-hidden ring-inset",
@@ -96,42 +100,82 @@ function FaqCard({
     radiusClass,
   ].join(" ");
 
-  const pad = desktopLayout
-    ? isActive
-      ? "px-8 lg:px-10 py-8"
-      : "h-full px-8 lg:px-10 flex items-center"
-    : "px-6 md:px-8 py-6";
+  // ВАЖНО: для неактивной строки делаем стабильное вертикальное центрирование
+  // через flex + items-center, а сам вопрос без лишних обёрток, чтобы не “подъезжал”.
+  const padInactiveDesktop = "h-full px-8 lg:px-10 flex items-center justify-start";
+  const padActiveDesktop = "px-8 lg:px-10 py-8";
+  const padMobile = "px-6 md:px-8 py-6";
 
   const qClass = [
+    "text-left",
     "leading-[1.12] tracking-tight",
     "text-[18px] md:text-[20px] lg:text-[22px]",
     isActive ? "font-semibold text-text" : "font-normal text-text/55",
   ].join(" ");
 
+  const AnswerBlock = (
+    <AnimatePresence
+      initial={false}
+      mode="sync"
+      onExitComplete={onAnswerExitComplete}
+    >
+      {isOpen ? (
+        <motion.div
+          key="answer"
+          className="overflow-hidden"
+          initial={{ height: 0, opacity: 0, y: 6 }}
+          animate={{ height: "auto", opacity: 1, y: 0 }}
+          exit={{ height: 0, opacity: 0, y: 4 }}
+          transition={{
+            height: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+            opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+            y: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+          }}
+        >
+          <div className="mt-5 h-px w-full bg-text/10" />
+          <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
+            {item.a}
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+
   const body = (
     <div className={shell}>
-      <div className={pad}>
-        <div className="w-full">
-          <div className={qClass}>{item.q}</div>
+      {desktopLayout ? (
+        isActive ? (
+          <div className={padActiveDesktop}>
+            <div className="w-full">
+              <div className={qClass}>{item.q}</div>
 
-          <AnimatePresence initial={false}>
-            {isActive ? (
-              <motion.div
-                key="a"
-                initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: 4, filter: "blur(6px)" }}
-                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="mt-5 h-px w-full bg-text/10" />
-                <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
-                  {item.a}
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+              {/* measure: без анимаций, чтобы высота считалась ровно */}
+              {mode === "measure" ? (
+                <>
+                  <div className="mt-5 h-px w-full bg-text/10" />
+                  <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
+                    {item.a}
+                  </div>
+                </>
+              ) : (
+                AnswerBlock
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={padInactiveDesktop}>
+            <div className={qClass}>{item.q}</div>
+          </div>
+        )
+      ) : (
+        // Mobile
+        <div className={padMobile}>
+          <div className="w-full">
+            <div className={qClass}>{item.q}</div>
+            {mode === "measure" ? null : AnswerBlock}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -142,7 +186,7 @@ function FaqCard({
       type="button"
       onClick={onToggle}
       className={fillHeight ? "block h-full w-full text-left" : "block w-full text-left"}
-      aria-expanded={isActive}
+      aria-expanded={isOpen}
     >
       {body}
     </button>
@@ -152,7 +196,11 @@ function FaqCard({
 export function Faq() {
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
 
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  // openIdx = кто реально показывает ответ
+  // layoutIdx = кто держит “активную геометрию/стиль” (в т.ч. во время закрытия)
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [layoutIdx, setLayoutIdx] = useState<number | null>(null);
+  const [closingIdx, setClosingIdx] = useState<number | null>(null);
 
   // геометрия “колоды” (desktop)
   const COLLAPSED_H = 92;
@@ -177,7 +225,7 @@ export function Faq() {
   }, []);
 
   useLayoutEffect(() => {
-    if (activeIdx == null) return;
+    if (layoutIdx == null) return;
     if (!measureRef.current) return;
 
     const raf = requestAnimationFrame(() => {
@@ -186,12 +234,12 @@ export function Faq() {
     });
 
     return () => cancelAnimationFrame(raf);
-  }, [activeIdx, deckW]);
+  }, [layoutIdx, deckW]);
 
   const extra = useMemo(() => {
-    if (activeIdx == null) return 0;
+    if (layoutIdx == null) return 0;
     return Math.max(0, activeH - COLLAPSED_H);
-  }, [activeIdx, activeH]);
+  }, [layoutIdx, activeH]);
 
   const deckH = useMemo(() => {
     const base = (FAQ.length - 1) * STEP + COLLAPSED_H;
@@ -199,27 +247,48 @@ export function Faq() {
   }, [extra]);
 
   const topFor = (i: number) => {
-    if (activeIdx == null) return i * STEP;
-    if (i <= activeIdx) return i * STEP;
+    if (layoutIdx == null) return i * STEP;
+    if (i <= layoutIdx) return i * STEP;
     return i * STEP + extra;
   };
 
   const heightFor = (i: number) => {
-    if (activeIdx == null) return COLLAPSED_H;
-    return i === activeIdx ? activeH : COLLAPSED_H;
+    if (layoutIdx == null) return COLLAPSED_H;
+    return i === layoutIdx ? activeH : COLLAPSED_H;
   };
 
   const radiusFor = (i: number, isActive: boolean) => {
     if (isActive) return "rounded-[30px]";
     const last = FAQ.length - 1;
 
-    const top = i === 0 && activeIdx !== 0;
-    const bot = i === last && activeIdx !== last;
+    const top = i === 0 && layoutIdx !== 0;
+    const bot = i === last && layoutIdx !== last;
 
     if (top && bot) return "rounded-[30px]";
     if (top) return "rounded-t-[30px] rounded-b-none";
     if (bot) return "rounded-b-[30px] rounded-t-none";
     return "rounded-none";
+  };
+
+  const onToggle = (i: number) => {
+    // закрываем текущую
+    if (openIdx === i) {
+      setOpenIdx(null);
+      setClosingIdx(i);
+      // layoutIdx оставляем, пока не отработает exit ответа
+      return;
+    }
+
+    // открываем новую
+    setClosingIdx(null);
+    setLayoutIdx(i);
+    setOpenIdx(i);
+  };
+
+  const onAnswerExitCompleteFor = (i: number) => {
+    // защита от “позднего” exit, если уже открыли другую карточку
+    setLayoutIdx((prev) => (prev === i ? null : prev));
+    setClosingIdx((prev) => (prev === i ? null : prev));
   };
 
   const CARD_MOTION =
@@ -280,20 +349,28 @@ export function Faq() {
           <div className="hidden md:block">
             <div ref={deckRef} className="relative w-full" style={{ height: deckH }}>
               {/* hidden measure (высота активной) */}
-              {activeIdx != null && deckW > 0 ? (
+              {layoutIdx != null && deckW > 0 ? (
                 <div
                   className="pointer-events-none absolute -left-[9999px] top-0 opacity-0"
                   style={{ width: deckW }}
                   aria-hidden
                 >
                   <div ref={measureRef}>
-                    <FaqCard item={FAQ[activeIdx]} isActive={true} mode="measure" radiusClass="rounded-[30px]" />
+                    <FaqCard
+                      item={FAQ[layoutIdx]}
+                      isActive={true}
+                      isOpen={true}
+                      mode="measure"
+                      radiusClass="rounded-[30px]"
+                    />
                   </div>
                 </div>
               ) : null}
 
               {FAQ.map((item, i) => {
-                const isActive = i === activeIdx;
+                const isActive = i === layoutIdx;
+                const isOpen = i === openIdx;
+
                 const z = isActive ? 50 : 10 + (FAQ.length - i);
 
                 return (
@@ -309,9 +386,13 @@ export function Faq() {
                     <FaqCard
                       item={item}
                       isActive={isActive}
+                      isOpen={isOpen}
                       mode="desktop"
                       radiusClass={radiusFor(i, isActive)}
-                      onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
+                      onToggle={() => onToggle(i)}
+                      onAnswerExitComplete={
+                        closingIdx === i ? () => onAnswerExitCompleteFor(i) : undefined
+                      }
                     />
                   </div>
                 );
@@ -322,15 +403,16 @@ export function Faq() {
           {/* Mobile: обычный аккордеон */}
           <div className="md:hidden space-y-4">
             {FAQ.map((item, i) => {
-              const isActive = i === activeIdx;
+              const isActive = i === openIdx;
               return (
                 <FaqCard
                   key={item.q}
                   item={item}
                   isActive={isActive}
+                  isOpen={isActive}
                   mode="mobile"
                   radiusClass="rounded-[24px]"
-                  onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
+                  onToggle={() => onToggle(i)}
                 />
               );
             })}
