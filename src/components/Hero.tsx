@@ -381,7 +381,7 @@ export function Hero() {
                         playsInline
                         preload="metadata"
                       >
-                        <source src={withBasePath("/hero/intro.mp4")} type="video/mp4" />
+                        <source src={withBasePath("/hero/IMG_6633.MOV")} type="video/MOV" />
                       </video>
                     </div>
                   </motion.div>
