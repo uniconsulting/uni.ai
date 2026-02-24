@@ -46,10 +46,6 @@ const FAQ: FaqItem[] = [
   },
 ];
 
-function clamp(n: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, n));
-}
-
 function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0px 0px -12% 0px") {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
@@ -80,44 +76,42 @@ function FaqCard({
   isActive,
   onToggle,
   mode,
+  radiusClass,
 }: {
   item: FaqItem;
   isActive: boolean;
   onToggle?: () => void;
   mode: "desktop" | "mobile" | "measure";
+  radiusClass: string;
 }) {
   const interactive = mode !== "measure";
 
   const shell = [
-    "w-full rounded-[30px] border-2 overflow-hidden",
-    "transition-[box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
-    isActive
-      ? "bg-accent-3 border-accent-2 shadow-[0_26px_90px_rgba(0,0,0,0.14)]"
-      : "bg-bg border-text/10 shadow-[0_18px_70px_rgba(0,0,0,0.08)]",
+    "w-full overflow-hidden",
+    "ring-inset",
+    isActive ? "bg-accent-3 ring-2 ring-accent-2" : "bg-bg ring-1 ring-text/15",
+    "transition-[background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none",
+    radiusClass,
+  ].join(" ");
+
+  const pad =
+    mode === "desktop"
+      ? isActive
+        ? "px-8 lg:px-10 py-8"
+        : "h-full px-8 lg:px-10 flex items-center"
+      : "px-6 md:px-8 py-6";
+
+  const qClass = [
+    "leading-[1.12] tracking-tight",
+    "text-[18px] md:text-[20px] lg:text-[22px]",
+    isActive ? "font-semibold text-text" : "font-normal text-text/55",
   ].join(" ");
 
   const body = (
     <div className={shell}>
-      <div
-        className={[
-          "h-full w-full",
-          mode === "desktop"
-            ? isActive
-              ? "px-8 lg:px-10 py-7"
-              : "px-8 lg:px-10 py-6 flex items-center"
-            : "px-6 md:px-8 py-6",
-        ].join(" ")}
-      >
+      <div className={pad}>
         <div className="w-full">
-          <div
-            className={[
-              "font-extrabold leading-[1.12] tracking-tight",
-              "text-[18px] md:text-[20px] lg:text-[22px]",
-              isActive ? "text-text" : "text-text/55",
-            ].join(" ")}
-          >
-            {item.q}
-          </div>
+          <div className={qClass}>{item.q}</div>
 
           <AnimatePresence initial={false}>
             {isActive ? (
@@ -128,7 +122,8 @@ function FaqCard({
                 exit={{ opacity: 0, y: 4, filter: "blur(6px)" }}
                 transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text/85">
+                <div className="mt-5 h-px w-full bg-text/10" />
+                <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text">
                   {item.a}
                 </div>
               </motion.div>
@@ -142,12 +137,7 @@ function FaqCard({
   if (!interactive) return body;
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="w-full text-left"
-      aria-expanded={isActive}
-    >
+    <button type="button" onClick={onToggle} className="w-full text-left" aria-expanded={isActive}>
       {body}
     </button>
   );
@@ -158,15 +148,15 @@ export function Faq() {
 
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
-  // геометрия “колоды”
-  const COLLAPSED_H = 92; // высота неактивной карточки (desktop)
-  const OVERLAP = 20; // перекрытие
+  // геометрия “колоды” (desktop)
+  const COLLAPSED_H = 92;
+  const OVERLAP = 20;
   const STEP = COLLAPSED_H - OVERLAP;
 
   const deckRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
   const [deckW, setDeckW] = useState(0);
-  const [activeH, setActiveH] = useState(220); // fallback для активной
+  const [activeH, setActiveH] = useState(260); // чуть больше по умолчанию
 
   useLayoutEffect(() => {
     const el = deckRef.current;
@@ -213,6 +203,19 @@ export function Faq() {
     return i === activeIdx ? activeH : COLLAPSED_H;
   };
 
+  const radiusFor = (i: number, isActive: boolean) => {
+    if (isActive) return "rounded-[30px]";
+    const last = FAQ.length - 1;
+
+    const top = i === 0 && activeIdx !== 0;
+    const bot = i === last && activeIdx !== last;
+
+    if (top && bot) return "rounded-[30px]";
+    if (top) return "rounded-t-[30px] rounded-b-none";
+    if (bot) return "rounded-b-[30px] rounded-t-none";
+    return "rounded-none";
+  };
+
   const CARD_MOTION =
     "will-change-[top,height] transition-[top,height] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
 
@@ -226,7 +229,7 @@ export function Faq() {
       className={`relative overflow-x-clip ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
       aria-label="FAQ"
     >
-      {/* разделители как в Packages: горизонтальный во всю ширину + вертикальный из середины вниз */}
+      {/* разделители как в Packages */}
       <div
         aria-hidden
         className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
@@ -248,7 +251,7 @@ export function Faq() {
               <div className="text-[18px] font-medium opacity-70 hover-accent">FAQ | Ответы</div>
             </div>
 
-            <div className="md:pl-10 text-left">
+            <div className="md:pl-10 text-right flex flex-col items-end">
               <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">
                 Часто задаваемые вопросы
               </div>
@@ -267,10 +270,10 @@ export function Faq() {
           className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-12`}
           style={{ transitionDelay: "80ms" }}
         >
-          {/* Desktop: колода с наложением */}
+          {/* Desktop: вертикальная “колода” */}
           <div className="hidden md:block">
             <div ref={deckRef} className="relative w-full" style={{ height: deckH }}>
-              {/* hidden measure (чтобы активная карточка подбирала высоту под текст) */}
+              {/* hidden measure (высота активной) */}
               {activeIdx != null && deckW > 0 ? (
                 <div
                   className="pointer-events-none absolute -left-[9999px] top-0 opacity-0"
@@ -278,15 +281,19 @@ export function Faq() {
                   aria-hidden
                 >
                   <div ref={measureRef}>
-                    <FaqCard item={FAQ[activeIdx]} isActive={true} mode="measure" />
+                    <FaqCard
+                      item={FAQ[activeIdx]}
+                      isActive={true}
+                      mode="measure"
+                      radiusClass="rounded-[30px]"
+                    />
                   </div>
                 </div>
               ) : null}
 
               {FAQ.map((item, i) => {
                 const isActive = i === activeIdx;
-
-                const z = isActive ? 50 : FAQ.length - i; // активная поверх всех
+                const z = isActive ? 50 : 10 + (FAQ.length - i);
 
                 return (
                   <div
@@ -302,6 +309,7 @@ export function Faq() {
                       item={item}
                       isActive={isActive}
                       mode="desktop"
+                      radiusClass={radiusFor(i, isActive)}
                       onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
                     />
                   </div>
@@ -310,7 +318,7 @@ export function Faq() {
             </div>
           </div>
 
-          {/* Mobile: обычный аккордеон без “колоды” */}
+          {/* Mobile: обычный аккордеон */}
           <div className="md:hidden space-y-4">
             {FAQ.map((item, i) => {
               const isActive = i === activeIdx;
@@ -320,6 +328,7 @@ export function Faq() {
                   item={item}
                   isActive={isActive}
                   mode="mobile"
+                  radiusClass="rounded-[24px]"
                   onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
                 />
               );
