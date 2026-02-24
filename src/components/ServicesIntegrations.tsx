@@ -107,7 +107,8 @@ function DetailsFrame({
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--tone" as any]: toneHex }}
     >
-      <div className="h-full px-10 py-8">
+      {/* FIX: flex-col + min-h-0, чтобы внутренний скролл никогда не “уезжал” под карточку */}
+      <div className="h-full px-10 py-8 flex flex-col">
         {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
@@ -154,7 +155,7 @@ function DetailsFrame({
               <ChevronRight className="h-5 w-5" />
             </button>
 
-            {/* (1) CTA перенесли в хедер: кнопка "написать" между → и X */}
+            {/* CTA в хедере */}
             <a
               href={service.ctaHref}
               target="_blank"
@@ -204,10 +205,7 @@ function DetailsFrame({
         </div>
 
         {/* body */}
-        <div
-          ref={bodyRef}
-          className="mt-8 h-[calc(100%-188px)] overflow-auto pr-2 pb-8"
-        >
+        <div ref={bodyRef} className="mt-8 flex-1 min-h-0 overflow-auto pr-2 pb-8">
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
               <div key={s.title} className="min-w-0">
@@ -244,14 +242,30 @@ function ProcessFrame({
     { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
     {
       title: "Знания и промпты",
-      items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"],
+      items: [
+        "Адаптация документов для базы знаний",
+        "Упаковка базы знаний",
+        "Написание промптов",
+      ],
     },
     {
       title: "Сборка и запуск",
-      items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"],
+      items: [
+        "Разработка MVP-версии",
+        "Тестирование",
+        "Внесение правок",
+        "Доведение до итоговой версии",
+      ],
     },
     { title: "Интеграции", items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"] },
-    { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
+    {
+      title: "Сопровождение",
+      items: [
+        "Контроль качества",
+        "Улучшения по аналитике и данным",
+        "План развития (roadmap)",
+      ],
+    },
   ];
 
   return (
@@ -259,7 +273,7 @@ function ProcessFrame({
       className="h-full w-full overflow-hidden rounded-3xl bg-accent-3 border border-text/10"
       style={{ ["--tone" as any]: toneHex }}
     >
-      <div className="h-full px-10 py-8">
+      <div className="h-full px-10 py-8 flex flex-col">
         <div className="flex items-start gap-4">
           <div className="min-w-0">
             <div className="text-[30px] md:text-[32px] font-extrabold leading-[1.05] text-text">
@@ -273,7 +287,6 @@ function ProcessFrame({
             </div>
           </div>
 
-          {/* (1) CTA перенесли наверх: "написать" слева от "закрыть" */}
           <div className="ml-auto flex shrink-0 items-start gap-2">
             <div className="inline-flex items-center gap-2 rounded-xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70">
               <Workflow className="h-4 w-4" />
@@ -303,7 +316,7 @@ function ProcessFrame({
           </div>
         </div>
 
-        <div className="mt-8 h-[calc(100%-132px)] overflow-auto pr-2 pb-8">
+        <div className="mt-8 flex-1 min-h-0 overflow-auto pr-2 pb-8">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {steps.map((s) => (
               <div key={s.title} className="rounded-2xl border border-text/10 bg-bg/20 p-6">
@@ -386,7 +399,11 @@ export function ServicesIntegrations() {
         ],
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         brief2: ["Интеграции с", "AmoCRM, Битрикс24, 1С, трекеры и ERP и др."],
-        points3: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
+        points3: [
+          "Аудит и метрики результата",
+          "База знаний, промпты, MVP",
+          "Интеграции, права, события",
+        ],
         ctaHref: TELEGRAM_HREF,
       },
     ],
@@ -419,6 +436,7 @@ export function ServicesIntegrations() {
           },
         ],
       },
+
       custom: {
         lead: "Проектная разработка решений под вашу задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
         tags: "Проектно • Под ключ • Интеграции • Сопровождение",
@@ -443,6 +461,7 @@ export function ServicesIntegrations() {
           },
         ],
       },
+
       turnkey: {
         lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему.",
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
@@ -451,21 +470,40 @@ export function ServicesIntegrations() {
           { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
           {
             title: "Знания и промпты",
-            items: ["Адаптация документов и информации для базы знаний", "Упаковка базы знаний", "Написание промптов"],
+            items: [
+              "Адаптация документов и информации для базы знаний",
+              "Упаковка базы знаний",
+              "Написание промптов",
+            ],
           },
           {
             title: "Сборка и запуск",
-            items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"],
+            items: [
+              "Разработка MVP-версии",
+              "Тестирование",
+              "Внесение правок",
+              "Доработка до итоговой версии",
+            ],
           },
           {
             title: "Интеграции",
-            items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"],
+            items: [
+              "Интеграции с сервисами/площадками/платформами, CRM, ERP",
+              "Права, маршрутизация, события",
+            ],
           },
           {
             title: "Сопровождение",
-            items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"],
+            items: [
+              "Контроль качества",
+              "Улучшения по аналитике и данным",
+              "План развития (roadmap)",
+            ],
           },
-          { title: "Примечание", items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."] },
+          {
+            title: "Примечание",
+            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
+          },
         ],
       },
     }),
@@ -475,7 +513,6 @@ export function ServicesIntegrations() {
   const CARD_H = 580;
   const INTERVAL = "24px";
 
-  // колода: 3 карты
   const W_INACTIVE = "33.333%";
   const W_ACTIVE = "44%";
   const ACTIVE_SHIFT = "3%";
@@ -497,8 +534,7 @@ export function ServicesIntegrations() {
 
   const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
-  // (2) extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления.
-  // Важно: НЕ трогаем middle (custom), чтобы он не "уезжал".
+  // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
   const inactiveTitleInsetFor = (i: number, isActive: boolean) =>
     !isActive && i === services.length - 1 ? "pr-14" : "";
 
@@ -595,7 +631,9 @@ export function ServicesIntegrations() {
     <section
       ref={sectionRef as any}
       id="integrations"
-      className={`relative ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
+      className={`relative ${
+        inView ? "opacity-100" : "opacity-0"
+      } transition-opacity duration-700 ease-out`}
     >
       <div
         aria-hidden
@@ -605,7 +643,6 @@ export function ServicesIntegrations() {
       />
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
-        {/* label + view mode switch */}
         <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="hover-accent text-[18px] font-medium opacity-70">услуги | интеграции</div>
@@ -650,7 +687,6 @@ export function ServicesIntegrations() {
           </div>
         </div>
 
-        {/* main zone */}
         <div
           className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-10`}
           style={{ transitionDelay: "80ms" }}
@@ -704,7 +740,9 @@ export function ServicesIntegrations() {
                           <div
                             className={[
                               "overflow-hidden rounded-[28px]",
-                              isActive ? "bg-accent-3 ring-2 ring-[color:var(--tone)]" : "bg-bg ring-1 ring-text/15",
+                              isActive
+                                ? "bg-accent-3 ring-2 ring-[color:var(--tone)]"
+                                : "bg-bg ring-1 ring-text/15",
                             ].join(" ")}
                             style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
                           >
@@ -713,7 +751,6 @@ export function ServicesIntegrations() {
                                 isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"
                               }`}
                             >
-                              {/* 1 */}
                               <div className="px-8 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
                                 <div className="flex h-full flex-col justify-start">
                                   <div
@@ -726,7 +763,9 @@ export function ServicesIntegrations() {
                                   >
                                     <div className="min-h-[56px]">
                                       <div className="truncate">{s.title2[0]}</div>
-                                      <div className="truncate">{s.title2[1] || <span className="opacity-0">.</span>}</div>
+                                      <div className="truncate">
+                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                                      </div>
                                     </div>
                                   </div>
 
@@ -742,24 +781,28 @@ export function ServicesIntegrations() {
                                         </div>
                                       ))}
                                     </div>
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">{s.tags}</div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
+                                      {s.tags}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* 2 */}
                               <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
                                     isActive ? "pointer-events-auto" : "pointer-events-none"
                                   }`}
                                 >
-                                  <div className="text-[16px] font-extrabold text-text truncate">{s.brief2[0]}</div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">{s.brief2[1]}</div>
+                                  <div className="text-[16px] font-extrabold text-text truncate">
+                                    {s.brief2[0]}
+                                  </div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
+                                    {s.brief2[1]}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* 3 */}
                               <div className="px-8 pt-[var(--i)] pb-4">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
@@ -777,7 +820,6 @@ export function ServicesIntegrations() {
                                 </div>
                               </div>
 
-                              {/* 4 */}
                               <div className="px-8 pt-2 pb-7">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
@@ -882,7 +924,6 @@ export function ServicesIntegrations() {
                                 isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
                               }`}
                             >
-                              {/* 1 */}
                               <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
                                 <div className="flex h-full flex-col justify-start">
                                   <div
@@ -894,7 +935,9 @@ export function ServicesIntegrations() {
                                   >
                                     <div className="min-h-[56px]">
                                       <div className="truncate">{s.title2[0]}</div>
-                                      <div className="truncate">{s.title2[1] || <span className="opacity-0">.</span>}</div>
+                                      <div className="truncate">
+                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                                      </div>
                                     </div>
                                   </div>
 
@@ -911,12 +954,13 @@ export function ServicesIntegrations() {
                                         </div>
                                       ))}
                                     </div>
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">{s.tags}</div>
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
+                                      {s.tags}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* 2 */}
                               <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
@@ -924,12 +968,15 @@ export function ServicesIntegrations() {
                                   }`}
                                   style={{ transitionDelay: contentDelay }}
                                 >
-                                  <div className="text-[18px] font-extrabold text-text truncate">{s.brief2[0]}</div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">{s.brief2[1]}</div>
+                                  <div className="text-[18px] font-extrabold text-text truncate">
+                                    {s.brief2[0]}
+                                  </div>
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
+                                    {s.brief2[1]}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* 3 */}
                               <div className="px-10 pt-[var(--i)] pb-4">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
@@ -948,7 +995,6 @@ export function ServicesIntegrations() {
                                 </div>
                               </div>
 
-                              {/* 4 */}
                               <div className="px-10 pt-2 pb-8">
                                 <div
                                   className={`${CONTENT_MOTION} ${contentState} ${
