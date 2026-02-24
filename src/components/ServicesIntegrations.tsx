@@ -33,7 +33,10 @@ const TONE: Record<Service["tone"], { hex: string }> = {
 
 const TELEGRAM_HREF = "https://t.me/uni_smb";
 
-function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0px 0px -12% 0px") {
+function useOnceInView<T extends HTMLElement>(
+  threshold = 0.12,
+  rootMargin = "0px 0px -12% 0px",
+) {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -105,7 +108,7 @@ function DetailsFrame({
               {service.title2[1] ? <span className="block">{service.title2[1]}</span> : null}
             </div>
 
-            {/* (1) немного больше отступ между заголовком и описанием */}
+            {/* немного больше отступ между заголовком и описанием */}
             <div className="mt-5 text-[16px] md:text-[18px] font-medium text-text/85">
               {details.lead}
             </div>
@@ -165,7 +168,9 @@ function DetailsFrame({
                 onClick={() => onSelect(t.id)}
                 className={[
                   "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
-                  isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
+                  isOn
+                    ? "bg-bg/65 border-2"
+                    : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
                 ].join(" ")}
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
@@ -219,22 +224,43 @@ function ProcessFrame({ toneHex }: { toneHex: string }) {
     { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
     {
       title: "Знания и промпты",
-      items: ["Адаптация документов для базы знаний", "Упаковка базы знаний", "Написание промптов"],
+      items: [
+        "Адаптация документов для базы знаний",
+        "Упаковка базы знаний",
+        "Написание промптов",
+      ],
     },
     {
       title: "Сборка и запуск",
-      items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доведение до итоговой версии"],
+      items: [
+        "Разработка MVP-версии",
+        "Тестирование",
+        "Внесение правок",
+        "Доведение до итоговой версии",
+      ],
     },
     { title: "Интеграции", items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"] },
-    { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
+    {
+      title: "Сопровождение",
+      items: [
+        "Контроль качества",
+        "Улучшения по аналитике и данным",
+        "План развития (roadmap)",
+      ],
+    },
   ];
 
   return (
-    <div className="h-full w-full overflow-hidden rounded-3xl bg-accent-3 border border-text/10" style={{ ["--tone" as any]: toneHex }}>
+    <div
+      className="h-full w-full overflow-hidden rounded-3xl bg-accent-3 border border-text/10"
+      style={{ ["--tone" as any]: toneHex }}
+    >
       <div className="h-full px-10 py-8">
         <div className="flex items-start gap-4">
           <div className="min-w-0">
-            <div className="text-[30px] md:text-[32px] font-extrabold leading-[1.05] text-text">Интеграции под ключ</div>
+            <div className="text-[30px] md:text-[32px] font-extrabold leading-[1.05] text-text">
+              Интеграции под ключ
+            </div>
             <div className="mt-3 text-[15px] md:text-[16px] font-medium text-text/70">
               Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
             </div>
@@ -298,10 +324,18 @@ export function ServicesIntegrations() {
         navTitle: "Обучение и консалтинг",
         title2: ["Обучение команд", "и консалтинг"],
         tone: "blue",
-        lead3: ["Обучаем руководителей и команды тому,", "как применять нейросети в ежедневной работе", "и получать измеримый эффект."],
+        lead3: [
+          "Обучаем руководителей и команды тому,",
+          "как применять нейросети в ежедневной работе",
+          "и получать измеримый эффект.",
+        ],
         tags: "Руководители • Команды • Практика • Результат",
         brief2: ["Учим работать с", "ChatGPT, Claude, Notion, NotebookLM и др."],
-        points3: ["Документация, регламенты, база знаний", "Отчёты, аналитика, KPI, управленческие сводки", "Таблицы, расчёты, финмодели, Excel-рутины"],
+        points3: [
+          "Документация, регламенты, база знаний",
+          "Отчёты, аналитика, KPI, управленческие сводки",
+          "Таблицы, расчёты, финмодели, Excel-рутины",
+        ],
         ctaHref: TELEGRAM_HREF,
       },
       {
@@ -309,10 +343,18 @@ export function ServicesIntegrations() {
         navTitle: "Индивидуальная разработка",
         title2: ["Индивидуальная", "разработка"],
         tone: "green",
-        lead3: ["Проектная разработка решений под вашу", "задачу: от идеи и ТЗ до готового внедрения", "и сопровождения."],
+        lead3: [
+          "Проектная разработка решений под вашу",
+          "задачу: от идеи и ТЗ до готового внедрения",
+          "и сопровождения.",
+        ],
         tags: "Проектно • Под ключ • Интеграции • Сопровождение",
         brief2: ["Делаем", "ИИ-инструменты, сайты и интернет-магазины и др."],
-        points3: ["Сбор требований и формализация задачи", "Разработка MVP и доведение до итоговой версии", "Запуск, контроль качества, улучшения по данным"],
+        points3: [
+          "Сбор требований и формализация задачи",
+          "Разработка MVP и доведение до итоговой версии",
+          "Запуск, контроль качества, улучшения по данным",
+        ],
         ctaHref: TELEGRAM_HREF,
       },
       {
@@ -320,7 +362,11 @@ export function ServicesIntegrations() {
         navTitle: "Интеграции под ключ",
         title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
         tone: "red",
-        lead3: ["Мы знаем, насколько важно сохранить", "удобство пользования инструментами для команды, поэтому", "интегрируем наши решения в Вашу экосистему"],
+        lead3: [
+          "Мы знаем, насколько важно сохранить",
+          "удобство пользования инструментами для команды, поэтому",
+          "интегрируем наши решения в Вашу экосистему",
+        ],
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         brief2: ["Интеграции с", "AmoCRM, Битрикс24, 1С, трекеры и ERP и др."],
         points3: ["Аудит и метрики результата", "База знаний, промпты, MVP", "Интеграции, права, события"],
@@ -336,28 +382,90 @@ export function ServicesIntegrations() {
         lead: "Обучаем руководителей и команды тому, как применять нейросети в ежедневной работе и получать измеримый эффект.",
         tags: "Руководители • Команды • Практика • Результат",
         sections: [
-          { title: "Что делаем", items: ["Документация, регламенты, база знаний", "Отчёты, аналитика, KPI, управленческие сводки", "Таблицы, расчёты, финмодели, Excel-рутины", "Договоры, письма, коммерческие предложения", "Сценарии, промпты, стандарты качества ответов"] },
-          { title: "Формат", items: ["Сессии с практикой на ваших задачах", "Шаблоны и стандарты для команды", "Фиксация результата в документах"] },
+          {
+            title: "Что делаем",
+            items: [
+              "Документация, регламенты, база знаний",
+              "Отчёты, аналитика, KPI, управленческие сводки",
+              "Таблицы, расчёты, финмодели, Excel-рутины",
+              "Договоры, письма, коммерческие предложения",
+              "Сценарии, промпты, стандарты качества ответов",
+            ],
+          },
+          {
+            title: "Формат",
+            items: [
+              "Сессии с практикой на ваших задачах",
+              "Шаблоны и стандарты для команды",
+              "Фиксация результата в документах",
+            ],
+          },
         ],
       },
+
       custom: {
         lead: "Проектная разработка решений под вашу задачу: от идеи и ТЗ до готового внедрения и сопровождения.",
         tags: "Проектно • Под ключ • Интеграции • Сопровождение",
         sections: [
-          { title: "Этапы/состав работ", items: ["Сбор требований и формализация задачи", "Проектирование логики, ролей, сценариев", "Разработка MVP и доведение до итоговой версии", "Интеграции с сервисами, CRM/ERP, площадками", "Запуск, контроль качества, улучшения по данным"] },
-          { title: "Как ведём проект", items: ["Прозрачные статусы и контроль качества", "Проверка гипотез по данным", "Доработки без хаоса"] },
+          {
+            title: "Этапы/состав работ",
+            items: [
+              "Сбор требований и формализация задачи",
+              "Проектирование логики, ролей, сценариев",
+              "Разработка MVP и доведение до итоговой версии",
+              "Интеграции с сервисами, CRM/ERP, площадками",
+              "Запуск, контроль качества, улучшения по данным",
+            ],
+          },
+          {
+            title: "Как ведём проект",
+            items: [
+              "Прозрачные статусы и контроль качества",
+              "Проверка гипотез по данным",
+              "Доработки без хаоса",
+            ],
+          },
         ],
       },
+
       turnkey: {
         lead: "Мы знаем, насколько важно сохранить удобство пользования инструментами для команды, поэтому интегрируем наши решения в Вашу экосистему.",
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         sections: [
           { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
           { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
-          { title: "Знания и промпты", items: ["Адаптация документов и информации для базы знаний", "Упаковка базы знаний", "Написание промптов"] },
-          { title: "Сборка и запуск", items: ["Разработка MVP-версии", "Тестирование", "Внесение правок", "Доработка до итоговой версии"] },
-          { title: "Интеграции", items: ["Интеграции с сервисами/площадками/платформами, CRM, ERP", "Права, маршрутизация, события"] },
-          { title: "Сопровождение", items: ["Контроль качества", "Улучшения по аналитике и данным", "План развития (roadmap)"] },
+          {
+            title: "Знания и промпты",
+            items: [
+              "Адаптация документов и информации для базы знаний",
+              "Упаковка базы знаний",
+              "Написание промптов",
+            ],
+          },
+          {
+            title: "Сборка и запуск",
+            items: [
+              "Разработка MVP-версии",
+              "Тестирование",
+              "Внесение правок",
+              "Доработка до итоговой версии",
+            ],
+          },
+          {
+            title: "Интеграции",
+            items: [
+              "Интеграции с сервисами/площадками/платформами, CRM, ERP",
+              "Права, маршрутизация, события",
+            ],
+          },
+          {
+            title: "Сопровождение",
+            items: [
+              "Контроль качества",
+              "Улучшения по аналитике и данным",
+              "План развития (roadmap)",
+            ],
+          },
           { title: "Примечание", items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."] },
         ],
       },
@@ -365,7 +473,8 @@ export function ServicesIntegrations() {
     [],
   );
 
-  const CARD_H = 580;
+  // было 580, из-за округлений/overflow кнопки визуально “упирались” в низ
+  const CARD_H = 620;
   const INTERVAL = "24px";
 
   // колода: 3 карты
@@ -388,9 +497,9 @@ export function ServicesIntegrations() {
     return "rounded-none";
   };
 
-  // (5) правый неактивный заголовок: даём отступ справа/слева и не упираем в край
-  const inactiveTitlePaddingFor = (i: number) => (i < activeIdx ? "pr-6" : "pl-6");
   const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
+  // правый неактивный заголовок: даём padding-right, чтобы не резался о край
+  const inactiveTitlePadFor = (i: number) => (i > activeIdx ? "pr-6" : "");
 
   const tabs = useMemo(
     () =>
@@ -427,6 +536,7 @@ export function ServicesIntegrations() {
     setExpandedTo(services[expandedIdx + 1].id);
   };
 
+  // клавиатура: ← → и Esc (только когда открыт фрейм)
   useEffect(() => {
     if (!expanded) return;
 
@@ -460,6 +570,7 @@ export function ServicesIntegrations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, expandedIdx, canPrev, canNext, services]);
 
+  // если переключили режим, закрываем раскрытие
   useEffect(() => {
     setExpanded(null);
   }, [mode]);
@@ -479,10 +590,8 @@ export function ServicesIntegrations() {
   const expandedToneHex = expandedService ? TONE[expandedService.tone].hex : TONE[activeService.tone].hex;
   const expandedBorderClass = expandedService ? "border-[color:var(--tone)]" : "border-text/10";
 
-  // (2)(3)(4) точечная правка вертикальных интервалов:
-  // - уменьшили третий ряд, чтобы нижний разделитель был ближе к списку
-  // - увеличили четвертый ряд, чтобы был чуть больший «воздух» снизу, при этом в CTA мы уменьшаем верхний padding
-  const ROWS_SERVICES = "grid-rows-[210px_110px_154px_146px]";
+  // перераспределили высоты: меньше “воздуха” над CTA, больше снизу у кнопок (и суммарно ровно 620px)
+  const ROWS_SERVICES = "grid-rows-[210px_110px_150px_150px]";
 
   return (
     <section
@@ -504,8 +613,7 @@ export function ServicesIntegrations() {
             <div className="hover-accent text-[18px] font-medium opacity-70">услуги | интеграции</div>
 
             <div className="flex items-center gap-3">
-              {/* (6) убрали "Режим просмотра" */}
-
+              {/* убрали "Режим просмотра" */}
               <div className="rounded-2xl bg-accent-1 p-[3px]">
                 <div className="flex rounded-2xl bg-accent-1 p-1">
                   <button
@@ -518,7 +626,7 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "services"}
                   >
-                    {/* (6) чуть ниже по вертикали */}
+                    {/* текст чуть ниже по оптике */}
                     <span className="relative top-[1px] inline-flex items-center gap-2">
                       <Layers className="h-4 w-4" />
                       <span>Услуги</span>
@@ -535,7 +643,7 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "process"}
                   >
-                    {/* (6) чуть ниже по вертикали */}
+                    {/* текст чуть ниже по оптике */}
                     <span className="relative top-[1px] inline-flex items-center gap-2">
                       <Workflow className="h-4 w-4" />
                       <span>Процесс интеграции</span>
@@ -552,6 +660,7 @@ export function ServicesIntegrations() {
           className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-10`}
           style={{ transitionDelay: "80ms" }}
         >
+          {/* SERVICES MODE */}
           {mode === "services" ? (
             <>
               {/* mobile */}
@@ -579,7 +688,9 @@ export function ServicesIntegrations() {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
-                      const contentState = isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]";
+                      const contentState = isActive
+                        ? "opacity-100 translate-y-0 blur-0"
+                        : "opacity-0 translate-y-1 blur-[2px]";
 
                       return (
                         <div
@@ -603,14 +714,20 @@ export function ServicesIntegrations() {
                             ].join(" ")}
                             style={{ ["--tone" as any]: toneHex, ["--i" as any]: INTERVAL }}
                           >
-                            <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"}`}>
+                            <div
+                              className={`grid h-full ${ROWS_SERVICES} ${
+                                isActive ? "divide-y divide-text/20" : "divide-y divide-text/10"
+                              }`}
+                            >
                               {/* 1 */}
                               <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                                <div className="flex h-full flex-col justify-between">
+                                <div className="flex h-full flex-col justify-start">
                                   <div
                                     className={[
                                       "text-[26px] font-extrabold leading-[1.05]",
-                                      isActive ? "text-[color:var(--tone)]" : `text-text/20 ${titleAlignForInactive(i)} ${inactiveTitlePaddingFor(i)}`,
+                                      isActive
+                                        ? "text-[color:var(--tone)]"
+                                        : `text-text/20 ${titleAlignForInactive(i)} ${inactiveTitlePadFor(i)}`,
                                     ].join(" ")}
                                   >
                                     <div className="min-h-[56px]">
@@ -619,9 +736,13 @@ export function ServicesIntegrations() {
                                     </div>
                                   </div>
 
-                                  <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
-                                    {/* (1) больше воздуха между заголовком и описанием: чуть увеличили mt */}
-                                    <div className="mt-1 space-y-1 text-[14px] font-medium leading-[1.25] text-text/80">
+                                  <div
+                                    className={`${CONTENT_MOTION} ${contentState} ${
+                                      isActive ? "pointer-events-auto" : "pointer-events-none"
+                                    }`}
+                                  >
+                                    {/* больше воздуха от заголовка до описания */}
+                                    <div className="mt-5 space-y-1 text-[14px] font-medium leading-[1.25] text-text/80">
                                       {s.lead3.map((l) => (
                                         <div key={l} className="truncate">
                                           {l}
@@ -635,7 +756,11 @@ export function ServicesIntegrations() {
 
                               {/* 2 */}
                               <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
+                                <div
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  }`}
+                                >
                                   <div className="text-[16px] font-extrabold text-text truncate">{s.brief2[0]}</div>
                                   <div className="mt-3 text-[14px] font-medium text-text/70 truncate">{s.brief2[1]}</div>
                                 </div>
@@ -643,7 +768,11 @@ export function ServicesIntegrations() {
 
                               {/* 3 */}
                               <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}>
+                                <div
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  }`}
+                                >
                                   <ul className="space-y-2 text-[15px] font-medium text-text/85">
                                     {s.points3.map((it) => (
                                       <li key={it} className="flex gap-3">
@@ -656,10 +785,13 @@ export function ServicesIntegrations() {
                               </div>
 
                               {/* 4 */}
-                              <div className="px-8 pt-3 pb-5">
-                                {/* (3) меньше от разделителя до кнопок: pt-3 вместо pt-[var(--i)]
-                                    (4) больше воздуха снизу: pb-5 */}
-                                <div className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"} flex h-full items-end`}>
+                              <div className="px-8 pt-2 pb-7">
+                                {/* меньше от разделителя до кнопок + больше снизу, чтобы не “резалось” округлением */}
+                                <div
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  } flex h-full items-end`}
+                                >
                                   <div className="flex w-full items-center gap-3">
                                     <div
                                       role="button"
@@ -707,6 +839,7 @@ export function ServicesIntegrations() {
               {/* desktop */}
               <div className="relative hidden md:block">
                 <div className="relative" style={{ height: CARD_H }}>
+                  {/* DECK */}
                   <div
                     className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
                       expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
@@ -725,7 +858,9 @@ export function ServicesIntegrations() {
                         ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
                         : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
 
-                      const contentState = isActive ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-1 blur-[2px]";
+                      const contentState = isActive
+                        ? "opacity-100 translate-y-0 blur-0"
+                        : "opacity-0 translate-y-1 blur-[2px]";
                       const contentDelay = isActive ? "140ms" : "0ms";
 
                       return (
@@ -751,15 +886,19 @@ export function ServicesIntegrations() {
                           }}
                         >
                           <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
-                            <div className={`grid h-full ${ROWS_SERVICES} ${isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"}`}>
-                              {/* 1 */}
+                            <div
+                              className={`grid h-full ${ROWS_SERVICES} ${
+                                isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
+                              }`}
+                            >
+                              {/* 1: title + lead/tags */}
                               <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                <div className="flex h-full flex-col justify-between">
+                                <div className="flex h-full flex-col justify-start">
                                   <div
                                     className={
                                       isActive
                                         ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
-                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitlePaddingFor(i)}`
+                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitlePadFor(i)}`
                                     }
                                   >
                                     <div className="min-h-[56px]">
@@ -769,11 +908,13 @@ export function ServicesIntegrations() {
                                   </div>
 
                                   <div
-                                    className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}
+                                    className={`${CONTENT_MOTION} ${contentState} ${
+                                      isActive ? "pointer-events-auto" : "pointer-events-none"
+                                    }`}
                                     style={{ transitionDelay: contentDelay }}
                                   >
-                                    {/* (1) чуть увеличили отступ между заголовком и описанием */}
-                                    <div className="mt-1 space-y-1 text-[15px] font-medium leading-[1.25] text-text/80">
+                                    {/* больше воздуха от заголовка до описания */}
+                                    <div className="mt-5 space-y-1 text-[15px] font-medium leading-[1.25] text-text/80">
                                       {s.lead3.map((l) => (
                                         <div key={l} className="truncate">
                                           {l}
@@ -785,10 +926,12 @@ export function ServicesIntegrations() {
                                 </div>
                               </div>
 
-                              {/* 2 */}
+                              {/* 2: brief */}
                               <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                 <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  }`}
                                   style={{ transitionDelay: contentDelay }}
                                 >
                                   <div className="text-[18px] font-extrabold text-text truncate">{s.brief2[0]}</div>
@@ -796,10 +939,12 @@ export function ServicesIntegrations() {
                                 </div>
                               </div>
 
-                              {/* 3 */}
+                              {/* 3: points */}
                               <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                 <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"}`}
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  }`}
                                   style={{ transitionDelay: contentDelay }}
                                 >
                                   <ul className="space-y-2 text-[16px] font-medium text-text/85">
@@ -813,12 +958,13 @@ export function ServicesIntegrations() {
                                 </div>
                               </div>
 
-                              {/* 4 */}
-                              <div className="px-10 pt-3 pb-6">
-                                {/* (3) меньше от разделителя до кнопок: pt-3
-                                    (4) больше воздуха снизу: pb-6 */}
+                              {/* 4: CTA row */}
+                              <div className="px-10 pt-2 pb-8">
+                                {/* меньше от разделителя до кнопок + больше снизу */}
                                 <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${isActive ? "pointer-events-auto" : "pointer-events-none"} flex h-full items-end`}
+                                  className={`${CONTENT_MOTION} ${contentState} ${
+                                    isActive ? "pointer-events-auto" : "pointer-events-none"
+                                  } flex h-full items-end`}
                                   style={{ transitionDelay: contentDelay }}
                                 >
                                   <div className="flex w-full items-center gap-3">
@@ -863,9 +1009,12 @@ export function ServicesIntegrations() {
                     })}
                   </div>
 
+                  {/* PANEL */}
                   <div
                     className={`absolute inset-0 ${PANEL_MOTION} ${
-                      expandedService ? "opacity-100 translate-y-0 blur-0 pointer-events-auto" : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
+                      expandedService
+                        ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
+                        : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
                     }`}
                   >
                     {expandedService ? (
@@ -889,6 +1038,7 @@ export function ServicesIntegrations() {
               </div>
             </>
           ) : (
+            /* PROCESS MODE */
             <div className="relative" style={{ height: CARD_H }}>
               <ProcessFrame toneHex={TONE.red.hex} />
             </div>
@@ -898,4 +1048,3 @@ export function ServicesIntegrations() {
     </section>
   );
 }
-
