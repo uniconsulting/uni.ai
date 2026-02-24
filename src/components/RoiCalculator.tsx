@@ -1,270 +1,389 @@
+/* src/components/RoiCalculator.tsx */
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/Container";
 import {
   Calculator,
-  TrendingUp,
-  Clock,
-  Users,
-  Percent,
   SlidersHorizontal,
+  X,
+  MessageCircle,
+  TrendingUp,
+  Info,
 } from "lucide-react";
 
-type ScenarioId = "ops" | "support" | "sales" | "hr" | "docs";
-type ProductId = "chat" | "voice" | "analytics" | "turnkey" | "custom";
+type PackageId = "small" | "medium" | "enterprise";
+type RoleId = "sales" | "admin" | "head";
 
-type TaskDef = {
-  id: string;
-  title: string;
-  hint?: string;
-  minutesPerUse: number;
-  usesPerMonth: number;
+type Inputs = {
+  leadsPerMonth: number;
+  callsPerMonth: number;
+  teamSales: number;
+  teamAdmin: number;
+  teamHead: number;
+};
+
+type Params = {
+  integrationFee: number; // разово, в 1-й год
+  salarySales: number; // ₽/мес
+  salaryAdmin: number;
+  salaryHead: number;
+  overheadCoef: number; // 1.35
+  hoursPerMonth: number; // 168
   adoption: number; // 0..1
-  enabled: boolean;
+  conversion: number; // 0..1
 };
 
-type ScenarioDef = {
-  id: ScenarioId;
-  title: string;
-  desc: string;
-  tasks: TaskDef[];
+type ModuleFlags = {
+  bots: boolean;
+  callAnalytics: boolean;
 };
 
-type ProductPreset = {
-  id: ProductId;
-  title: string;
-  oneTime: number;
-  monthly: number;
-  note?: string;
+type Task = {
+  module: "bots" | "callAnalytics";
+  name: string;
+  role: RoleId;
+  minutesPerUnit: number;
+  effect: number; // 0..1
+  volumeKind: "leads" | "calls" | "fixed";
+  volumeMultiplier?: number; // для leads/calls
+  fixedMinutesPerMonth?: number; // для fixed
 };
 
-const TONE = { hex: "#C94444" };
+const TELEGRAM_HREF = "https://t.me/uni_smb";
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+const nfRub = new Intl.NumberFormat("ru-RU");
+const nfNum = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 });
+
+function rub(n: number) {
+  return `${nfRub.format(Math.round(n))} ₽`;
+}
+function clamp(n: number, a: number, b: number) {
+  return Math.min(b, Math.max(a, n));
+}
+function safeNumber(v: any, fallback: number) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-function toNum(v: string) {
-  const n = Number(String(v).replace(",", "."));
-  return Number.isFinite(n) ? n : 0;
+const PACKAGES: Record<
+  PackageId,
+  {
+    title: string;
+    monthlyFee: number;
+    defaults: Inputs;
+  }
+> = {
+  small: {
+    title: "Малый",
+    monthlyFee: 9_900,
+    defaults: { leadsPerMonth: 300, callsPerMonth: 600, teamSales: 2, teamAdmin: 1, teamHead: 1 },
+  },
+  medium: {
+    title: "Средний",
+    monthlyFee: 39_900,
+    defaults: { leadsPerMonth: 700, callsPerMonth: 1400, teamSales: 5, teamAdmin: 2, teamHead: 1 },
+  },
+  enterprise: {
+    title: "Энтерпрайз",
+    monthlyFee: 99_900,
+    defaults: { leadsPerMonth: 2000, callsPerMonth: 4000, teamSales: 12, teamAdmin: 4, teamHead: 2 },
+  },
+};
+
+const DEFAULT_PARAMS: Params = {
+  integrationFee: 179_900,
+  salarySales: 70_000,
+  salaryAdmin: 70_000,
+  salaryHead: 70_000,
+  overheadCoef: 1.35,
+  hoursPerMonth: 168,
+  adoption: 0.85,
+  conversion: 0.6,
+};
+
+const TASKS: Task[] = [
+  // Чат-боты
+  {
+    module: "bots",
+    name: "Первичная обработка обращений (часть задач админа)",
+    role: "admin",
+    minutesPerUnit: 2.5,
+    effect: 0.5,
+    volumeKind: "leads",
+    volumeMultiplier: 1.0,
+  },
+  {
+    module: "bots",
+    name: "Первичная обработка обращений (часть задач продаж)",
+    role: "sales",
+    minutesPerUnit: 2.5,
+    effect: 0.5,
+    volumeKind: "leads",
+    volumeMultiplier: 1.0,
+  },
+  {
+    module: "bots",
+    name: "Квалификация лида",
+    role: "sales",
+    minutesPerUnit: 6,
+    effect: 0.35,
+    volumeKind: "leads",
+    volumeMultiplier: 0.8,
+  },
+  {
+    module: "bots",
+    name: "Запись/подтверждения/переносы",
+    role: "admin",
+    minutesPerUnit: 4,
+    effect: 0.6,
+    volumeKind: "leads",
+    volumeMultiplier: 0.35,
+  },
+  {
+    module: "bots",
+    name: "Заполнение CRM по первичке",
+    role: "sales",
+    minutesPerUnit: 2,
+    effect: 0.3,
+    volumeKind: "leads",
+    volumeMultiplier: 0.8,
+  },
+
+  // Аналитика звонков
+  {
+    module: "callAnalytics",
+    name: "Ручной контроль качества/разбор",
+    role: "head",
+    minutesPerUnit: 5,
+    effect: 0.7,
+    volumeKind: "calls",
+    volumeMultiplier: 1.0,
+  },
+  {
+    module: "callAnalytics",
+    name: "Теги, причины отказов, итоги",
+    role: "head",
+    minutesPerUnit: 1.5,
+    effect: 0.6,
+    volumeKind: "calls",
+    volumeMultiplier: 1.0,
+  },
+  {
+    module: "callAnalytics",
+    name: "Еженедельные отчеты (время руководителя)",
+    role: "head",
+    minutesPerUnit: 1,
+    effect: 0.6,
+    volumeKind: "fixed",
+    fixedMinutesPerMonth: 120 * 4.33,
+  },
+  {
+    module: "callAnalytics",
+    name: "Приоритезация коучинга (время руководителя)",
+    role: "head",
+    minutesPerUnit: 1,
+    effect: 0.25,
+    volumeKind: "fixed",
+    fixedMinutesPerMonth: 90 * 4.33,
+  },
+];
+
+function hourCost(salaryMonthly: number, overheadCoef: number, hoursPerMonth: number) {
+  const denom = Math.max(1, hoursPerMonth);
+  return (salaryMonthly * overheadCoef) / denom;
 }
 
-function formatRUB(n: number) {
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "RUB",
-    maximumFractionDigits: 0,
-  }).format(Math.round(n));
-}
+function computeMonthlySavings(inputs: Inputs, params: Params, flags: ModuleFlags) {
+  const hc = {
+    sales: hourCost(params.salarySales, params.overheadCoef, params.hoursPerMonth),
+    admin: hourCost(params.salaryAdmin, params.overheadCoef, params.hoursPerMonth),
+    head: hourCost(params.salaryHead, params.overheadCoef, params.hoursPerMonth),
+  } as const;
 
-function formatPct(n: number) {
-  if (!Number.isFinite(n)) return "0%";
-  return `${Math.round(n)}%`;
-}
+  const enabledModules = {
+    bots: flags.bots,
+    callAnalytics: flags.callAnalytics,
+  };
 
-function Sparkline({ values }: { values: number[] }) {
-  const W = 220;
-  const H = 56;
-  const pad = 6;
+  const raw = TASKS.filter((t) => enabledModules[t.module]);
 
-  const minV = Math.min(...values, 0);
-  const maxV = Math.max(...values, 0);
+  const adoption = clamp(params.adoption, 0, 1);
+  const conversion = clamp(params.conversion, 0, 1);
 
-  const span = maxV - minV || 1;
+  // 1) считаем "сырые" часы и деньги по задачам
+  const items = raw.map((t) => {
+    let units = 0;
 
-  const pts = values.map((v, i) => {
-    const x = pad + (i * (W - pad * 2)) / Math.max(1, values.length - 1);
-    const y = pad + (H - pad * 2) * (1 - (v - minV) / span);
-    return { x, y };
+    if (t.volumeKind === "leads") units = inputs.leadsPerMonth * (t.volumeMultiplier ?? 1);
+    if (t.volumeKind === "calls") units = inputs.callsPerMonth * (t.volumeMultiplier ?? 1);
+    if (t.volumeKind === "fixed") units = 1;
+
+    const minutes =
+      t.volumeKind === "fixed"
+        ? (t.fixedMinutesPerMonth ?? 0)
+        : units * t.minutesPerUnit;
+
+    const hoursSaved = (minutes / 60) * t.effect * adoption;
+    const moneySaved = hoursSaved * hc[t.role] * conversion;
+
+    return {
+      ...t,
+      hoursSaved,
+      moneySaved,
+    };
   });
 
-  const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+  // 2) кап по роли (чтобы не улетало в нереалистичные значения)
+  // допущение: экономия времени не может превышать 70% доступного рабочего времени роли в месяц
+  const capCoef = 0.7;
+  const maxHours = {
+    sales: inputs.teamSales * params.hoursPerMonth * capCoef,
+    admin: inputs.teamAdmin * params.hoursPerMonth * capCoef,
+    head: inputs.teamHead * params.hoursPerMonth * capCoef,
+  };
 
-  const zeroY = pad + (H - pad * 2) * (1 - (0 - minV) / span);
+  const byRoleHoursRaw: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
+  const byRoleMoneyRaw: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
+
+  for (const it of items) {
+    byRoleHoursRaw[it.role] += it.hoursSaved;
+    byRoleMoneyRaw[it.role] += it.moneySaved;
+  }
+
+  // коэффициенты "сжатия" по каждой роли
+  const squeeze: Record<RoleId, number> = {
+    sales: byRoleHoursRaw.sales > 0 ? Math.min(1, maxHours.sales / byRoleHoursRaw.sales) : 1,
+    admin: byRoleHoursRaw.admin > 0 ? Math.min(1, maxHours.admin / byRoleHoursRaw.admin) : 1,
+    head: byRoleHoursRaw.head > 0 ? Math.min(1, maxHours.head / byRoleHoursRaw.head) : 1,
+  };
+
+  const itemsCapped = items.map((it) => {
+    const k = squeeze[it.role];
+    return { ...it, hoursSaved: it.hoursSaved * k, moneySaved: it.moneySaved * k };
+  });
+
+  const byRoleHours: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
+  const byRoleMoney: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
+
+  for (const it of itemsCapped) {
+    byRoleHours[it.role] += it.hoursSaved;
+    byRoleMoney[it.role] += it.moneySaved;
+  }
+
+  const totalMoney = byRoleMoney.sales + byRoleMoney.admin + byRoleMoney.head;
+  const totalHours = byRoleHours.sales + byRoleHours.admin + byRoleHours.head;
+
+  return {
+    totalMoney,
+    totalHours,
+    byRoleMoney,
+    byRoleHours,
+    hourCosts: hc,
+    items: itemsCapped,
+    squeeze,
+  };
+}
+
+function Modal({
+  open,
+  title,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
-      <path d={`M ${pad} ${zeroY} L ${W - pad} ${zeroY}`} stroke="currentColor" strokeOpacity="0.2" />
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2.25" />
-    </svg>
+    <div className="fixed inset-0 z-[60]">
+      <button
+        type="button"
+        aria-label="Закрыть"
+        className="absolute inset-0 bg-black/45"
+        onClick={onClose}
+      />
+      <div className="absolute left-1/2 top-1/2 w-[min(920px,92vw)] -translate-x-1/2 -translate-y-1/2">
+        <div className="overflow-hidden rounded-3xl border border-text/10 bg-accent-3 shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
+          <div className="flex items-center gap-3 border-b border-text/10 px-7 py-5">
+            <div className="min-w-0">
+              <div className="text-[18px] font-extrabold text-text">{title}</div>
+              <div className="mt-1 text-[13px] font-medium text-text/60">
+                Настрой под свой контекст, на главном экране останется только самое нужное.
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-lift-outline ml-auto inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+              aria-label="Закрыть"
+              title="Закрыть (Esc)"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="max-h-[70vh] overflow-auto px-7 py-6">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export function RoiCalculator() {
-  const scenarios: ScenarioDef[] = useMemo(
-    () => [
-      {
-        id: "ops",
-        title: "Операционка",
-        desc: "Рутина руководителя и команды: отчёты, сводки, контроль, таблицы.",
-        tasks: [
-          { id: "ops_reports", title: "Отчёты и сводки", hint: "Еженедельные/ежедневные отчёты, статусы, итоги.", minutesPerUse: 45, usesPerMonth: 12, adoption: 0.7, enabled: true },
-          { id: "ops_kpi", title: "KPI и контроль показателей", hint: "Сбор цифр, форматирование, выводы.", minutesPerUse: 35, usesPerMonth: 10, adoption: 0.6, enabled: true },
-          { id: "ops_excel", title: "Excel-рутина", hint: "Сводные, формулы, очистка данных.", minutesPerUse: 25, usesPerMonth: 20, adoption: 0.6, enabled: true },
-          { id: "ops_meetings", title: "Протоколы и поручения", hint: "Итоги встреч, задачи, фиксация.", minutesPerUse: 20, usesPerMonth: 12, adoption: 0.7, enabled: false },
-        ],
-      },
-      {
-        id: "support",
-        title: "Клиентский сервис",
-        desc: "Ответы, классификация обращений, качество сервиса.",
-        tasks: [
-          { id: "sup_answers", title: "Черновики ответов клиентам", hint: "Быстрые ответы в мессенджерах/почте.", minutesPerUse: 4, usesPerMonth: 600, adoption: 0.75, enabled: true },
-          { id: "sup_tags", title: "Классификация обращений", hint: "Теги, причины, типы проблем.", minutesPerUse: 1.2, usesPerMonth: 600, adoption: 0.7, enabled: true },
-          { id: "sup_qc", title: "Контроль качества диалогов", hint: "Проверка, разбор, рекомендации.", minutesPerUse: 12, usesPerMonth: 40, adoption: 0.6, enabled: false },
-        ],
-      },
-      {
-        id: "sales",
-        title: "Продажи",
-        desc: "Лиды, КП, скрипты, подготовка предложений.",
-        tasks: [
-          { id: "sales_kp", title: "Коммерческие предложения", hint: "Структура, аргументы, выгоды.", minutesPerUse: 35, usesPerMonth: 16, adoption: 0.65, enabled: true },
-          { id: "sales_follow", title: "Фоллоу-апы и сообщения", hint: "Переписка, догоняющие касания.", minutesPerUse: 3, usesPerMonth: 250, adoption: 0.7, enabled: true },
-          { id: "sales_calls", title: "Подготовка к звонкам", hint: "Контекст, вопросы, резюме.", minutesPerUse: 10, usesPerMonth: 60, adoption: 0.6, enabled: false },
-        ],
-      },
-      {
-        id: "hr",
-        title: "HR",
-        desc: "Подбор, адаптация, обучение, регламенты.",
-        tasks: [
-          { id: "hr_cv", title: "Отбор резюме и краткие выводы", hint: "Сравнение кандидатов, риски.", minutesPerUse: 6, usesPerMonth: 120, adoption: 0.6, enabled: true },
-          { id: "hr_docs", title: "Регламенты и инструкции", hint: "Черновики регламентов, стандарты.", minutesPerUse: 60, usesPerMonth: 6, adoption: 0.6, enabled: false },
-          { id: "hr_adapt", title: "Материалы адаптации", hint: "План, чек-листы, тесты.", minutesPerUse: 45, usesPerMonth: 4, adoption: 0.6, enabled: false },
-        ],
-      },
-      {
-        id: "docs",
-        title: "Документы",
-        desc: "Договоры, письма, формулировки, согласования.",
-        tasks: [
-          { id: "doc_contracts", title: "Черновики договоров/допсоглашений", hint: "Структура, пункты, формулировки.", minutesPerUse: 50, usesPerMonth: 6, adoption: 0.6, enabled: true },
-          { id: "doc_letters", title: "Письма и официальные ответы", hint: "Собрать позицию и текст.", minutesPerUse: 18, usesPerMonth: 20, adoption: 0.7, enabled: true },
-          { id: "doc_summary", title: "Выжимка из документов", hint: "Коротко: что важно и что делать.", minutesPerUse: 12, usesPerMonth: 16, adoption: 0.6, enabled: false },
-        ],
-      },
-    ],
-    [],
-  );
+  const [pkg, setPkg] = useState<PackageId>("small");
+  const [flags, setFlags] = useState<ModuleFlags>({ bots: true, callAnalytics: true });
+  const [inputs, setInputs] = useState<Inputs>(PACKAGES.small.defaults);
+  const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
+  const [openParams, setOpenParams] = useState(false);
 
-  const products: ProductPreset[] = useMemo(
-    () => [
-      { id: "chat", title: "Чат-бот", oneTime: 79990, monthly: 1890 },
-      { id: "voice", title: "Голосовой бот", oneTime: 149990, monthly: 20000, note: "Можно заменить на расчёт по минутам." },
-      { id: "analytics", title: "Аналитика", oneTime: 49990, monthly: 6000 },
-      { id: "turnkey", title: "Интеграция под ключ", oneTime: 179990, monthly: 6000 },
-      { id: "custom", title: "Свой вариант", oneTime: 179990, monthly: 0 },
-    ],
-    [],
-  );
+  // автоподстановка дефолтов под пакет
+  useEffect(() => {
+    setInputs(PACKAGES[pkg].defaults);
+  }, [pkg]);
 
-  const [scenarioId, setScenarioId] = useState<ScenarioId>("ops");
-  const activeScenario = scenarios.find((s) => s.id === scenarioId) ?? scenarios[0];
+  const monthlyFee = PACKAGES[pkg].monthlyFee;
 
-  const [productId, setProductId] = useState<ProductId>("turnkey");
-  const preset = products.find((p) => p.id === productId) ?? products[0];
+  const calc = useMemo(() => computeMonthlySavings(inputs, params, flags), [inputs, params, flags]);
 
-  const [integrationFee, setIntegrationFee] = useState<number>(preset.oneTime);
-  const [monthlyFee, setMonthlyFee] = useState<number>(preset.monthly);
+  const costYear1 = params.integrationFee + monthlyFee * 12;
+  const costYear2 = monthlyFee * 12;
+  const costYear3 = monthlyFee * 12;
 
-  const [salaryMonthly, setSalaryMonthly] = useState<number>(90000);
-  const [overheadPct, setOverheadPct] = useState<number>(30);
-  const [workHours, setWorkHours] = useState<number>(160);
-  const [people, setPeople] = useState<number>(2);
-  const [horizon, setHorizon] = useState<number>(12);
+  const benefitYear = calc.totalMoney * 12;
 
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const netYear1 = benefitYear - costYear1;
+  const netYear2 = benefitYear - costYear2;
+  const netYear3 = benefitYear - costYear3;
 
-  // задачи - локальное состояние на сценарий
-  const [tasksByScenario, setTasksByScenario] = useState<Record<ScenarioId, TaskDef[]>>(() => {
-    const m = {} as Record<ScenarioId, TaskDef[]>;
-    for (const s of scenarios) m[s.id] = s.tasks.map((t) => ({ ...t }));
-    return m;
-  });
+  const paybackMonths =
+    calc.totalMoney > 0 ? costYear1 / calc.totalMoney : Number.POSITIVE_INFINITY;
 
-  const tasks = tasksByScenario[scenarioId] ?? activeScenario.tasks;
+  const roiYear1 = costYear1 > 0 ? (netYear1 / costYear1) * 100 : 0;
 
-  const applyPreset = (id: ProductId) => {
-    setProductId(id);
-    const p = products.find((x) => x.id === id);
-    if (!p) return;
-    setIntegrationFee(p.oneTime);
-    setMonthlyFee(p.monthly);
-  };
-
-  const updateTask = (taskId: string, patch: Partial<TaskDef>) => {
-    setTasksByScenario((prev) => {
-      const cur = prev[scenarioId] ?? [];
-      const next = cur.map((t) => (t.id === taskId ? { ...t, ...patch } : t));
-      return { ...prev, [scenarioId]: next };
-    });
-  };
-
-  const hourlyRate = useMemo(() => {
-    const base = Math.max(0, salaryMonthly);
-    const k = 1 + clamp(overheadPct, 0, 300) / 100;
-    const hours = Math.max(1, workHours);
-    return (base * k) / hours;
-  }, [salaryMonthly, overheadPct, workHours]);
-
-  const calc = useMemo(() => {
-    const team = clamp(people, 1, 999);
-
-    const taskRows = tasks.map((t) => {
-      const minutes = Math.max(0, t.minutesPerUse);
-      const uses = Math.max(0, t.usesPerMonth);
-      const adoption = clamp(t.adoption, 0, 1);
-      const enabled = !!t.enabled;
-
-      const minutesSaved = enabled ? minutes * uses * adoption * team : 0;
-      const rubSaved = (minutesSaved / 60) * hourlyRate;
-
-      return { ...t, minutesSaved, rubSaved };
-    });
-
-    const savingsPerMonth = taskRows.reduce((a, b) => a + b.rubSaved, 0);
-
-    const oneTime = Math.max(0, integrationFee);
-    const monthly = Math.max(0, monthlyFee);
-
-    const totalCost = oneTime + monthly * horizon;
-    const totalBenefit = savingsPerMonth * horizon;
-    const net = totalBenefit - totalCost;
-
-    const monthlyNet = savingsPerMonth - monthly;
-    const paybackMonths =
-      monthlyNet > 0 ? oneTime / monthlyNet : Infinity;
-
-    const roiPct = totalCost > 0 ? (net / totalCost) * 100 : 0;
-
-    const series = Array.from({ length: horizon + 1 }, (_, m) => {
-      const cum = -oneTime + monthlyNet * m;
-      return cum;
-    });
-
-    const topTasks = [...taskRows]
-      .filter((t) => t.rubSaved > 0)
-      .sort((a, b) => b.rubSaved - a.rubSaved)
-      .slice(0, 4);
-
-    const minutesSavedTotal = taskRows.reduce((a, b) => a + b.minutesSaved, 0);
-
-    return {
-      taskRows,
-      savingsPerMonth,
-      minutesSavedTotal,
-      totalCost,
-      totalBenefit,
-      net,
-      roiPct,
-      paybackMonths,
-      series,
-      topTasks,
-      monthlyNet,
-    };
-  }, [tasks, people, hourlyRate, integrationFee, monthlyFee, horizon]);
+  const bars = useMemo(() => {
+    const xs = [netYear1, netYear2, netYear3];
+    const maxAbs = Math.max(1, ...xs.map((v) => Math.abs(v)));
+    return xs.map((v) => ({
+      value: v,
+      pct: Math.round((Math.abs(v) / maxAbs) * 100),
+      sign: v >= 0 ? "pos" : "neg",
+    }));
+  }, [netYear1, netYear2, netYear3]);
 
   return (
     <section id="roi" className="relative">
@@ -273,385 +392,485 @@ export function RoiCalculator() {
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <div className="hover-accent text-[18px] font-medium opacity-70">ROI-калькулятор</div>
-            <div className="mt-3 text-[30px] md:text-[36px] font-extrabold leading-[1.05] text-text">
-              Оцените окупаемость по ФОТ
+            <div className="hover-accent text-[18px] font-medium opacity-70">
+              ROI-калькулятор
             </div>
-            <div className="mt-3 text-[15px] md:text-[16px] font-medium text-text/70">
-              Сравниваем экономию времени команды с её стоимостью (зарплата + накладные).
+            <div className="mt-3 text-[34px] md:text-[40px] font-extrabold leading-[1.05] text-text">
+              Оценка окупаемости
+              <span className="block">по ФОТ и времени команды</span>
+            </div>
+            <div className="mt-5 max-w-[900px] text-[16px] md:text-[18px] font-medium text-text/70">
+              Выбираешь пакет и контекст. Калькулятор показывает 1-й год с учетом разовой интеграции
+              и 2-й год без нее, поэтому там эффект выше.
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="btn-lift-outline inline-flex items-center gap-2 rounded-xl border border-text/10 bg-bg px-4 py-3 text-[13px] font-semibold text-text/80"
-              title="Параметры расчёта"
+              onClick={() => setOpenParams(true)}
+              className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-5 py-3 text-[14px] font-semibold text-text/80 backdrop-blur hover:text-text"
             >
               <SlidersHorizontal className="h-4 w-4" />
               <span>Параметры</span>
             </button>
 
-            <div
-              className="inline-flex items-center gap-2 rounded-xl border border-text/10 bg-accent-3 px-4 py-3 text-[13px] font-semibold"
-              style={{ color: TONE.hex }}
-              title="Базовая логика"
+            <a
+              href={TELEGRAM_HREF}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl bg-accent-3 px-5 py-3 text-[14px] font-extrabold text-text"
             >
-              <Calculator className="h-4 w-4" />
-              <span>Сценарий + задачи</span>
-            </div>
+              <MessageCircle className="h-4 w-4" />
+              <span>Написать нам</span>
+            </a>
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          {/* LEFT: settings + tasks */}
-          <div className="rounded-3xl border border-text/10 bg-accent-3 p-6 md:p-8">
-            {/* scenario tabs */}
-            <div className="flex flex-wrap gap-2">
-              {scenarios.map((s) => {
-                const on = s.id === scenarioId;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setScenarioId(s.id)}
-                    className={[
-                      "btn-lift-outline inline-flex items-center rounded-xl px-4 py-2 text-[13px] font-semibold",
-                      on
-                        ? "border-2 bg-bg/70 text-text"
-                        : "border border-text/10 bg-bg/25 text-text/70 hover:text-text",
-                    ].join(" ")}
-                    style={on ? { borderColor: TONE.hex } : undefined}
-                    aria-pressed={on}
-                  >
-                    {s.title}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 text-[14px] font-medium text-text/70">{activeScenario.desc}</div>
-
-            {/* product + horizon */}
-            <div className="mt-7 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-text/10 bg-bg/25 p-4">
-                <div className="text-[13px] font-semibold text-text/65">Решение</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {products.map((p) => {
-                    const on = p.id === productId;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => applyPreset(p.id)}
-                        className={[
-                          "btn-lift-outline inline-flex items-center rounded-xl px-3 py-2 text-[12px] font-semibold",
-                          on
-                            ? "border-2 bg-bg/70 text-text"
-                            : "border border-text/10 bg-bg/25 text-text/70 hover:text-text",
-                        ].join(" ")}
-                        style={on ? { borderColor: TONE.hex } : undefined}
-                        aria-pressed={on}
-                      >
-                        {p.title}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {preset.note ? (
-                  <div className="mt-3 text-[12px] font-medium text-text/55">{preset.note}</div>
-                ) : null}
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <div className="text-[12px] font-semibold text-text/60">Разово, ₽</div>
-                    <input
-                      value={integrationFee}
-                      onChange={(e) => setIntegrationFee(toNum(e.target.value))}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <div className="text-[12px] font-semibold text-text/60">В месяц, ₽</div>
-                    <input
-                      value={monthlyFee}
-                      onChange={(e) => setMonthlyFee(toNum(e.target.value))}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                    />
-                  </label>
-                </div>
+        <div className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* LEFT: inputs */}
+          <div className="rounded-3xl border border-text/10 bg-bg/25 p-7">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-text/10 bg-bg/35">
+                <Calculator className="h-5 w-5" />
               </div>
-
-              <div className="rounded-2xl border border-text/10 bg-bg/25 p-4">
-                <div className="text-[13px] font-semibold text-text/65">Горизонт расчёта</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[3, 6, 12, 18, 24].map((m) => {
-                    const on = m === horizon;
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setHorizon(m)}
-                        className={[
-                          "btn-lift-outline inline-flex items-center rounded-xl px-4 py-2 text-[12px] font-semibold",
-                          on
-                            ? "border-2 bg-bg/70 text-text"
-                            : "border border-text/10 bg-bg/25 text-text/70 hover:text-text",
-                        ].join(" ")}
-                        style={on ? { borderColor: TONE.hex } : undefined}
-                        aria-pressed={on}
-                      >
-                        {m} мес
-                      </button>
-                    );
-                  })}
+              <div className="min-w-0">
+                <div className="text-[18px] font-extrabold text-text">Вводные</div>
+                <div className="mt-1 text-[13px] font-medium text-text/60">
+                  На главном экране только 5 простых настроек.
                 </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <div className="text-[12px] font-semibold text-text/60">Зарплата, ₽/мес</div>
-                    <input
-                      value={salaryMonthly}
-                      onChange={(e) => setSalaryMonthly(toNum(e.target.value))}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <div className="text-[12px] font-semibold text-text/60">Людей в процессе</div>
-                    <input
-                      value={people}
-                      onChange={(e) => setPeople(toNum(e.target.value))}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                    />
-                  </label>
-                </div>
-
-                {showAdvanced ? (
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <label className="block">
-                      <div className="text-[12px] font-semibold text-text/60">Накладные, %</div>
-                      <input
-                        value={overheadPct}
-                        onChange={(e) => setOverheadPct(toNum(e.target.value))}
-                        inputMode="numeric"
-                        className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                      />
-                    </label>
-
-                    <label className="block">
-                      <div className="text-[12px] font-semibold text-text/60">Часов/мес</div>
-                      <input
-                        value={workHours}
-                        onChange={(e) => setWorkHours(toNum(e.target.value))}
-                        inputMode="numeric"
-                        className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[14px] font-semibold text-text outline-none"
-                      />
-                    </label>
-
-                    <div className="col-span-2 text-[12px] font-medium text-text/55">
-                      Часовая ставка: <span className="font-semibold text-text/80">{formatRUB(hourlyRate)}</span> / час
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
 
-            {/* tasks */}
-            <div className="mt-8">
-              <div className="text-[15px] font-extrabold text-text">Задачи и экономия времени</div>
-              <div className="mt-2 text-[13px] font-medium text-text/60">
-                Мин/раз и Раз/мес можно менять под вашу реальность. Охват: доля задач, где реально применяют инструмент.
-              </div>
-
-              <div className="mt-5 grid gap-3">
-                {tasks.map((t) => {
-                  const contrib = calc.taskRows.find((x) => x.id === t.id)?.rubSaved ?? 0;
+            {/* Package */}
+            <div className="mt-6">
+              <div className="text-[13px] font-semibold text-text/60">Пакет</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(Object.keys(PACKAGES) as PackageId[]).map((id) => {
+                  const on = id === pkg;
                   return (
-                    <div key={t.id} className="rounded-2xl border border-text/10 bg-bg/25 p-4">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={t.enabled}
-                          onChange={(e) => updateTask(t.id, { enabled: e.target.checked })}
-                          className="mt-1 h-4 w-4 accent-[color:var(--tone)]"
-                          style={{ ["--tone" as any]: TONE.hex }}
-                        />
-
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-extrabold text-text">{t.title}</div>
-                          {t.hint ? (
-                            <div className="mt-1 text-[12px] font-medium text-text/55">{t.hint}</div>
-                          ) : null}
-
-                          <div className="mt-4 grid gap-3 md:grid-cols-3">
-                            <label className="block">
-                              <div className="text-[12px] font-semibold text-text/60">Мин/раз</div>
-                              <input
-                                value={t.minutesPerUse}
-                                onChange={(e) => updateTask(t.id, { minutesPerUse: toNum(e.target.value) })}
-                                inputMode="decimal"
-                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[13px] font-semibold text-text outline-none"
-                              />
-                            </label>
-
-                            <label className="block">
-                              <div className="text-[12px] font-semibold text-text/60">Раз/мес</div>
-                              <input
-                                value={t.usesPerMonth}
-                                onChange={(e) => updateTask(t.id, { usesPerMonth: toNum(e.target.value) })}
-                                inputMode="numeric"
-                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[13px] font-semibold text-text outline-none"
-                              />
-                            </label>
-
-                            <label className="block">
-                              <div className="text-[12px] font-semibold text-text/60">Охват, %</div>
-                              <input
-                                value={Math.round(t.adoption * 100)}
-                                onChange={(e) => updateTask(t.id, { adoption: clamp(toNum(e.target.value) / 100, 0, 1) })}
-                                inputMode="numeric"
-                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg px-3 py-2 text-[13px] font-semibold text-text outline-none"
-                              />
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 text-right">
-                          <div className="text-[12px] font-semibold text-text/60">Экономия</div>
-                          <div className="mt-2 text-[14px] font-extrabold" style={{ color: TONE.hex }}>
-                            {formatRUB(contrib)}
-                            <span className="text-[12px] font-semibold text-text/55"> /мес</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setPkg(id)}
+                      className={[
+                        "btn-lift-outline inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[13px] font-semibold",
+                        on
+                          ? "bg-accent-3 border-2 border-text/15 text-text"
+                          : "bg-bg/25 border border-text/10 text-text/70 hover:text-text",
+                      ].join(" ")}
+                      aria-pressed={on}
+                    >
+                      <span>{PACKAGES[id].title}</span>
+                      <span className="text-text/45">{rub(PACKAGES[id].monthlyFee)}/мес</span>
+                    </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Modules */}
+            <div className="mt-6">
+              <div className="text-[13px] font-semibold text-text/60">Что внедряем</div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setFlags((p) => ({ ...p, bots: !p.bots }))}
+                  className={[
+                    "btn-lift-outline flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left",
+                    flags.bots ? "border-text/15 bg-accent-3" : "border-text/10 bg-bg/25",
+                  ].join(" ")}
+                  aria-pressed={flags.bots}
+                >
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-extrabold text-text">Чат-боты</div>
+                    <div className="mt-1 text-[12px] font-medium text-text/60">
+                      Снимают рутину с админа и продаж
+                    </div>
+                  </div>
+                  <div
+                    className={[
+                      "h-6 w-11 rounded-full border border-text/10 p-[2px] transition",
+                      flags.bots ? "bg-text/10" : "bg-bg/35",
+                    ].join(" ")}
+                  >
+                    <div
+                      className={[
+                        "h-5 w-5 rounded-full bg-text/60 transition",
+                        flags.bots ? "translate-x-5" : "translate-x-0",
+                      ].join(" ")}
+                    />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFlags((p) => ({ ...p, callAnalytics: !p.callAnalytics }))}
+                  className={[
+                    "btn-lift-outline flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left",
+                    flags.callAnalytics ? "border-text/15 bg-accent-3" : "border-text/10 bg-bg/25",
+                  ].join(" ")}
+                  aria-pressed={flags.callAnalytics}
+                >
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-extrabold text-text">Аналитика звонков</div>
+                    <div className="mt-1 text-[12px] font-medium text-text/60">
+                      Снимает контроль качества с РОП
+                    </div>
+                  </div>
+                  <div
+                    className={[
+                      "h-6 w-11 rounded-full border border-text/10 p-[2px] transition",
+                      flags.callAnalytics ? "bg-text/10" : "bg-bg/35",
+                    ].join(" ")}
+                  >
+                    <div
+                      className={[
+                        "h-5 w-5 rounded-full bg-text/60 transition",
+                        flags.callAnalytics ? "translate-x-5" : "translate-x-0",
+                      ].join(" ")}
+                    />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Volumes + team */}
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Лиды/обращения в месяц</div>
+                <input
+                  value={inputs.leadsPerMonth}
+                  onChange={(e) =>
+                    setInputs((p) => ({ ...p, leadsPerMonth: clamp(safeNumber(e.target.value, 0), 0, 1_000_000) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Звонки в месяц</div>
+                <input
+                  value={inputs.callsPerMonth}
+                  onChange={(e) =>
+                    setInputs((p) => ({ ...p, callsPerMonth: clamp(safeNumber(e.target.value, 0), 0, 2_000_000) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Менеджеры</div>
+                <input
+                  value={inputs.teamSales}
+                  onChange={(e) =>
+                    setInputs((p) => ({ ...p, teamSales: clamp(safeNumber(e.target.value, 0), 0, 200) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Админы</div>
+                <input
+                  value={inputs.teamAdmin}
+                  onChange={(e) =>
+                    setInputs((p) => ({ ...p, teamAdmin: clamp(safeNumber(e.target.value, 0), 0, 200) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">РОП</div>
+                <input
+                  value={inputs.teamHead}
+                  onChange={(e) =>
+                    setInputs((p) => ({ ...p, teamHead: clamp(safeNumber(e.target.value, 0), 0, 50) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-text/10 bg-bg/20 px-4 py-3">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-text/60" />
+              <div className="text-[12px] font-medium text-text/60">
+                В расчет заложен консервативный кап: экономия времени по роли не превышает 70% доступного рабочего времени.
+                Это защищает от нереалистичных значений при больших объемах.
               </div>
             </div>
           </div>
 
           {/* RIGHT: results */}
-          <div className="rounded-3xl border border-text/10 bg-bg p-6 md:p-8">
-            <div className="flex items-start justify-between gap-4">
+          <div className="rounded-3xl border border-text/10 bg-accent-3 p-7">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-text/10 bg-bg/35">
+                <TrendingUp className="h-5 w-5" />
+              </div>
               <div className="min-w-0">
-                <div className="text-[14px] font-semibold text-text/60">Результат</div>
-                <div className="mt-2 text-[22px] font-extrabold text-text">Окупаемость и ROI</div>
-                <div className="mt-2 text-[13px] font-medium text-text/60">
-                  Учитываем разовый платёж и ежемесячный платёж.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-text/10 bg-accent-3 px-4 py-3 text-[12px] font-semibold text-text/70">
-                {horizon} мес
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-text/10 bg-accent-3 p-4">
-                <div className="flex items-center gap-2 text-[12px] font-semibold text-text/60">
-                  <TrendingUp className="h-4 w-4" />
-                  Экономия, ₽/мес
-                </div>
-                <div className="mt-3 text-[22px] font-extrabold" style={{ color: TONE.hex }}>
-                  {formatRUB(calc.savingsPerMonth)}
-                </div>
-                <div className="mt-2 text-[12px] font-medium text-text/55">
-                  Время: ~{Math.round(calc.minutesSavedTotal / 60)} ч/мес
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-text/10 bg-accent-3 p-4">
-                <div className="flex items-center gap-2 text-[12px] font-semibold text-text/60">
-                  <Clock className="h-4 w-4" />
-                  Окупаемость
-                </div>
-                <div className="mt-3 text-[22px] font-extrabold text-text">
-                  {calc.paybackMonths === Infinity ? "не сходится" : `${Math.max(0.1, calc.paybackMonths).toFixed(1)} мес`}
-                </div>
-                <div className="mt-2 text-[12px] font-medium text-text/55">
-                  Чистыми: {formatRUB(calc.monthlyNet)} /мес
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-text/10 bg-accent-3 p-4">
-                <div className="flex items-center gap-2 text-[12px] font-semibold text-text/60">
-                  <Percent className="h-4 w-4" />
-                  ROI за {horizon} мес
-                </div>
-                <div className="mt-3 text-[22px] font-extrabold text-text">
-                  {formatPct(calc.roiPct)}
-                </div>
-                <div className="mt-2 text-[12px] font-medium text-text/55">
-                  Затраты: {formatRUB(calc.totalCost)}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-text/10 bg-accent-3 p-4">
-                <div className="flex items-center gap-2 text-[12px] font-semibold text-text/60">
-                  <Users className="h-4 w-4" />
-                  Эффект за {horizon} мес
-                </div>
-                <div className="mt-3 text-[22px] font-extrabold" style={{ color: calc.net >= 0 ? TONE.hex : "currentColor" }}>
-                  {formatRUB(calc.net)}
-                </div>
-                <div className="mt-2 text-[12px] font-medium text-text/55">
-                  Выгода: {formatRUB(calc.totalBenefit)}
+                <div className="text-[18px] font-extrabold text-text">Результат</div>
+                <div className="mt-1 text-[13px] font-medium text-text/60">
+                  Год 1 с интеграцией, год 2 и далее без нее.
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-text/10 bg-accent-3 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-[12px] font-semibold text-text/60">Кумулятивный эффект</div>
-                  <div className="mt-2 text-[13px] font-medium text-text/65">
-                    Стартуем с минуса на разовый платёж, затем “отбиваемся” ежемесячным эффектом.
-                  </div>
-                </div>
-                <div className="text-right text-[12px] font-semibold text-text/60">
-                  0 → {horizon} мес
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                <div className="text-[12px] font-semibold text-text/60">Экономия в месяц</div>
+                <div className="mt-2 text-[22px] font-extrabold text-text">{rub(calc.totalMoney)}</div>
+                <div className="mt-2 text-[12px] font-medium text-text/60">
+                  Время: {nf1.format(calc.totalHours)} ч/мес
                 </div>
               </div>
 
-              <div className="mt-4 text-text/70">
-                <Sparkline values={calc.series} />
+              <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                <div className="text-[12px] font-semibold text-text/60">Окупаемость</div>
+                <div className="mt-2 text-[22px] font-extrabold text-text">
+                  {Number.isFinite(paybackMonths) ? `${nf1.format(paybackMonths)} мес` : "—"}
+                </div>
+                <div className="mt-2 text-[12px] font-medium text-text/60">
+                  ROI (год 1): {Number.isFinite(roiYear1) ? `${nf1.format(roiYear1)}%` : "—"}
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-text/10 bg-accent-3 p-4">
-              <div className="text-[12px] font-semibold text-text/60">Топ источников экономии</div>
-              <div className="mt-3 grid gap-2">
-                {calc.topTasks.length ? (
-                  calc.topTasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-text/10 bg-bg/25 px-3 py-2">
-                      <div className="min-w-0 text-[13px] font-semibold text-text/75 truncate">{t.title}</div>
-                      <div className="shrink-0 text-[13px] font-extrabold" style={{ color: TONE.hex }}>
-                        {formatRUB(t.rubSaved)}/мес
+            <div className="mt-5 rounded-2xl border border-text/10 bg-bg/20 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[12px] font-semibold text-text/60">Финансы по годам (чистая выгода)</div>
+                <div className="text-[12px] font-medium text-text/60">
+                  Пакет: {rub(monthlyFee)}/мес, Интеграция: {rub(params.integrationFee)}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {[
+                  { title: "Год 1", net: netYear1, cost: costYear1, bar: bars[0] },
+                  { title: "Год 2", net: netYear2, cost: costYear2, bar: bars[1] },
+                  { title: "Год 3", net: netYear3, cost: costYear3, bar: bars[2] },
+                ].map((y) => (
+                  <div key={y.title} className="rounded-2xl border border-text/10 bg-bg/25 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[13px] font-extrabold text-text">{y.title}</div>
+                      <div className="text-[13px] font-semibold text-text/70">
+                        Net: <span className="text-text">{rub(y.net)}</span>
+                        <span className="text-text/40"> · </span>
+                        Cost: {rub(y.cost)}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-[13px] font-medium text-text/55">
-                    Включи хотя бы одну задачу, чтобы увидеть распределение.
+
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-bg/30">
+                      <div
+                        className={[
+                          "h-full rounded-full",
+                          y.bar.sign === "pos" ? "bg-text/70" : "bg-text/25",
+                        ].join(" ")}
+                        style={{ width: `${y.bar.pct}%` }}
+                      />
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
-            <div className="mt-6 text-[12px] font-medium text-text/55">
-              Подсказка: если хочешь “жёстче” считать ФОТ, увеличь накладные и/или уменьши охват.
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
+                <div className="text-[12px] font-semibold text-text/60">Менеджеры</div>
+                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.sales)}</div>
+                <div className="mt-1 text-[12px] font-medium text-text/60">
+                  {nf1.format(calc.byRoleHours.sales)} ч
+                </div>
+              </div>
+              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
+                <div className="text-[12px] font-semibold text-text/60">Админы</div>
+                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.admin)}</div>
+                <div className="mt-1 text-[12px] font-medium text-text/60">
+                  {nf1.format(calc.byRoleHours.admin)} ч
+                </div>
+              </div>
+              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
+                <div className="text-[12px] font-semibold text-text/60">РОП</div>
+                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.head)}</div>
+                <div className="mt-1 text-[12px] font-medium text-text/60">
+                  {nf1.format(calc.byRoleHours.head)} ч
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </Container>
+
+      <Modal open={openParams} title="Параметры расчета" onClose={() => setOpenParams(false)}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6">
+            <div className="text-[16px] font-extrabold text-text">Цены</div>
+
+            <label className="mt-4 block">
+              <div className="text-[13px] font-semibold text-text/60">Интеграция (разово)</div>
+              <input
+                value={params.integrationFee}
+                onChange={(e) =>
+                  setParams((p) => ({ ...p, integrationFee: clamp(safeNumber(e.target.value, 0), 0, 50_000_000) }))
+                }
+                inputMode="numeric"
+                className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+              />
+              <div className="mt-2 text-[12px] font-medium text-text/60">
+                Если уже внедрено, можно поставить 0.
+              </div>
+            </label>
+          </div>
+
+          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6">
+            <div className="text-[16px] font-extrabold text-text">ФОТ (по умолчанию 70 000 ₽)</div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Менеджер</div>
+                <input
+                  value={params.salarySales}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, salarySales: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Админ</div>
+                <input
+                  value={params.salaryAdmin}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, salaryAdmin: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">РОП</div>
+                <input
+                  value={params.salaryHead}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, salaryHead: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Коэф. накладных</div>
+                <input
+                  value={params.overheadCoef}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, overheadCoef: clamp(safeNumber(e.target.value, 1.35), 1, 3) }))
+                  }
+                  inputMode="decimal"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+                <div className="mt-2 text-[12px] font-medium text-text/60">По умолчанию 1.35</div>
+              </label>
+
+              <label className="block">
+                <div className="text-[13px] font-semibold text-text/60">Часов в месяц</div>
+                <input
+                  value={params.hoursPerMonth}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, hoursPerMonth: clamp(safeNumber(e.target.value, 168), 80, 220) }))
+                  }
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
+                />
+                <div className="mt-2 text-[12px] font-medium text-text/60">По умолчанию 168</div>
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6 lg:col-span-2">
+            <div className="text-[16px] font-extrabold text-text">Эффект</div>
+            <div className="mt-2 text-[13px] font-medium text-text/60">
+              Adoption отражает внедрение и дисциплину команды. Conversion отражает, какая часть сэкономленного времени реально превращается в деньги.
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[13px] font-semibold text-text/60">Adoption</div>
+                  <div className="text-[13px] font-semibold text-text">{nfNum.format(params.adoption * 100)}%</div>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(params.adoption * 100)}
+                  onChange={(e) => setParams((p) => ({ ...p, adoption: clamp(Number(e.target.value) / 100, 0, 1) }))}
+                  className="mt-2 w-full"
+                />
+              </label>
+
+              <label className="block">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[13px] font-semibold text-text/60">Conversion</div>
+                  <div className="text-[13px] font-semibold text-text">{nfNum.format(params.conversion * 100)}%</div>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(params.conversion * 100)}
+                  onChange={(e) => setParams((p) => ({ ...p, conversion: clamp(Number(e.target.value) / 100, 0, 1) }))}
+                  className="mt-2 w-full"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setParams((p) => ({ ...p, adoption: 0.7, conversion: 0.45 }))}
+                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
+              >
+                Консервативно
+              </button>
+              <button
+                type="button"
+                onClick={() => setParams((p) => ({ ...p, adoption: 0.85, conversion: 0.6 }))}
+                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
+              >
+                Нормально
+              </button>
+              <button
+                type="button"
+                onClick={() => setParams((p) => ({ ...p, adoption: 0.92, conversion: 0.75 }))}
+                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
+              >
+                Агрессивно
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setParams(DEFAULT_PARAMS)}
+                className="btn-lift-outline ml-auto rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-extrabold text-text/80"
+              >
+                Сбросить дефолты
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }
