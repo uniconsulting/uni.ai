@@ -213,7 +213,7 @@ export function Footer() {
                   {/* watermark: 94px и +4px вниз, центр по вертикальной оси 960-зоны */}
                   <div
                     aria-hidden
-                    className="pointer-events-none select-none absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2"
+                    className="pointer-events-none select-none absolute left-1/2 top-[82%] -translate-x-1/2 -translate-y-1/2"
                   >
                     <div className="relative top-[16px] whitespace-nowrap text-bg/18 font-normal leading-none tracking-tight text-[112px]">
                       衆志、城を成す
