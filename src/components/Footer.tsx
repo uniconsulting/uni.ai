@@ -1,12 +1,13 @@
+/* src/components/Footer.tsx */
 "use client";
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
 const LINKS = {
   contacts: {
+    phone: "+7 (995) 518-69-42",
     tg: "https://t.me/uni_smb",
     email: "mailto:uni.kit@mail.ru",
     issue: "https://t.me/uni_smb",
@@ -61,32 +62,21 @@ function IntLink({
 }
 
 function RuBadge() {
-  const a1 = "rgb(var(--accent-1, 122 114 233))";
-  const a2 = "rgb(var(--accent-2, 198 207 19))";
-
   return (
     <div className="inline-flex">
-      <div className="relative inline-flex overflow-hidden rounded-full p-[3px]">
-        {/* dynamic gradient border (accent-1 -> accent-2) */}
+      <div className="relative inline-flex rounded-[22px] p-[2px]">
+        {/* динамичный градиент-бордюр (accent-1 -> accent-2) */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-full"
-          style={{
-            backgroundImage: `linear-gradient(90deg, ${a1}, ${a2}, ${a1})`,
-            backgroundSize: "220% 100%",
-          }}
-          animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          }}
-          transition={{ duration: 4.6, ease: "linear", repeat: Infinity }}
+          className="pointer-events-none absolute inset-0 rounded-[22px] bg-gradient-to-r from-accent-1 via-accent-2 to-accent-1"
+          style={{ backgroundSize: "240% 240%" }}
+          animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+          transition={{ duration: 7.5, ease: "linear", repeat: Infinity }}
         />
-
-        <div className="relative inline-flex items-center gap-3 rounded-full bg-accent-3 px-9 py-4">
-          <span className="text-[16px] md:text-[17px] font-semibold text-text">
-            RU
-          </span>
-          <span className="text-text/50">•</span>
-          <span className="text-[16px] md:text-[17px] font-semibold text-text">
+        <div className="relative inline-flex items-center gap-3 rounded-[20px] bg-accent-3 px-8 py-5">
+          <span className="text-[16px] font-semibold text-text">RU</span>
+          <span className="text-text/45">•</span>
+          <span className="text-[16px] font-semibold text-text">
             Продукт сделан в России
           </span>
         </div>
@@ -95,37 +85,48 @@ function RuBadge() {
   );
 }
 
+function Col({
+  title,
+  children,
+  showDivider,
+}: {
+  title: string;
+  children: ReactNode;
+  showDivider?: boolean;
+}) {
+  return (
+    <div className="relative min-w-0 px-10 lg:px-12 pt-10 lg:pt-12 pb-12">
+      {showDivider ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-10 bottom-10 w-px bg-bg/18"
+        />
+      ) : null}
+
+      <div className="hover-accent text-[22px] lg:text-[26px] font-extrabold text-bg">
+        {title}
+      </div>
+
+      <div className="mt-7 space-y-4 text-[16px] font-medium text-bg/90">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function Footer() {
   return (
-    <footer
-      id="footer"
-      className={[
-        "relative w-full bg-text text-bg",
-        // если footer рендерится внутри <main className="pb-12 md:pb-20">,
-        // это “съедает” нижний padding, чтобы не было пустоты
-        "-mb-12 md:-mb-20",
-      ].join(" ")}
-    >
-      {/* top divider */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-bg/10"
-      />
-
-      <Container className="relative z-10 px-6 md:px-10 lg:px-12">
-        <div className="relative py-12 md:py-14 pb-10 md:pb-12">
-          {/* center vertical divider (longer) */}
-          <div
-            aria-hidden
-            className="pointer-events-none hidden lg:block absolute left-1/2 top-0 h-[640px] w-px -translate-x-1/2 bg-bg/10"
-          />
-
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-0">
-            {/* LEFT */}
-            <div className="min-w-0 lg:pr-10">
+    <footer id="footer" className="w-full">
+      {/* TOP AREA: 620px on lg */}
+      <div className="w-full lg:h-[620px]">
+        <div className="grid w-full lg:grid-cols-[480px_1px_1fr]">
+          {/* LEFT (bg) */}
+          <div className="bg-bg text-text">
+            <div className="h-full px-10 lg:px-12 pt-10 lg:pt-12">
+              {/* brand row */}
               <div className="flex items-center gap-4">
-                {/* logo in round mask */}
-                <div className="h-12 w-12 shrink-0 rounded-full overflow-hidden ring-1 ring-bg/15 bg-bg/5 flex items-center justify-center">
+                {/* круглая рамка/маска */}
+                <div className="h-14 w-14 shrink-0 rounded-full bg-accent-1 overflow-hidden flex items-center justify-center">
                   <img
                     src={withBasePath("/brand/uni-logo.svg")}
                     alt="ЮНИ"
@@ -134,132 +135,140 @@ export function Footer() {
                   />
                 </div>
 
-                {/* text aligned to logo center */}
+                {/* текст строго по центру относительно круга */}
                 <div className="min-w-0 flex flex-col justify-center">
-                  <div className="hover-accent text-[18px] font-semibold leading-tight">
-                    ЮНИ.ai
+                  <div className="hover-accent text-[20px] font-extrabold leading-none">
+                    юни.ai
                   </div>
-                  <div className="hover-accent text-[14px] font-medium leading-tight text-bg/70">
-                    Системы для SMB с ИИ японского качества
+                  <div className="hover-accent mt-1 text-[14px] font-medium text-text/70 leading-snug">
+                    Системы для SMB с ИИ
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 border-t border-bg/10 pt-8">
-                <div className="hover-accent text-[16px] font-medium text-bg/80">
-                  СТЭП = Стабильность. Точность. Эффективность. Простота.
-                </div>
+              {/* тонкий разделитель */}
+              <div className="mt-8 h-px w-full bg-text/12" />
 
-                <div className="mt-8 space-y-2">
-                  <div className="hover-accent text-[14px] font-semibold text-bg/80">
-                    ООО БЭНИФИТ
-                  </div>
-                  <div className="hover-accent text-[14px] font-medium text-bg/65">
-                    ИНН: 7300031274 • ОГРН: 1247300003257
-                  </div>
-                  <div className="hover-accent text-[14px] font-medium text-bg/65">
-                    обл. Ульяновская, г. Ульяновск, ул. Жигулевская, д. 17.
-                  </div>
-                </div>
+              {/* слоган */}
+              <div className="hover-accent mt-8 text-[16px] font-medium text-text/80">
+                СТЭП = Стабильность. Точность. Эффективность. Простота.
+              </div>
 
-                <div className="mt-10">
-                  <RuBadge />
+              {/* реквизиты */}
+              <div className="mt-10 space-y-3">
+                <div className="hover-accent text-[16px] font-semibold text-text/85">
+                  ООО БЭНИФИТ
                 </div>
+                <div className="hover-accent text-[16px] font-medium text-text/70">
+                  ИНН: 7300031274 • ОГРН: 1247300003257
+                </div>
+                <div className="hover-accent text-[16px] font-medium text-text/70">
+                  обл. Ульяновская, г. Ульяновск,
+                  <br />
+                  ул. Жигулевская, д. 17.
+                </div>
+              </div>
+
+              {/* второй разделитель */}
+              <div className="mt-10 h-px w-full bg-text/12" />
+
+              {/* RU badge */}
+              <div className="mt-10 pb-12">
+                <RuBadge />
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN DIVIDER */}
+          <div aria-hidden className="hidden lg:block bg-text/12" />
+
+          {/* RIGHT (top accent-1 + bottom text) */}
+          <div className="min-w-0">
+            {/* TOP RED */}
+            <div className="relative bg-accent-1 text-bg lg:h-[472px] overflow-hidden">
+              {/* watermark */}
+              <div
+                aria-hidden
+                className="pointer-events-none select-none absolute inset-x-0 bottom-8 flex justify-center"
+              >
+                <div className="text-bg/18 font-normal leading-none tracking-tight text-[96px] md:text-[120px] lg:text-[150px]">
+                  衆志、城を成す
+                </div>
+              </div>
+
+              <div className="relative z-10 grid md:grid-cols-3">
+                <Col title="Блог">
+                  <div>
+                    <ExtLink href={LINKS.blog.tgChannel}>Telegram-канал</ExtLink>
+                  </div>
+                  <div>
+                    <ExtLink href={LINKS.blog.tenchat}>TenChat</ExtLink>
+                  </div>
+                </Col>
+
+                <Col title="Контакты" showDivider>
+                  <div className="hover-accent">{LINKS.contacts.phone}</div>
+                  <div>
+                    <ExtLink href={LINKS.contacts.tg}>Telegram</ExtLink>
+                  </div>
+                  <div>
+                    <ExtLink href={LINKS.contacts.email}>uni.kit@mail.ru</ExtLink>
+                  </div>
+                  <div>
+                    <ExtLink href={LINKS.contacts.issue}>Сообщить о проблеме</ExtLink>
+                  </div>
+                </Col>
+
+                <Col title="Документация" showDivider>
+                  <div>
+                    <IntLink href={LINKS.docs.privacy}>Политика конфиденциальности</IntLink>
+                  </div>
+                  <div>
+                    <IntLink href={LINKS.docs.opd}>Согласие ОПД клиента</IntLink>
+                  </div>
+                  <div>
+                    <IntLink href={LINKS.docs.offer}>Публичная оферта</IntLink>
+                  </div>
+                  <div>
+                    <IntLink href={LINKS.docs.cookies}>Политика cookies</IntLink>
+                  </div>
+                </Col>
               </div>
             </div>
 
-            {/* RIGHT */}
-            <div className="min-w-0 lg:pl-10">
-              <div className="grid gap-10 sm:grid-cols-3 sm:gap-x-10">
-                {/* BLOG */}
-                <div className="min-w-0">
-                  <div className="hover-accent text-[14px] font-semibold text-bg/85">
-                    Блог
-                  </div>
+            {/* BOTTOM DARK */}
+            <div className="bg-text text-bg lg:h-[148px]">
+              {/* разделитель по границе красного/тёмного */}
+              <div aria-hidden className="h-px w-full bg-bg/18" />
 
-                  <div className="mt-5 space-y-3 text-[14px] font-medium text-bg/65">
-                    <div>
-                      <ExtLink href={LINKS.blog.tgChannel}>Telegram-канал</ExtLink>
-                    </div>
-                    <div>
-                      <ExtLink href={LINKS.blog.tenchat}>TenChat</ExtLink>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CONTACTS (чуть ближе к “Блог”) */}
-                <div className="min-w-0 sm:-ml-2">
-                  <div className="hover-accent text-[14px] font-semibold text-bg/85">
-                    Контакты
-                  </div>
-
-                  <div className="mt-5 space-y-3 text-[14px] font-medium text-bg/65">
-                    <div className="hover-accent">+7 (995) 518-69-42</div>
-                    <div>
-                      <ExtLink href={LINKS.contacts.tg}>Telegram</ExtLink>
-                    </div>
-                    <div>
-                      <a
-                        href={LINKS.contacts.email}
-                        className="hover-accent transition-colors"
-                      >
-                        uni.kit@mail.ru
-                      </a>
-                    </div>
-                    <div>
-                      <ExtLink href={LINKS.contacts.issue}>Сообщить о проблеме</ExtLink>
-                    </div>
-                  </div>
-                </div>
-
-                {/* DOCS */}
-                <div className="min-w-0">
-                  <div className="hover-accent text-[14px] font-semibold text-bg/85">
-                    Документы
-                  </div>
-
-                  <div className="mt-5 space-y-3 text-[14px] font-medium text-bg/65">
-                    <div>
-                      <IntLink href={LINKS.docs.privacy}>
-                        Политика конфиденциальности
-                      </IntLink>
-                    </div>
-                    <div>
-                      <IntLink href={LINKS.docs.opd}>Согласие ОПД клиента</IntLink>
-                    </div>
-                    <div>
-                      <IntLink href={LINKS.docs.offer}>Публичная оферта</IntLink>
-                    </div>
-                    <div>
-                      <IntLink href={LINKS.docs.cookies}>Политика cookies</IntLink>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* divider under columns */}
-              <div className="mt-10 h-px w-full bg-bg/10" />
-
-              {/* CTA button under divider */}
-              <div className="mt-6 flex justify-start sm:justify-end">
+              <div className="h-full px-10 lg:px-12 flex items-center gap-10">
+                <div className="h-px flex-1 bg-bg/18" />
                 <a
                   href="#cta"
-                  className="btn-lift-outline btm-lift-outline rounded-full px-7 py-3 text-[14px] font-semibold"
+                  className="hover-accent text-[22px] md:text-[26px] lg:text-[30px] font-extrabold tracking-tight whitespace-nowrap"
                 >
-                  Начать проект
+                  начать проект
                 </a>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* bottom */}
-          <div className="mt-8 pt-5 border-t border-bg/10">
-            <div className="text-center text-[13px] font-medium text-bg/55 hover-accent">
-              Copyright © 2026 Uni.ai (ООО "БЭНИФИТ")
-            </div>
+        {/* разделитель перед нижней полосой */}
+        <div aria-hidden className="h-px w-full bg-text/12" />
+      </div>
+
+      {/* BOTTOM BAR (accent-2): 100px on lg */}
+      <div className="bg-accent-2 text-bg lg:h-[100px]">
+        <div className="h-full px-10 lg:px-12 flex items-center justify-between">
+          <div className="hover-accent text-[16px] font-medium">
+            © 2026 (ООО "БЭНИФИТ")
+          </div>
+          <div className="hover-accent text-[16px] font-medium">
+            Сделано ЮНИ.ai
           </div>
         </div>
-      </Container>
+      </div>
     </footer>
   );
 }
