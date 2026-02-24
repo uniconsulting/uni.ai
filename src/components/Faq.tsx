@@ -1,15 +1,11 @@
 /* src/components/Faq.tsx */
 "use client";
 
-import { useMemo, useState } from "react";
-import { Container } from "@/components/Container";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Minus } from "lucide-react";
+import { Container } from "@/components/Container";
 
-type FaqItem = {
-  q: string;
-  a: string;
-};
+type FaqItem = { q: string; a: string };
 
 const FAQ: FaqItem[] = [
   {
@@ -50,41 +46,214 @@ const FAQ: FaqItem[] = [
   },
 ];
 
-export function Faq() {
-  const [open, setOpen] = useState<number | null>(null);
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
 
-  const headerPad = useMemo(() => "pt-12 md:pt-14 lg:pt-16", []);
-  const bodyPad = useMemo(() => "pb-12 md:pb-16 lg:pb-20", []);
+function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0px 0px -12% 0px") {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || inView) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold, rootMargin },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView, threshold, rootMargin]);
+
+  return { ref, inView };
+}
+
+function FaqCard({
+  item,
+  isActive,
+  onToggle,
+  mode,
+}: {
+  item: FaqItem;
+  isActive: boolean;
+  onToggle?: () => void;
+  mode: "desktop" | "mobile" | "measure";
+}) {
+  const interactive = mode !== "measure";
+
+  const shell = [
+    "w-full rounded-[30px] border-2 overflow-hidden",
+    "transition-[box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+    isActive
+      ? "bg-accent-3 border-accent-2 shadow-[0_26px_90px_rgba(0,0,0,0.14)]"
+      : "bg-bg border-text/10 shadow-[0_18px_70px_rgba(0,0,0,0.08)]",
+  ].join(" ");
+
+  const body = (
+    <div className={shell}>
+      <div
+        className={[
+          "h-full w-full",
+          mode === "desktop"
+            ? isActive
+              ? "px-8 lg:px-10 py-7"
+              : "px-8 lg:px-10 py-6 flex items-center"
+            : "px-6 md:px-8 py-6",
+        ].join(" ")}
+      >
+        <div className="w-full">
+          <div
+            className={[
+              "font-extrabold leading-[1.12] tracking-tight",
+              "text-[18px] md:text-[20px] lg:text-[22px]",
+              isActive ? "text-text" : "text-text/55",
+            ].join(" ")}
+          >
+            {item.q}
+          </div>
+
+          <AnimatePresence initial={false}>
+            {isActive ? (
+              <motion.div
+                key="a"
+                initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: 4, filter: "blur(6px)" }}
+                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="mt-4 text-[15px] md:text-[16px] font-medium leading-snug text-text/85">
+                  {item.a}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!interactive) return body;
 
   return (
-    <section id="faq" className="relative overflow-x-clip">
-      {/* горизонтальный разделитель во всю ширину */}
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full text-left"
+      aria-expanded={isActive}
+    >
+      {body}
+    </button>
+  );
+}
+
+export function Faq() {
+  const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
+
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  // геометрия “колоды”
+  const COLLAPSED_H = 92; // высота неактивной карточки (desktop)
+  const OVERLAP = 20; // перекрытие
+  const STEP = COLLAPSED_H - OVERLAP;
+
+  const deckRef = useRef<HTMLDivElement | null>(null);
+  const measureRef = useRef<HTMLDivElement | null>(null);
+  const [deckW, setDeckW] = useState(0);
+  const [activeH, setActiveH] = useState(220); // fallback для активной
+
+  useLayoutEffect(() => {
+    const el = deckRef.current;
+    if (!el) return;
+
+    const update = () => setDeckW(el.getBoundingClientRect().width);
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    if (activeIdx == null) return;
+    if (!measureRef.current) return;
+
+    const raf = requestAnimationFrame(() => {
+      const h = measureRef.current?.getBoundingClientRect().height ?? 0;
+      if (h > 0) setActiveH(Math.ceil(h));
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [activeIdx, deckW]);
+
+  const extra = useMemo(() => {
+    if (activeIdx == null) return 0;
+    return Math.max(0, activeH - COLLAPSED_H);
+  }, [activeIdx, activeH]);
+
+  const deckH = useMemo(() => {
+    const base = (FAQ.length - 1) * STEP + COLLAPSED_H;
+    return base + extra;
+  }, [extra]);
+
+  const topFor = (i: number) => {
+    if (activeIdx == null) return i * STEP;
+    if (i <= activeIdx) return i * STEP;
+    return i * STEP + extra;
+  };
+
+  const heightFor = (i: number) => {
+    if (activeIdx == null) return COLLAPSED_H;
+    return i === activeIdx ? activeH : COLLAPSED_H;
+  };
+
+  const CARD_MOTION =
+    "will-change-[top,height] transition-[top,height] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
+
+  const REVEAL_BASE =
+    "transform-gpu transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
+
+  return (
+    <section
+      id="faq"
+      ref={sectionRef as any}
+      className={`relative overflow-x-clip ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
+      aria-label="FAQ"
+    >
+      {/* разделители как в Packages: горизонтальный во всю ширину + вертикальный из середины вниз */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10"
+        className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
+          inView ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute left-1/2 top-0 h-[220px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
+          inView ? "opacity-100" : "opacity-0"
+        }`}
       />
 
-      <Container className={`relative z-10 ${headerPad} ${bodyPad} px-6 md:px-10 lg:px-12`}>
-        {/* HEADER */}
-        <div className="relative">
-          {/* вертикальный разделитель на 220px из центра */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 hidden h-[220px] w-px -translate-x-1/2 bg-text/10 md:block"
-          />
-
-          <div className="grid gap-8 md:grid-cols-2 md:gap-0">
-            {/* left */}
+      <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
+        {/* header */}
+        <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div className="grid gap-10 md:grid-cols-2">
             <div className="md:pr-10">
               <div className="text-[18px] font-medium opacity-70 hover-accent">FAQ | Ответы</div>
             </div>
 
-            {/* right */}
-            <div className="md:pl-10">
+            <div className="md:pl-10 text-left">
               <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">
                 Часто задаваемые вопросы
               </div>
-              <div className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
+
+              <div className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px] text-text">
                 Вероятнее всего,
                 <br />
                 ответ на твой вопрос тут.
@@ -93,86 +262,69 @@ export function Faq() {
           </div>
         </div>
 
-        {/* FAQ DECK */}
-        <div className="mt-10 md:mt-12 lg:mt-14">
-          <ul className="mx-auto max-w-[980px]">
-            {FAQ.map((item, idx) => {
-              const isOpen = open === idx;
-
-              const baseOverlap =
-                idx === 0
-                  ? ""
-                  : open == null
-                    ? "-mt-4"
-                    : idx === open + 1
-                      ? "mt-6"
-                      : "-mt-4";
-
-              const z = isOpen ? 50 : 10 + (FAQ.length - idx);
-
-              return (
-                <motion.li
-                  key={item.q}
-                  layout
-                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                  className={baseOverlap}
-                  style={{ zIndex: z, position: "relative" }}
+        {/* cards */}
+        <div
+          className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-12`}
+          style={{ transitionDelay: "80ms" }}
+        >
+          {/* Desktop: колода с наложением */}
+          <div className="hidden md:block">
+            <div ref={deckRef} className="relative w-full" style={{ height: deckH }}>
+              {/* hidden measure (чтобы активная карточка подбирала высоту под текст) */}
+              {activeIdx != null && deckW > 0 ? (
+                <div
+                  className="pointer-events-none absolute -left-[9999px] top-0 opacity-0"
+                  style={{ width: deckW }}
+                  aria-hidden
                 >
-                  <motion.div
-                    layout
-                    className={[
-                      "rounded-[30px] bg-accent-3 ring-1 ring-text/10 overflow-hidden",
-                      "shadow-[0_14px_50px_rgba(0,0,0,0.12)]",
-                      isOpen ? "scale-[1.01]" : "scale-[0.995] opacity-[0.92]",
-                    ].join(" ")}
+                  <div ref={measureRef}>
+                    <FaqCard item={FAQ[activeIdx]} isActive={true} mode="measure" />
+                  </div>
+                </div>
+              ) : null}
+
+              {FAQ.map((item, i) => {
+                const isActive = i === activeIdx;
+
+                const z = isActive ? 50 : FAQ.length - i; // активная поверх всех
+
+                return (
+                  <div
+                    key={item.q}
+                    className={`${CARD_MOTION} absolute left-0 right-0`}
+                    style={{
+                      top: topFor(i),
+                      height: heightFor(i),
+                      zIndex: z,
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setOpen((v) => (v === idx ? null : idx))}
-                      className="w-full text-left p-6 md:p-7"
-                      aria-expanded={isOpen}
-                      aria-controls={`faq-panel-${idx}`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[16px] md:text-[18px] font-extrabold text-text leading-snug">
-                            {idx + 1}. {item.q}
-                          </div>
-                          <div className="mt-2 text-[13px] md:text-[14px] font-semibold text-text/55">
-                            {isOpen ? "нажми, чтобы свернуть" : "нажми, чтобы раскрыть"}
-                          </div>
-                        </div>
+                    <FaqCard
+                      item={item}
+                      isActive={isActive}
+                      mode="desktop"
+                      onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-                        <span className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-text/10 bg-bg/20">
-                          {isOpen ? <Minus className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                        </span>
-                      </div>
-                    </button>
-
-                    <AnimatePresence initial={false}>
-                      {isOpen ? (
-                        <motion.div
-                          id={`faq-panel-${idx}`}
-                          key="content"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                        >
-                          <div className="px-6 md:px-7 pb-6 md:pb-7">
-                            <div className="h-px w-full bg-text/10" />
-                            <div className="mt-4 text-[15px] md:text-[16px] leading-relaxed text-text/85">
-                              {item.a}
-                            </div>
-                          </div>
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </motion.div>
-                </motion.li>
+          {/* Mobile: обычный аккордеон без “колоды” */}
+          <div className="md:hidden space-y-4">
+            {FAQ.map((item, i) => {
+              const isActive = i === activeIdx;
+              return (
+                <FaqCard
+                  key={item.q}
+                  item={item}
+                  isActive={isActive}
+                  mode="mobile"
+                  onToggle={() => setActiveIdx((prev) => (prev === i ? null : i))}
+                />
               );
             })}
-          </ul>
+          </div>
         </div>
       </Container>
     </section>
