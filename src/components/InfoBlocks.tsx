@@ -3,6 +3,7 @@
 import { useMemo, useRef } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
+import { withBasePath } from "@/lib/basePath";
 
 export function InfoBlocks() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -135,7 +136,18 @@ export function InfoBlocks() {
 
                   {/* CENTER INSERT */}
                   <div className="h-full w-[580px]">
-                    <div className="h-full w-full rounded-[44px] bg-accent-3" />
+                    <div className="h-full w-full overflow-hidden rounded-[44px] bg-accent-3">
+                      <video
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                      >
+                        <source src={withBasePath("/info/IMG_6634.mp4")} type="video/mp4" />
+                      </video>
+                    </div>
                   </div>
 
                   {/* RIGHT COLUMN */}
@@ -182,11 +194,15 @@ export function InfoBlocks() {
                 с чего начать?
               </div>
 
-              <div className="aspect-video w-full rounded-[28px] bg-accent-3" />
+              <div className="aspect-video w-full overflow-hidden rounded-[28px] bg-accent-3">
+                <video className="h-full w-full object-cover" autoPlay muted loop playsInline preload="metadata">
+                  <source src={withBasePath("/info/IMG_6634.mp4")} type="video/mp4" />
+                </video>
+              </div>
 
               <div className="text-base leading-snug opacity-85">
-                Представьте, что Вам необходимо составить вакансию - опишите именно те требования,
-                которые для Вас важны. Встроенный помощник составит должностную инструкцию, а далее...
+                Представьте, что Вам необходимо составить вакансию - опишите именно те требования, которые для Вас важны.
+                Встроенный помощник составит должностную инструкцию, а далее...
               </div>
             </div>
           </Container>
@@ -195,4 +211,3 @@ export function InfoBlocks() {
     </section>
   );
 }
-
