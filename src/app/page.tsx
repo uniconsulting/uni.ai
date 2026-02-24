@@ -5,7 +5,6 @@ import { InfoBlocks } from "@/components/InfoBlocks";
 import { DemoChat } from "@/components/DemoChat";
 import { Packages } from "@/components/Packages";
 import { ServicesIntegrations } from "@/components/ServicesIntegrations";
-import { RoiCalculator } from "@/components/RoiCalculator";
 
 export default function Page() {
   return (
@@ -18,7 +17,6 @@ export default function Page() {
         <DemoChat />
         <Packages />
         <ServicesIntegrations />
-        <RoiCalculator />
       </main>
     </div>
   );
