@@ -1,876 +1,709 @@
 /* src/components/RoiCalculator.tsx */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
 import {
   Calculator,
   SlidersHorizontal,
   X,
-  MessageCircle,
-  TrendingUp,
+  Plus,
+  Minus,
   Info,
 } from "lucide-react";
 
-type PackageId = "small" | "medium" | "enterprise";
-type RoleId = "sales" | "admin" | "head";
+type PlanId = "small" | "mid" | "enterprise";
 
-type Inputs = {
-  leadsPerMonth: number;
-  callsPerMonth: number;
-  teamSales: number;
-  teamAdmin: number;
-  teamHead: number;
+type Plan = {
+  id: PlanId;
+  title: string;
+  priceMonthly: number; // ₽/мес
+  tone: "blue" | "green" | "red";
+  hint: string;
 };
 
-type Params = {
-  integrationFee: number; // разово, в 1-й год
-  salarySales: number; // ₽/мес
-  salaryAdmin: number;
-  salaryHead: number;
-  overheadCoef: number; // 1.35
-  hoursPerMonth: number; // 168
-  adoption: number; // 0..1
-  conversion: number; // 0..1
+const TONE: Record<Plan["tone"], { hex: string }> = {
+  blue: { hex: "#5B86C6" },
+  green: { hex: "#49C874" },
+  red: { hex: "#C94444" },
 };
 
-type ModuleFlags = {
-  bots: boolean;
-  callAnalytics: boolean;
+const DEFAULTS = {
+  salaryMonthly: 88894, // ₽/мес, средняя оплата труда МОП по РФ
+  hoursPerWeek: 40,
+  integrationFee: 179900, // ₽, разово
+  replacementFactor: 0.8, // доля замещения (0..1)
 };
 
-type Task = {
-  module: "bots" | "callAnalytics";
-  name: string;
-  role: RoleId;
-  minutesPerUnit: number;
-  effect: number; // 0..1
-  volumeKind: "leads" | "calls" | "fixed";
-  volumeMultiplier?: number; // для leads/calls
-  fixedMinutesPerMonth?: number; // для fixed
-};
-
-const TELEGRAM_HREF = "https://t.me/uni_smb";
-
-const nfRub = new Intl.NumberFormat("ru-RU");
-const nfNum = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
-const nf1 = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 });
-
-function rub(n: number) {
-  return `${nfRub.format(Math.round(n))} ₽`;
-}
-function clamp(n: number, a: number, b: number) {
-  return Math.min(b, Math.max(a, n));
-}
-function safeNumber(v: any, fallback: number) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-const PACKAGES: Record<
-  PackageId,
+const PLANS: Plan[] = [
   {
-    title: string;
-    monthlyFee: number;
-    defaults: Inputs;
-  }
-> = {
-  small: {
+    id: "small",
     title: "Малый",
-    monthlyFee: 9_900,
-    defaults: { leadsPerMonth: 300, callsPerMonth: 600, teamSales: 2, teamAdmin: 1, teamHead: 1 },
+    priceMonthly: 9900,
+    tone: "blue",
+    hint: "Чат-боты + аналитика, базовый масштаб",
   },
-  medium: {
+  {
+    id: "mid",
     title: "Средний",
-    monthlyFee: 39_900,
-    defaults: { leadsPerMonth: 700, callsPerMonth: 1400, teamSales: 5, teamAdmin: 2, teamHead: 1 },
+    priceMonthly: 39900,
+    tone: "green",
+    hint: "Больше сценариев и глубже аналитика",
   },
-  enterprise: {
+  {
+    id: "enterprise",
     title: "Энтерпрайз",
-    monthlyFee: 99_900,
-    defaults: { leadsPerMonth: 2000, callsPerMonth: 4000, teamSales: 12, teamAdmin: 4, teamHead: 2 },
-  },
-};
-
-const DEFAULT_PARAMS: Params = {
-  integrationFee: 179_900,
-  salarySales: 70_000,
-  salaryAdmin: 70_000,
-  salaryHead: 70_000,
-  overheadCoef: 1.35,
-  hoursPerMonth: 168,
-  adoption: 0.85,
-  conversion: 0.6,
-};
-
-const TASKS: Task[] = [
-  // Чат-боты
-  {
-    module: "bots",
-    name: "Первичная обработка обращений (часть задач админа)",
-    role: "admin",
-    minutesPerUnit: 2.5,
-    effect: 0.5,
-    volumeKind: "leads",
-    volumeMultiplier: 1.0,
-  },
-  {
-    module: "bots",
-    name: "Первичная обработка обращений (часть задач продаж)",
-    role: "sales",
-    minutesPerUnit: 2.5,
-    effect: 0.5,
-    volumeKind: "leads",
-    volumeMultiplier: 1.0,
-  },
-  {
-    module: "bots",
-    name: "Квалификация лида",
-    role: "sales",
-    minutesPerUnit: 6,
-    effect: 0.35,
-    volumeKind: "leads",
-    volumeMultiplier: 0.8,
-  },
-  {
-    module: "bots",
-    name: "Запись/подтверждения/переносы",
-    role: "admin",
-    minutesPerUnit: 4,
-    effect: 0.6,
-    volumeKind: "leads",
-    volumeMultiplier: 0.35,
-  },
-  {
-    module: "bots",
-    name: "Заполнение CRM по первичке",
-    role: "sales",
-    minutesPerUnit: 2,
-    effect: 0.3,
-    volumeKind: "leads",
-    volumeMultiplier: 0.8,
-  },
-
-  // Аналитика звонков
-  {
-    module: "callAnalytics",
-    name: "Ручной контроль качества/разбор",
-    role: "head",
-    minutesPerUnit: 5,
-    effect: 0.7,
-    volumeKind: "calls",
-    volumeMultiplier: 1.0,
-  },
-  {
-    module: "callAnalytics",
-    name: "Теги, причины отказов, итоги",
-    role: "head",
-    minutesPerUnit: 1.5,
-    effect: 0.6,
-    volumeKind: "calls",
-    volumeMultiplier: 1.0,
-  },
-  {
-    module: "callAnalytics",
-    name: "Еженедельные отчеты (время руководителя)",
-    role: "head",
-    minutesPerUnit: 1,
-    effect: 0.6,
-    volumeKind: "fixed",
-    fixedMinutesPerMonth: 120 * 4.33,
-  },
-  {
-    module: "callAnalytics",
-    name: "Приоритезация коучинга (время руководителя)",
-    role: "head",
-    minutesPerUnit: 1,
-    effect: 0.25,
-    volumeKind: "fixed",
-    fixedMinutesPerMonth: 90 * 4.33,
+    priceMonthly: 99900,
+    tone: "red",
+    hint: "Максимальная глубина и масштаб",
   },
 ];
 
-function hourCost(salaryMonthly: number, overheadCoef: number, hoursPerMonth: number) {
-  const denom = Math.max(1, hoursPerMonth);
-  return (salaryMonthly * overheadCoef) / denom;
+function formatRUB(n: number) {
+  const v = Number.isFinite(n) ? n : 0;
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(Math.round(v)) + " ₽";
 }
 
-function computeMonthlySavings(inputs: Inputs, params: Params, flags: ModuleFlags) {
-  const hc = {
-    sales: hourCost(params.salarySales, params.overheadCoef, params.hoursPerMonth),
-    admin: hourCost(params.salaryAdmin, params.overheadCoef, params.hoursPerMonth),
-    head: hourCost(params.salaryHead, params.overheadCoef, params.hoursPerMonth),
-  } as const;
-
-  const enabledModules = {
-    bots: flags.bots,
-    callAnalytics: flags.callAnalytics,
-  };
-
-  const raw = TASKS.filter((t) => enabledModules[t.module]);
-
-  const adoption = clamp(params.adoption, 0, 1);
-  const conversion = clamp(params.conversion, 0, 1);
-
-  // 1) считаем "сырые" часы и деньги по задачам
-  const items = raw.map((t) => {
-    let units = 0;
-
-    if (t.volumeKind === "leads") units = inputs.leadsPerMonth * (t.volumeMultiplier ?? 1);
-    if (t.volumeKind === "calls") units = inputs.callsPerMonth * (t.volumeMultiplier ?? 1);
-    if (t.volumeKind === "fixed") units = 1;
-
-    const minutes =
-      t.volumeKind === "fixed"
-        ? (t.fixedMinutesPerMonth ?? 0)
-        : units * t.minutesPerUnit;
-
-    const hoursSaved = (minutes / 60) * t.effect * adoption;
-    const moneySaved = hoursSaved * hc[t.role] * conversion;
-
-    return {
-      ...t,
-      hoursSaved,
-      moneySaved,
-    };
-  });
-
-  // 2) кап по роли (чтобы не улетало в нереалистичные значения)
-  // допущение: экономия времени не может превышать 70% доступного рабочего времени роли в месяц
-  const capCoef = 0.7;
-  const maxHours = {
-    sales: inputs.teamSales * params.hoursPerMonth * capCoef,
-    admin: inputs.teamAdmin * params.hoursPerMonth * capCoef,
-    head: inputs.teamHead * params.hoursPerMonth * capCoef,
-  };
-
-  const byRoleHoursRaw: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
-  const byRoleMoneyRaw: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
-
-  for (const it of items) {
-    byRoleHoursRaw[it.role] += it.hoursSaved;
-    byRoleMoneyRaw[it.role] += it.moneySaved;
-  }
-
-  // коэффициенты "сжатия" по каждой роли
-  const squeeze: Record<RoleId, number> = {
-    sales: byRoleHoursRaw.sales > 0 ? Math.min(1, maxHours.sales / byRoleHoursRaw.sales) : 1,
-    admin: byRoleHoursRaw.admin > 0 ? Math.min(1, maxHours.admin / byRoleHoursRaw.admin) : 1,
-    head: byRoleHoursRaw.head > 0 ? Math.min(1, maxHours.head / byRoleHoursRaw.head) : 1,
-  };
-
-  const itemsCapped = items.map((it) => {
-    const k = squeeze[it.role];
-    return { ...it, hoursSaved: it.hoursSaved * k, moneySaved: it.moneySaved * k };
-  });
-
-  const byRoleHours: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
-  const byRoleMoney: Record<RoleId, number> = { sales: 0, admin: 0, head: 0 };
-
-  for (const it of itemsCapped) {
-    byRoleHours[it.role] += it.hoursSaved;
-    byRoleMoney[it.role] += it.moneySaved;
-  }
-
-  const totalMoney = byRoleMoney.sales + byRoleMoney.admin + byRoleMoney.head;
-  const totalHours = byRoleHours.sales + byRoleHours.admin + byRoleHours.head;
-
-  return {
-    totalMoney,
-    totalHours,
-    byRoleMoney,
-    byRoleHours,
-    hourCosts: hc,
-    items: itemsCapped,
-    squeeze,
-  };
+function formatPct(n: number) {
+  const v = Number.isFinite(n) ? n : 0;
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(v) + "%";
 }
 
-function Modal({
-  open,
-  title,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0px 0px -12% 0px") {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+    const el = ref.current;
+    if (!el || inView) return;
 
-  if (!open) return null;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold, rootMargin },
+    );
 
-  return (
-    <div className="fixed inset-0 z-[60]">
-      <button
-        type="button"
-        aria-label="Закрыть"
-        className="absolute inset-0 bg-black/45"
-        onClick={onClose}
-      />
-      <div className="absolute left-1/2 top-1/2 w-[min(920px,92vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="overflow-hidden rounded-3xl border border-text/10 bg-accent-3 shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
-          <div className="flex items-center gap-3 border-b border-text/10 px-7 py-5">
-            <div className="min-w-0">
-              <div className="text-[18px] font-extrabold text-text">{title}</div>
-              <div className="mt-1 text-[13px] font-medium text-text/60">
-                Настрой под свой контекст, на главном экране останется только самое нужное.
-              </div>
-            </div>
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView, threshold, rootMargin]);
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-lift-outline ml-auto inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
-              aria-label="Закрыть"
-              title="Закрыть (Esc)"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="max-h-[70vh] overflow-auto px-7 py-6">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
+  return { ref, inView };
 }
 
 export function RoiCalculator() {
-  const [pkg, setPkg] = useState<PackageId>("small");
-  const [flags, setFlags] = useState<ModuleFlags>({ bots: true, callAnalytics: true });
-  const [inputs, setInputs] = useState<Inputs>(PACKAGES.small.defaults);
-  const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
-  const [openParams, setOpenParams] = useState(false);
+  const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
 
-  // автоподстановка дефолтов под пакет
+  const [planId, setPlanId] = useState<PlanId>("mid");
+  const [years, setYears] = useState<1 | 2 | 3>(2);
+
+  // быстрые вводные (по умолчанию)
+  const [fteTotal, setFteTotal] = useState(1); // эквивалент сотрудников
+  const [paramsOpen, setParamsOpen] = useState(false);
+
+  // параметры (модалка)
+  const [salaryMonthly, setSalaryMonthly] = useState(DEFAULTS.salaryMonthly);
+  const [hoursPerWeek, setHoursPerWeek] = useState(DEFAULTS.hoursPerWeek);
+  const [integrationFee, setIntegrationFee] = useState(DEFAULTS.integrationFee);
+  const [includeIntegration, setIncludeIntegration] = useState(true);
+  const [replacementFactor, setReplacementFactor] = useState(DEFAULTS.replacementFactor);
+
+  // по ролям (опционально)
+  const [useRoles, setUseRoles] = useState(false);
+  const [fteMop, setFteMop] = useState(0.5);
+  const [fteAdmin, setFteAdmin] = useState(0.25);
+  const [fteRop, setFteRop] = useState(0.25);
+
+  // UX: блокируем скролл страницы, пока открыта модалка
   useEffect(() => {
-    setInputs(PACKAGES[pkg].defaults);
-  }, [pkg]);
+    if (!paramsOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [paramsOpen]);
 
-  const monthlyFee = PACKAGES[pkg].monthlyFee;
+  // Esc закрывает модалку
+  useEffect(() => {
+    if (!paramsOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setParamsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [paramsOpen]);
 
-  const calc = useMemo(() => computeMonthlySavings(inputs, params, flags), [inputs, params, flags]);
+  const plan = useMemo(() => PLANS.find((p) => p.id === planId) ?? PLANS[0], [planId]);
+  const toneHex = TONE[plan.tone].hex;
 
-  const costYear1 = params.integrationFee + monthlyFee * 12;
-  const costYear2 = monthlyFee * 12;
-  const costYear3 = monthlyFee * 12;
+  const fteEffective = useMemo(() => {
+    const base = useRoles ? fteMop + fteAdmin + fteRop : fteTotal;
+    return clamp(base, 0, 20);
+  }, [useRoles, fteMop, fteAdmin, fteRop, fteTotal]);
 
-  const benefitYear = calc.totalMoney * 12;
+  const replacementK = useMemo(() => clamp(replacementFactor, 0, 1), [replacementFactor]);
 
-  const netYear1 = benefitYear - costYear1;
-  const netYear2 = benefitYear - costYear2;
-  const netYear3 = benefitYear - costYear3;
+  const calc = useMemo(() => {
+    const months = years * 12;
 
-  const paybackMonths =
-    calc.totalMoney > 0 ? costYear1 / calc.totalMoney : Number.POSITIVE_INFINITY;
+    const monthlySavings = salaryMonthly * fteEffective * replacementK;
+    const monthlyCost = plan.priceMonthly;
 
-  const roiYear1 = costYear1 > 0 ? (netYear1 / costYear1) * 100 : 0;
+    const totalSavings = monthlySavings * months;
+    const totalCosts = monthlyCost * months + (includeIntegration ? integrationFee : 0);
 
-  const bars = useMemo(() => {
-    const xs = [netYear1, netYear2, netYear3];
-    const maxAbs = Math.max(1, ...xs.map((v) => Math.abs(v)));
-    return xs.map((v) => ({
-      value: v,
-      pct: Math.round((Math.abs(v) / maxAbs) * 100),
-      sign: v >= 0 ? "pos" : "neg",
-    }));
-  }, [netYear1, netYear2, netYear3]);
+    const net = totalSavings - totalCosts;
+    const roi = totalCosts > 0 ? (net / totalCosts) * 100 : 0;
+
+    const year1Savings = monthlySavings * 12;
+    const year1Costs = monthlyCost * 12 + (includeIntegration ? integrationFee : 0);
+    const year1Net = year1Savings - year1Costs;
+
+    const year2Costs = monthlyCost * 12;
+    const year2Net = year1Savings - year2Costs; // те же savings, но без интеграции
+
+    // окупаемость по месяцам (интеграция считается "в начале")
+    let paybackMonths: number | null = null;
+    let cumSavings = 0;
+    let cumCosts = includeIntegration ? integrationFee : 0;
+
+    for (let m = 1; m <= months; m += 1) {
+      cumCosts += monthlyCost;
+      cumSavings += monthlySavings;
+      if (cumSavings >= cumCosts) {
+        paybackMonths = m;
+        break;
+      }
+    }
+
+    return {
+      months,
+      monthlySavings,
+      monthlyCost,
+      totalSavings,
+      totalCosts,
+      net,
+      roi,
+      year1Net,
+      year2Net,
+      paybackMonths,
+    };
+  }, [years, salaryMonthly, fteEffective, replacementK, plan.priceMonthly, includeIntegration, integrationFee]);
+
+  const REVEAL_BASE =
+    "transform-gpu transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
+
+  const pillBtn = (isOn: boolean) =>
+    [
+      "btn-lift-outline inline-flex items-center justify-center rounded-xl px-4 py-2 text-[13px] font-semibold",
+      isOn ? "bg-bg/65 border-2" : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
+    ].join(" ");
 
   return (
-    <section id="roi" className="relative">
-      <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10" />
+    <section
+      ref={sectionRef as any}
+      id="roi"
+      className={`relative ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
+    >
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
+          inView ? "opacity-100" : "opacity-0"
+        }`}
+      />
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
-            <div className="hover-accent text-[18px] font-medium opacity-70">
-              ROI-калькулятор
+        {/* header */}
+        <div className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="hover-accent text-[18px] font-medium opacity-70">roi | калькулятор</div>
+              <div className="mt-3 text-[34px] md:text-[40px] font-extrabold leading-[1.05] text-text">
+                Окупаемость через ФОТ
+              </div>
+              <div className="mt-4 text-[15px] md:text-[16px] font-medium text-text/70 max-w-[820px]">
+                Сравниваем стоимость пакета и разовой интеграции с экономией на людях.
+                Интеграция оплачивается один раз, поэтому на второй и последующие годы эффект заметно выше.
+              </div>
             </div>
-            <div className="mt-3 text-[34px] md:text-[40px] font-extrabold leading-[1.05] text-text">
-              Оценка окупаемости
-              <span className="block">по ФОТ и времени команды</span>
-            </div>
-            <div className="mt-5 max-w-[900px] text-[16px] md:text-[18px] font-medium text-text/70">
-              Выбираешь пакет и контекст. Калькулятор показывает 1-й год с учетом разовой интеграции
-              и 2-й год без нее, поэтому там эффект выше.
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setOpenParams(true)}
-              className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-5 py-3 text-[14px] font-semibold text-text/80 backdrop-blur hover:text-text"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span>Параметры</span>
-            </button>
-
-            <a
-              href={TELEGRAM_HREF}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl bg-accent-3 px-5 py-3 text-[14px] font-extrabold text-text"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>Написать нам</span>
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setParamsOpen(true)}
+                className="btn-lift-outline inline-flex items-center gap-2 rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[13px] font-semibold text-text/70 backdrop-blur"
+                aria-label="Параметры"
+                title="Параметры"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Параметры</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          {/* LEFT: inputs */}
-          <div className="rounded-3xl border border-text/10 bg-bg/25 p-7">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-text/10 bg-bg/35">
-                <Calculator className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[18px] font-extrabold text-text">Вводные</div>
-                <div className="mt-1 text-[13px] font-medium text-text/60">
-                  На главном экране только 5 простых настроек.
+        {/* main */}
+        <div
+          className={`${REVEAL_BASE} ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"} mt-10`}
+          style={{ transitionDelay: "80ms" }}
+        >
+          <div
+            className="rounded-[30px] bg-accent-3 ring-1 ring-text/10 shadow-[0_22px_70px_rgba(0,0,0,0.10)] overflow-hidden"
+            style={{ ["--tone" as any]: toneHex }}
+          >
+            <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr] divide-y lg:divide-y-0 lg:divide-x divide-text/10">
+              {/* inputs */}
+              <div className="p-8 md:p-10">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-text/10 bg-bg/25">
+                    <Calculator className="h-5 w-5 text-text/70" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[18px] font-extrabold text-text">Вводные</div>
+                    <div className="mt-1 text-[13px] font-semibold text-text/55">
+                      По умолчанию: ФОТ {formatRUB(DEFAULTS.salaryMonthly)}/мес, {DEFAULTS.hoursPerWeek} ч/нед, интеграция{" "}
+                      {formatRUB(DEFAULTS.integrationFee)} разово.
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Package */}
-            <div className="mt-6">
-              <div className="text-[13px] font-semibold text-text/60">Пакет</div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(Object.keys(PACKAGES) as PackageId[]).map((id) => {
-                  const on = id === pkg;
-                  return (
+                {/* plan */}
+                <div className="mt-8">
+                  <div className="text-[14px] font-extrabold text-text">Пакет</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {PLANS.map((p) => {
+                      const isOn = p.id === planId;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setPlanId(p.id)}
+                          className={pillBtn(isOn)}
+                          style={isOn ? { borderColor: TONE[p.tone].hex } : undefined}
+                          aria-pressed={isOn}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: TONE[p.tone].hex }} />
+                            <span>{p.title}</span>
+                            <span className="text-text/55">·</span>
+                            <span className="text-text/70">{formatRUB(p.priceMonthly)}/мес</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-3 text-[14px] font-medium text-text/70">{plan.hint}</div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-2 rounded-xl border border-text/10 bg-bg/20 px-3 py-2 text-[13px] font-semibold text-text/70">
+                      <Info className="h-4 w-4" />
+                      <span>Интеграция 1 раз: {formatRUB(integrationFee)}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-xl border border-text/10 bg-bg/20 px-3 py-2 text-[13px] font-semibold text-text/70">
+                      <span>Доля замещения</span>
+                      <span className="text-text/55">·</span>
+                      <span>{formatPct(replacementK * 100)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* fte */}
+                <div className="mt-8">
+                  <div className="text-[14px] font-extrabold text-text">Эквивалент сотрудников</div>
+                  <div className="mt-3 flex items-center gap-3">
                     <button
-                      key={id}
                       type="button"
-                      onClick={() => setPkg(id)}
-                      className={[
-                        "btn-lift-outline inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[13px] font-semibold",
-                        on
-                          ? "bg-accent-3 border-2 border-text/15 text-text"
-                          : "bg-bg/25 border border-text/10 text-text/70 hover:text-text",
-                      ].join(" ")}
-                      aria-pressed={on}
+                      onClick={() => setFteTotal((v) => clamp(Math.round((v - 0.25) * 100) / 100, 0, 20))}
+                      className="btn-lift-outline inline-flex h-11 w-11 items-center justify-center rounded-xl border border-text/10 bg-bg/25"
+                      aria-label="Уменьшить"
+                      title="Уменьшить"
                     >
-                      <span>{PACKAGES[id].title}</span>
-                      <span className="text-text/45">{rub(PACKAGES[id].monthlyFee)}/мес</span>
+                      <Minus className="h-5 w-5" />
                     </button>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Modules */}
-            <div className="mt-6">
-              <div className="text-[13px] font-semibold text-text/60">Что внедряем</div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setFlags((p) => ({ ...p, bots: !p.bots }))}
-                  className={[
-                    "btn-lift-outline flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left",
-                    flags.bots ? "border-text/15 bg-accent-3" : "border-text/10 bg-bg/25",
-                  ].join(" ")}
-                  aria-pressed={flags.bots}
-                >
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-extrabold text-text">Чат-боты</div>
-                    <div className="mt-1 text-[12px] font-medium text-text/60">
-                      Снимают рутину с админа и продаж
+                    <div className="min-w-[160px] rounded-2xl border border-text/10 bg-bg/25 px-5 py-3 text-center">
+                      <div className="text-[22px] font-extrabold text-text">{fteTotal.toFixed(2).replace(/\.00$/, "")}</div>
+                      <div className="mt-1 text-[12px] font-semibold text-text/55">FTE</div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setFteTotal((v) => clamp(Math.round((v + 0.25) * 100) / 100, 0, 20))}
+                      className="btn-lift-outline inline-flex h-11 w-11 items-center justify-center rounded-xl border border-text/10 bg-bg/25"
+                      aria-label="Увеличить"
+                      title="Увеличить"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+
+                    <div className="ml-auto hidden md:block text-[13px] font-semibold text-text/55">
+                      Если считаешь по ролям, открой "Параметры".
                     </div>
                   </div>
-                  <div
-                    className={[
-                      "h-6 w-11 rounded-full border border-text/10 p-[2px] transition",
-                      flags.bots ? "bg-text/10" : "bg-bg/35",
-                    ].join(" ")}
-                  >
-                    <div
-                      className={[
-                        "h-5 w-5 rounded-full bg-text/60 transition",
-                        flags.bots ? "translate-x-5" : "translate-x-0",
-                      ].join(" ")}
-                    />
-                  </div>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => setFlags((p) => ({ ...p, callAnalytics: !p.callAnalytics }))}
-                  className={[
-                    "btn-lift-outline flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left",
-                    flags.callAnalytics ? "border-text/15 bg-accent-3" : "border-text/10 bg-bg/25",
-                  ].join(" ")}
-                  aria-pressed={flags.callAnalytics}
-                >
+                  <div className="mt-4 text-[13px] font-medium text-text/70">
+                    Под капотом: экономия = ФОТ * FTE * доля замещения.
+                  </div>
+                </div>
+
+                {/* horizon */}
+                <div className="mt-8">
+                  <div className="text-[14px] font-extrabold text-text">Горизонт расчёта</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[1, 2, 3].map((y) => {
+                      const isOn = years === y;
+                      return (
+                        <button
+                          key={y}
+                          type="button"
+                          onClick={() => setYears(y as 1 | 2 | 3)}
+                          className={pillBtn(isOn)}
+                          style={isOn ? { borderColor: toneHex } : undefined}
+                          aria-pressed={isOn}
+                        >
+                          {y} {y === 1 ? "год" : y === 2 ? "года" : "года"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* disclaimer */}
+                <div className="mt-8 rounded-2xl border border-text/10 bg-bg/20 p-5">
+                  <div className="text-[13px] font-extrabold text-text">Дисклеймер</div>
+                  <div className="mt-2 text-[13px] font-medium text-text/70">
+                    Расчёт упрощённый. Используем средний ФОТ МОП по РФ ({formatRUB(DEFAULTS.salaryMonthly)}/мес) и
+                    коэффициент замещения по умолчанию {formatPct(DEFAULTS.replacementFactor * 100)}.
+                    В "Параметры" можно подставить твой контекст.
+                  </div>
+                </div>
+              </div>
+
+              {/* results */}
+              <div className="p-8 md:p-10 bg-bg/10">
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[14px] font-extrabold text-text">Аналитика звонков</div>
-                    <div className="mt-1 text-[12px] font-medium text-text/60">
-                      Снимает контроль качества с РОП
+                    <div className="text-[18px] font-extrabold text-text">Результат</div>
+                    <div className="mt-1 text-[13px] font-semibold text-text/55">
+                      План: {plan.title}, горизонт: {years} {years === 1 ? "год" : "года"}.
                     </div>
                   </div>
+
                   <div
-                    className={[
-                      "h-6 w-11 rounded-full border border-text/10 p-[2px] transition",
-                      flags.callAnalytics ? "bg-text/10" : "bg-bg/35",
-                    ].join(" ")}
+                    className="shrink-0 inline-flex items-center gap-2 rounded-xl border-2 bg-bg/30 px-4 py-2 text-[13px] font-extrabold"
+                    style={{ borderColor: toneHex, color: toneHex }}
                   >
-                    <div
-                      className={[
-                        "h-5 w-5 rounded-full bg-text/60 transition",
-                        flags.callAnalytics ? "translate-x-5" : "translate-x-0",
-                      ].join(" ")}
-                    />
+                    <span>ROI</span>
+                    <span className="text-text/55">·</span>
+                    <span>{formatPct(calc.roi)}</span>
                   </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Volumes + team */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Лиды/обращения в месяц</div>
-                <input
-                  value={inputs.leadsPerMonth}
-                  onChange={(e) =>
-                    setInputs((p) => ({ ...p, leadsPerMonth: clamp(safeNumber(e.target.value, 0), 0, 1_000_000) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Звонки в месяц</div>
-                <input
-                  value={inputs.callsPerMonth}
-                  onChange={(e) =>
-                    setInputs((p) => ({ ...p, callsPerMonth: clamp(safeNumber(e.target.value, 0), 0, 2_000_000) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Менеджеры</div>
-                <input
-                  value={inputs.teamSales}
-                  onChange={(e) =>
-                    setInputs((p) => ({ ...p, teamSales: clamp(safeNumber(e.target.value, 0), 0, 200) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Админы</div>
-                <input
-                  value={inputs.teamAdmin}
-                  onChange={(e) =>
-                    setInputs((p) => ({ ...p, teamAdmin: clamp(safeNumber(e.target.value, 0), 0, 200) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">РОП</div>
-                <input
-                  value={inputs.teamHead}
-                  onChange={(e) =>
-                    setInputs((p) => ({ ...p, teamHead: clamp(safeNumber(e.target.value, 0), 0, 50) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-            </div>
-
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-text/10 bg-bg/20 px-4 py-3">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-text/60" />
-              <div className="text-[12px] font-medium text-text/60">
-                В расчет заложен консервативный кап: экономия времени по роли не превышает 70% доступного рабочего времени.
-                Это защищает от нереалистичных значений при больших объемах.
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: results */}
-          <div className="rounded-3xl border border-text/10 bg-accent-3 p-7">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-text/10 bg-bg/35">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[18px] font-extrabold text-text">Результат</div>
-                <div className="mt-1 text-[13px] font-medium text-text/60">
-                  Год 1 с интеграцией, год 2 и далее без нее.
                 </div>
-              </div>
-            </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
-                <div className="text-[12px] font-semibold text-text/60">Экономия в месяц</div>
-                <div className="mt-2 text-[22px] font-extrabold text-text">{rub(calc.totalMoney)}</div>
-                <div className="mt-2 text-[12px] font-medium text-text/60">
-                  Время: {nf1.format(calc.totalHours)} ч/мес
-                </div>
-              </div>
+                <div className="mt-8 grid gap-4">
+                  <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                    <div className="text-[13px] font-semibold text-text/55">Экономия в месяц</div>
+                    <div className="mt-2 text-[26px] font-extrabold text-text">{formatRUB(calc.monthlySavings)}</div>
+                    <div className="mt-2 text-[13px] font-medium text-text/70">
+                      ФОТ {formatRUB(salaryMonthly)}/мес · FTE {fteEffective.toFixed(2).replace(/\.00$/, "")} · доля{" "}
+                      {formatPct(replacementK * 100)}
+                    </div>
+                  </div>
 
-              <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
-                <div className="text-[12px] font-semibold text-text/60">Окупаемость</div>
-                <div className="mt-2 text-[22px] font-extrabold text-text">
-                  {Number.isFinite(paybackMonths) ? `${nf1.format(paybackMonths)} мес` : "—"}
-                </div>
-                <div className="mt-2 text-[12px] font-medium text-text/60">
-                  ROI (год 1): {Number.isFinite(roiYear1) ? `${nf1.format(roiYear1)}%` : "—"}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-text/10 bg-bg/20 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-[12px] font-semibold text-text/60">Финансы по годам (чистая выгода)</div>
-                <div className="text-[12px] font-medium text-text/60">
-                  Пакет: {rub(monthlyFee)}/мес, Интеграция: {rub(params.integrationFee)}
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                {[
-                  { title: "Год 1", net: netYear1, cost: costYear1, bar: bars[0] },
-                  { title: "Год 2", net: netYear2, cost: costYear2, bar: bars[1] },
-                  { title: "Год 3", net: netYear3, cost: costYear3, bar: bars[2] },
-                ].map((y) => (
-                  <div key={y.title} className="rounded-2xl border border-text/10 bg-bg/25 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[13px] font-extrabold text-text">{y.title}</div>
-                      <div className="text-[13px] font-semibold text-text/70">
-                        Net: <span className="text-text">{rub(y.net)}</span>
-                        <span className="text-text/40"> · </span>
-                        Cost: {rub(y.cost)}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                      <div className="text-[13px] font-semibold text-text/55">Затраты (в месяц)</div>
+                      <div className="mt-2 text-[22px] font-extrabold text-text">
+                        {formatRUB(calc.monthlyCost)}
+                        <span className="text-[13px] font-semibold text-text/55"> /мес</span>
+                      </div>
+                      <div className="mt-2 text-[13px] font-medium text-text/70">
+                        + интеграция {includeIntegration ? formatRUB(integrationFee) : formatRUB(0)} разово
                       </div>
                     </div>
 
-                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-bg/30">
-                      <div
-                        className={[
-                          "h-full rounded-full",
-                          y.bar.sign === "pos" ? "bg-text/70" : "bg-text/25",
-                        ].join(" ")}
-                        style={{ width: `${y.bar.pct}%` }}
-                      />
+                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                      <div className="text-[13px] font-semibold text-text/55">Окупаемость</div>
+                      <div className="mt-2 text-[22px] font-extrabold text-text">
+                        {calc.paybackMonths ? `${calc.paybackMonths} мес` : `не за ${calc.months} мес`}
+                      </div>
+                      <div className="mt-2 text-[13px] font-medium text-text/70">
+                        Интеграция учитывается в начале расчёта.
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
-                <div className="text-[12px] font-semibold text-text/60">Менеджеры</div>
-                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.sales)}</div>
-                <div className="mt-1 text-[12px] font-medium text-text/60">
-                  {nf1.format(calc.byRoleHours.sales)} ч
-                </div>
-              </div>
-              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
-                <div className="text-[12px] font-semibold text-text/60">Админы</div>
-                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.admin)}</div>
-                <div className="mt-1 text-[12px] font-medium text-text/60">
-                  {nf1.format(calc.byRoleHours.admin)} ч
-                </div>
-              </div>
-              <div className="rounded-2xl border border-text/10 bg-bg/20 p-4">
-                <div className="text-[12px] font-semibold text-text/60">РОП</div>
-                <div className="mt-2 text-[14px] font-extrabold text-text">{rub(calc.byRoleMoney.head)}</div>
-                <div className="mt-1 text-[12px] font-medium text-text/60">
-                  {nf1.format(calc.byRoleHours.head)} ч
+                  <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[13px] font-semibold text-text/55">Итог за {calc.months} мес</div>
+                      <div className="text-[13px] font-semibold text-text/55">
+                        Затраты: {formatRUB(calc.totalCosts)} · Экономия: {formatRUB(calc.totalSavings)}
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="h-2 w-full rounded-full bg-text/10 overflow-hidden">
+                        {(() => {
+                          const a = calc.totalSavings;
+                          const b = calc.totalCosts;
+                          const total = Math.max(a + b, 1);
+                          const w = clamp((a / total) * 100, 0, 100);
+                          return <div className="h-full" style={{ width: `${w}%`, backgroundColor: toneHex }} />;
+                        })()}
+                      </div>
+                      <div className="mt-3 flex items-baseline justify-between gap-3">
+                        <div className="text-[13px] font-semibold text-text/55">Чистый эффект</div>
+                        <div className="text-[22px] font-extrabold text-text">{formatRUB(calc.net)}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid gap-4 md:grid-cols-2">
+                      <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                        <div className="text-[13px] font-semibold text-text/55">Год 1 (с интеграцией)</div>
+                        <div className="mt-2 text-[20px] font-extrabold text-text">{formatRUB(calc.year1Net)}</div>
+                      </div>
+
+                      <div className="rounded-2xl border border-text/10 bg-bg/20 p-5">
+                        <div className="text-[13px] font-semibold text-text/55">Год 2+ (без интеграции)</div>
+                        <div className="mt-2 text-[20px] font-extrabold text-text">{formatRUB(calc.year2Net)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setParamsOpen(true)}
+                    className="btn-lift-outline inline-flex w-full items-center justify-center gap-2 rounded-xl border border-text/15 bg-bg/35 px-6 py-4 text-center text-[16px] font-extrabold text-text backdrop-blur"
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                    <span>Открыть параметры</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* PARAMS MODAL */}
+        {paramsOpen ? (
+          <div className="fixed inset-0 z-[60]">
+            <div
+              className="absolute inset-0 bg-text/25 backdrop-blur-[2px]"
+              onClick={() => setParamsOpen(false)}
+              aria-hidden
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div
+                className="w-full max-w-[980px] overflow-hidden rounded-3xl bg-accent-3 ring-1 ring-text/10 shadow-[0_30px_90px_rgba(0,0,0,0.18)]"
+                style={{ ["--tone" as any]: toneHex }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Параметры ROI-калькулятора"
+              >
+                <div className="px-8 py-6 flex items-start gap-3 border-b border-text/10">
+                  <div className="min-w-0">
+                    <div className="text-[18px] font-extrabold text-text">Параметры</div>
+                    <div className="mt-1 text-[13px] font-semibold text-text/55">
+                      Настрой под свой контекст. Значения обновляют расчёт сразу после закрытия.
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setParamsOpen(false)}
+                    className="ml-auto btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+                    aria-label="Закрыть"
+                    title="Закрыть"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="px-8 py-6 max-h-[75vh] overflow-auto">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                      <div className="text-[14px] font-extrabold text-text">ФОТ и режим</div>
+
+                      <label className="mt-5 block">
+                        <div className="text-[13px] font-semibold text-text/55">ФОТ сотрудника (₽/мес)</div>
+                        <input
+                          type="number"
+                          value={salaryMonthly}
+                          min={0}
+                          onChange={(e) => setSalaryMonthly(clamp(Number(e.target.value || 0), 0, 10_000_000))}
+                          className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                        />
+                      </label>
+
+                      <label className="mt-4 block">
+                        <div className="text-[13px] font-semibold text-text/55">Часы в неделю</div>
+                        <input
+                          type="number"
+                          value={hoursPerWeek}
+                          min={0}
+                          max={168}
+                          onChange={(e) => setHoursPerWeek(clamp(Number(e.target.value || 0), 0, 168))}
+                          className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                        />
+                      </label>
+
+                      <label className="mt-4 block">
+                        <div className="text-[13px] font-semibold text-text/55">Доля замещения (0..1)</div>
+                        <input
+                          type="number"
+                          step="0.05"
+                          value={replacementFactor}
+                          min={0}
+                          max={1}
+                          onChange={(e) => setReplacementFactor(clamp(Number(e.target.value || 0), 0, 1))}
+                          className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                        />
+                        <div className="mt-2 text-[12px] font-medium text-text/55">
+                          Пример: 0.8 означает, что инструмент покрывает около 80% функционала ставки.
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="rounded-2xl border border-text/10 bg-bg/20 p-6">
+                      <div className="text-[14px] font-extrabold text-text">Интеграция и FTE</div>
+
+                      <label className="mt-5 block">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-[13px] font-semibold text-text/55">Интеграция (₽, разово)</div>
+                          <label className="inline-flex items-center gap-2 text-[13px] font-semibold text-text/70">
+                            <input
+                              type="checkbox"
+                              checked={includeIntegration}
+                              onChange={(e) => setIncludeIntegration(e.target.checked)}
+                            />
+                            учитывать
+                          </label>
+                        </div>
+
+                        <input
+                          type="number"
+                          value={integrationFee}
+                          min={0}
+                          onChange={(e) => setIntegrationFee(clamp(Number(e.target.value || 0), 0, 50_000_000))}
+                          className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                          disabled={!includeIntegration}
+                        />
+                      </label>
+
+                      <div className="mt-6 rounded-2xl border border-text/10 bg-bg/20 p-5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-[13px] font-extrabold text-text">Считать по ролям</div>
+                          <button
+                            type="button"
+                            onClick={() => setUseRoles((v) => !v)}
+                            className="btn-lift-outline inline-flex items-center justify-center rounded-xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70"
+                            aria-pressed={useRoles}
+                          >
+                            {useRoles ? "включено" : "выключено"}
+                          </button>
+                        </div>
+
+                        {useRoles ? (
+                          <div className="mt-4 grid gap-4">
+                            <label className="block">
+                              <div className="text-[13px] font-semibold text-text/55">МОП (FTE)</div>
+                              <input
+                                type="number"
+                                step="0.25"
+                                value={fteMop}
+                                min={0}
+                                max={20}
+                                onChange={(e) => setFteMop(clamp(Number(e.target.value || 0), 0, 20))}
+                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                              />
+                            </label>
+
+                            <label className="block">
+                              <div className="text-[13px] font-semibold text-text/55">Администратор (FTE)</div>
+                              <input
+                                type="number"
+                                step="0.25"
+                                value={fteAdmin}
+                                min={0}
+                                max={20}
+                                onChange={(e) => setFteAdmin(clamp(Number(e.target.value || 0), 0, 20))}
+                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                              />
+                            </label>
+
+                            <label className="block">
+                              <div className="text-[13px] font-semibold text-text/55">РОП (FTE)</div>
+                              <input
+                                type="number"
+                                step="0.25"
+                                value={fteRop}
+                                min={0}
+                                max={20}
+                                onChange={(e) => setFteRop(clamp(Number(e.target.value || 0), 0, 20))}
+                                className="mt-2 w-full rounded-xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:ring-2 focus:ring-[color:var(--tone)]"
+                              />
+                            </label>
+
+                            <div className="text-[13px] font-semibold text-text/70">
+                              Итого FTE: {formatRUB(0).replace(" ₽", "")}
+                              <span className="text-text/55"> · </span>
+                              {fteEffective.toFixed(2).replace(/\.00$/, "")}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-4 text-[13px] font-medium text-text/70">
+                            Сейчас используется быстрый параметр "Эквивалент сотрудников" на карточке.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSalaryMonthly(DEFAULTS.salaryMonthly);
+                        setHoursPerWeek(DEFAULTS.hoursPerWeek);
+                        setIntegrationFee(DEFAULTS.integrationFee);
+                        setIncludeIntegration(true);
+                        setReplacementFactor(DEFAULTS.replacementFactor);
+                        setUseRoles(false);
+                        setFteTotal(1);
+                        setFteMop(0.5);
+                        setFteAdmin(0.25);
+                        setFteRop(0.25);
+                      }}
+                      className="btn-lift-outline inline-flex items-center justify-center rounded-xl border border-text/10 bg-bg/25 px-5 py-3 text-[13px] font-semibold text-text/70"
+                    >
+                      Сбросить к дефолту
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setParamsOpen(false)}
+                      className="btn-lift-outline inline-flex items-center justify-center rounded-xl border border-text/15 bg-bg/40 px-6 py-3 text-[14px] font-extrabold text-text backdrop-blur"
+                    >
+                      Готово
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </Container>
-
-      <Modal open={openParams} title="Параметры расчета" onClose={() => setOpenParams(false)}>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6">
-            <div className="text-[16px] font-extrabold text-text">Цены</div>
-
-            <label className="mt-4 block">
-              <div className="text-[13px] font-semibold text-text/60">Интеграция (разово)</div>
-              <input
-                value={params.integrationFee}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, integrationFee: clamp(safeNumber(e.target.value, 0), 0, 50_000_000) }))
-                }
-                inputMode="numeric"
-                className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-              />
-              <div className="mt-2 text-[12px] font-medium text-text/60">
-                Если уже внедрено, можно поставить 0.
-              </div>
-            </label>
-          </div>
-
-          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6">
-            <div className="text-[16px] font-extrabold text-text">ФОТ (по умолчанию 70 000 ₽)</div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Менеджер</div>
-                <input
-                  value={params.salarySales}
-                  onChange={(e) =>
-                    setParams((p) => ({ ...p, salarySales: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Админ</div>
-                <input
-                  value={params.salaryAdmin}
-                  onChange={(e) =>
-                    setParams((p) => ({ ...p, salaryAdmin: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">РОП</div>
-                <input
-                  value={params.salaryHead}
-                  onChange={(e) =>
-                    setParams((p) => ({ ...p, salaryHead: clamp(safeNumber(e.target.value, 0), 0, 5_000_000) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-              </label>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Коэф. накладных</div>
-                <input
-                  value={params.overheadCoef}
-                  onChange={(e) =>
-                    setParams((p) => ({ ...p, overheadCoef: clamp(safeNumber(e.target.value, 1.35), 1, 3) }))
-                  }
-                  inputMode="decimal"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-                <div className="mt-2 text-[12px] font-medium text-text/60">По умолчанию 1.35</div>
-              </label>
-
-              <label className="block">
-                <div className="text-[13px] font-semibold text-text/60">Часов в месяц</div>
-                <input
-                  value={params.hoursPerMonth}
-                  onChange={(e) =>
-                    setParams((p) => ({ ...p, hoursPerMonth: clamp(safeNumber(e.target.value, 168), 80, 220) }))
-                  }
-                  inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-text/10 bg-bg/25 px-4 py-3 text-[14px] font-semibold text-text outline-none focus:border-text/25"
-                />
-                <div className="mt-2 text-[12px] font-medium text-text/60">По умолчанию 168</div>
-              </label>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-text/10 bg-bg/25 p-6 lg:col-span-2">
-            <div className="text-[16px] font-extrabold text-text">Эффект</div>
-            <div className="mt-2 text-[13px] font-medium text-text/60">
-              Adoption отражает внедрение и дисциплину команды. Conversion отражает, какая часть сэкономленного времени реально превращается в деньги.
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[13px] font-semibold text-text/60">Adoption</div>
-                  <div className="text-[13px] font-semibold text-text">{nfNum.format(params.adoption * 100)}%</div>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(params.adoption * 100)}
-                  onChange={(e) => setParams((p) => ({ ...p, adoption: clamp(Number(e.target.value) / 100, 0, 1) }))}
-                  className="mt-2 w-full"
-                />
-              </label>
-
-              <label className="block">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[13px] font-semibold text-text/60">Conversion</div>
-                  <div className="text-[13px] font-semibold text-text">{nfNum.format(params.conversion * 100)}%</div>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(params.conversion * 100)}
-                  onChange={(e) => setParams((p) => ({ ...p, conversion: clamp(Number(e.target.value) / 100, 0, 1) }))}
-                  className="mt-2 w-full"
-                />
-              </label>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setParams((p) => ({ ...p, adoption: 0.7, conversion: 0.45 }))}
-                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
-              >
-                Консервативно
-              </button>
-              <button
-                type="button"
-                onClick={() => setParams((p) => ({ ...p, adoption: 0.85, conversion: 0.6 }))}
-                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
-              >
-                Нормально
-              </button>
-              <button
-                type="button"
-                onClick={() => setParams((p) => ({ ...p, adoption: 0.92, conversion: 0.75 }))}
-                className="btn-lift-outline rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-semibold text-text/70 hover:text-text"
-              >
-                Агрессивно
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setParams(DEFAULT_PARAMS)}
-                className="btn-lift-outline ml-auto rounded-2xl border border-text/10 bg-bg/25 px-4 py-2 text-[13px] font-extrabold text-text/80"
-              >
-                Сбросить дефолты
-              </button>
-            </div>
-          </div>
-        </div>
-      </Modal>
     </section>
   );
 }
