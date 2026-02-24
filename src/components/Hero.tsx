@@ -2,13 +2,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
@@ -339,16 +333,11 @@ export function Hero() {
   return (
     <section id="hero" className="relative overflow-x-clip">
       {/* TOP (блюрится) */}
-      <motion.div
-        className="relative will-change-[filter]"
-        style={{ filter: bgFilter, opacity: bgOpacity }}
-      >
+      <motion.div className="relative will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
         <Container className={`relative ${topPad}`}>
           <div className="relative px-1">
             <div className="pointer-events-none absolute right-0 top-8 hidden lg:block">
-              <div className="jp-vertical text-[120px] font-normal leading-none hover-accent-2 opacity-90">
-                精益生產
-              </div>
+              <div className="jp-vertical text-[120px] font-normal leading-none hover-accent-2 opacity-90">精益生產</div>
             </div>
 
             <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
@@ -382,7 +371,19 @@ export function Hero() {
                       transformOrigin: "center center",
                     }}
                   >
-                    <div className="aspect-video w-full" />
+                    {/* VIDEO 16:9 */}
+                    <div className="aspect-video w-full">
+                      <video
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                      >
+                        <source src={withBasePath("/hero/intro.mp4")} type="video/mp4" />
+                      </video>
+                    </div>
                   </motion.div>
                 </div>
               </div>
@@ -391,10 +392,7 @@ export function Hero() {
         </div>
 
         {/* НИЗ (блюрится) */}
-        <motion.div
-          className="relative z-20 will-change-[filter]"
-          style={{ filter: bgFilter, opacity: bgOpacity }}
-        >
+        <motion.div className="relative z-20 will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
           <div className="relative">
             {templeVisible && (
               <img
@@ -417,12 +415,8 @@ export function Hero() {
 
                       <div className="col-span-12 md:col-span-5 relative z-20 flex h-full flex-col">
                         <div className="pt-2">
-                          <div className="text-lg font-normal leading-none opacity-40 hover-accent-2">
-                            наш telegram
-                          </div>
-                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">
-                            @uni_smb
-                          </div>
+                          <div className="text-lg font-normal leading-none opacity-40 hover-accent-2">наш telegram</div>
+                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">@uni_smb</div>
                         </div>
 
                         <div className="flex-1 flex items-center">
@@ -430,12 +424,8 @@ export function Hero() {
                         </div>
 
                         <div>
-                          <div className="text-lg font-normal leading-none opacity-40 hover-accent-2">
-                            email для связи
-                          </div>
-                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">
-                            uni.kit@mail.ru
-                          </div>
+                          <div className="text-lg font-normal leading-none opacity-40 hover-accent-2">email для связи</div>
+                          <div className="mt-3 text-3xl font-normal leading-none hover-accent">uni.kit@mail.ru</div>
                         </div>
                       </div>
                     </div>
