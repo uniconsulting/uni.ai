@@ -365,7 +365,7 @@ export function ServicesIntegrations() {
     [],
   );
 
-  const CARD_H = 620;
+  const CARD_H = 580;
   const INTERVAL = "24px";
 
   // колода: 3 карты
