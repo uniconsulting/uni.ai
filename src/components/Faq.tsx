@@ -1,3 +1,4 @@
+/* src/components/Faq.tsx */
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -72,8 +73,8 @@ function useOnceInView<T extends HTMLElement>(threshold = 0.12, rootMargin = "0p
 
 function FaqCard({
   item,
-  isActive, // отвечает за “активный вид” карточки (фон/бордер/жирность вопроса)
-  isOpen, // отвечает за показ/анимацию ответа
+  isActive, // активный вид (фон/бордер/жирность вопроса)
+  isOpen, // открытость ответа
   onToggle,
   onAnswerExitComplete,
   mode,
@@ -99,8 +100,6 @@ function FaqCard({
     radiusClass,
   ].join(" ");
 
-  // ВАЖНО: для неактивной строки делаем стабильное вертикальное центрирование
-  // через flex + items-center, а сам вопрос без лишних обёрток, чтобы не “подъезжал”.
   const padInactiveDesktop = "h-full px-8 lg:px-10 flex items-center justify-start";
   const padActiveDesktop = "px-8 lg:px-10 py-8";
   const padMobile = "px-6 md:px-8 py-6";
@@ -113,11 +112,7 @@ function FaqCard({
   ].join(" ");
 
   const AnswerBlock = (
-    <AnimatePresence
-      initial={false}
-      mode="sync"
-      onExitComplete={onAnswerExitComplete}
-    >
+    <AnimatePresence initial={false} mode="sync" onExitComplete={onAnswerExitComplete}>
       {isOpen ? (
         <motion.div
           key="answer"
@@ -148,7 +143,7 @@ function FaqCard({
             <div className="w-full">
               <div className={qClass}>{item.q}</div>
 
-              {/* measure: без анимаций, чтобы высота считалась ровно */}
+              {/* measure: без анимации, чтобы высота мерилась стабильно */}
               {mode === "measure" ? (
                 <>
                   <div className="mt-5 h-px w-full bg-text/10" />
@@ -167,11 +162,11 @@ function FaqCard({
           </div>
         )
       ) : (
-        // Mobile
+        // Mobile (здесь mode уже "mobile", поэтому никаких mode==="measure")
         <div className={padMobile}>
           <div className="w-full">
             <div className={qClass}>{item.q}</div>
-            {mode === "measure" ? null : AnswerBlock}
+            {AnswerBlock}
           </div>
         </div>
       )}
@@ -196,7 +191,7 @@ export function Faq() {
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
 
   // openIdx = кто реально показывает ответ
-  // layoutIdx = кто держит “активную геометрию/стиль” (в т.ч. во время закрытия)
+  // layoutIdx = кто держит “активную геометрию/стиль” (и при закрытии тоже, до конца exit)
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [layoutIdx, setLayoutIdx] = useState<number | null>(null);
   const [closingIdx, setClosingIdx] = useState<number | null>(null);
@@ -270,22 +265,17 @@ export function Faq() {
   };
 
   const onToggle = (i: number) => {
-    // закрываем текущую
     if (openIdx === i) {
       setOpenIdx(null);
       setClosingIdx(i);
-      // layoutIdx оставляем, пока не отработает exit ответа
       return;
     }
-
-    // открываем новую
     setClosingIdx(null);
     setLayoutIdx(i);
     setOpenIdx(i);
   };
 
   const onAnswerExitCompleteFor = (i: number) => {
-    // защита от “позднего” exit, если уже открыли другую карточку
     setLayoutIdx((prev) => (prev === i ? null : prev));
     setClosingIdx((prev) => (prev === i ? null : prev));
   };
@@ -347,7 +337,7 @@ export function Faq() {
           {/* Desktop: вертикальная “колода” */}
           <div className="hidden md:block">
             <div ref={deckRef} className="relative w-full" style={{ height: deckH }}>
-              {/* hidden measure (высота активной) */}
+              {/* hidden measure */}
               {layoutIdx != null && deckW > 0 ? (
                 <div
                   className="pointer-events-none absolute -left-[9999px] top-0 opacity-0"
@@ -369,7 +359,6 @@ export function Faq() {
               {FAQ.map((item, i) => {
                 const isActive = i === layoutIdx;
                 const isOpen = i === openIdx;
-
                 const z = isActive ? 50 : 10 + (FAQ.length - i);
 
                 return (
@@ -389,9 +378,7 @@ export function Faq() {
                       mode="desktop"
                       radiusClass={radiusFor(i, isActive)}
                       onToggle={() => onToggle(i)}
-                      onAnswerExitComplete={
-                        closingIdx === i ? () => onAnswerExitCompleteFor(i) : undefined
-                      }
+                      onAnswerExitComplete={closingIdx === i ? () => onAnswerExitCompleteFor(i) : undefined}
                     />
                   </div>
                 );
@@ -399,16 +386,16 @@ export function Faq() {
             </div>
           </div>
 
-          {/* Mobile: обычный аккордеон */}
+          {/* Mobile */}
           <div className="md:hidden space-y-4">
             {FAQ.map((item, i) => {
-              const isActive = i === openIdx;
+              const isOpen = i === openIdx;
               return (
                 <FaqCard
                   key={item.q}
                   item={item}
-                  isActive={isActive}
-                  isOpen={isActive}
+                  isActive={isOpen}
+                  isOpen={isOpen}
                   mode="mobile"
                   radiusClass="rounded-[24px]"
                   onToggle={() => onToggle(i)}
