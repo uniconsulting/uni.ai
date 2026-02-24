@@ -1,4 +1,3 @@
-/* src/components/Footer.tsx */
 "use client";
 
 import type { ReactNode } from "react";
