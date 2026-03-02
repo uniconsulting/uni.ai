@@ -922,15 +922,19 @@ export function ServicesIntegrations() {
     </div>
   </div>
 ) : (
-  <div
-    className={[
-      "w-full text-[24px] font-extrabold leading-[1.05] text-text/15",
-      i < activeIdx ? "text-left pl-10 pr-6" : "text-right pr-10 pl-6",
-    ].join(" ")}
-  >
-    <div className="min-h-[56px]">
-      <div>{s.title2[0]}</div>
-      <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
+  <div className="w-full">
+    <div className={i < activeIdx ? "flex justify-start" : "flex justify-end"}>
+      <div
+        className={[
+          "min-h-[56px]",
+          "w-[232px]", // единая рабочая ширина для обеих неактивных карточек
+          "text-[24px] font-extrabold leading-[1.05] text-text/15",
+          i < activeIdx ? "text-left" : "text-right",
+        ].join(" ")}
+      >
+        <div>{s.title2[0]}</div>
+        <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
+      </div>
     </div>
   </div>
 )}
