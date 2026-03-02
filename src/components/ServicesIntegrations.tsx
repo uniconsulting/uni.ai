@@ -914,32 +914,35 @@ export function ServicesIntegrations() {
                             >
                               <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
                                 <div className="flex h-full flex-col justify-start">
-                                  {isActive ? (
-                                    <div className="text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]">
-                                      <div className="min-h-[56px]">
-                                        <div>{s.title2[0]}</div>
-                                        <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className={inactiveTitleWrapFor(i)}>
-                                      <div className="w-[320px] max-w-full">
-                                        <div
-                                          className={[
-                                            "text-[24px] font-extrabold leading-[1.05] text-text/15",
-                                            inactiveTitleAlign,
-                                          ].join(" ")}
-                                        >
-                                          <div className="min-h-[56px]">
-                                            <div className="whitespace-nowrap">{s.title2[0]}</div>
-                                            <div className="whitespace-nowrap">
-                                              {s.title2[1] || <span className="opacity-0">.</span>}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                                 {isActive ? (
+  <div className="text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]">
+    <div className="min-h-[56px]">
+      <div>{s.title2[0]}</div>
+      <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
+    </div>
+  </div>
+) : (
+  <div
+    className={[
+      "w-full flex",
+      i < activeIdx ? "justify-start" : "justify-end",
+    ].join(" ")}
+  >
+    <div className="w-[252px] shrink-0">
+      <div
+        className={[
+          "text-[24px] font-extrabold leading-[1.05] text-text/15",
+          i < activeIdx ? "text-left" : "text-right",
+        ].join(" ")}
+      >
+        <div className="min-h-[56px]">
+          <div>{s.title2[0]}</div>
+          <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
                                   <div
                                     className={`${CONTENT_MOTION} ${contentState} ${
