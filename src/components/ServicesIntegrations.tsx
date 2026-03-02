@@ -535,8 +535,11 @@ export function ServicesIntegrations() {
   const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
   // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
-  const inactiveTitleInsetFor = (i: number, isActive: boolean) =>
-    !isActive && i === services.length - 1 ? "pr-14" : "";
+const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
+  if (isActive) return "";
+  if (i > activeIdx) return "pr-14";
+  return "";
+};
 
   const tabs = useMemo(
     () =>
