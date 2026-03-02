@@ -523,10 +523,13 @@ export function ServicesIntegrations() {
     return "rounded-none";
   };
 
-  const inactiveTitleWrapFor = (i: number) => {
-    if (i < activeIdx) return "mr-auto text-left";
-    return "ml-auto text-right";
-  };
+const inactiveTitleWrapFor = (i: number) => {
+  if (i < activeIdx) {
+    return "w-full pr-10 flex justify-start";
+  }
+
+  return "w-full pl-10 flex justify-end";
+};
 
   const tabs = useMemo(
     () =>
@@ -920,16 +923,23 @@ export function ServicesIntegrations() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className={`max-w-[252px] ${inactiveTitleWrapFor(i)}`}>
-                                      <div className="text-[24px] font-extrabold leading-[1.05] text-text/15">
-                                        <div className="min-h-[56px]">
-                                          <div className="truncate">{s.title2[0]}</div>
-                                          <div className="truncate">
-                                            {s.title2[1] || <span className="opacity-0">.</span>}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+<div className={inactiveTitleWrapFor(i)}>
+  <div className="w-[252px]">
+    <div
+      className={[
+        "text-[24px] font-extrabold leading-[1.05] text-text/15",
+        i < activeIdx ? "text-left" : "text-right",
+      ].join(" ")}
+    >
+      <div className="min-h-[56px]">
+        <div className="truncate">{s.title2[0]}</div>
+        <div className="truncate">
+          {s.title2[1] || <span className="opacity-0">.</span>}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
                                   )}
 
                                   <div
