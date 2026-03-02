@@ -547,7 +547,7 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
 
   // крайняя правая карточка со скруглением
   // (когда active слева/по центру, это "Интеграции...")
-  return "pr-14";
+  return "pr-18";
 };
 
   const tabs = useMemo(
