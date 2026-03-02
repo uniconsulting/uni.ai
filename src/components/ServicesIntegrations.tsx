@@ -17,14 +17,14 @@ type ServiceId = "consulting" | "custom" | "turnkey";
 
 type Service = {
   id: ServiceId;
-  navTitle: string; // для табов в фрейме
-  title2: [string, string]; // заголовок: 2 строки (вторая может быть пустой, но место сохраняем)
+  navTitle: string;
+  title2: [string, string];
   tone: "blue" | "green" | "red";
-  lead3: [string, string, string]; // описание: 3 строки
-  tags: string; // 1 строка
-  brief2: [string, string]; // блок “Коротко”: 1 строка + 1 строка
-  points3: [string, string, string]; // 3 пункта, 1 строка каждый
-  ctaHref: string; // Telegram
+  lead3: [string, string, string];
+  tags: string;
+  brief2: [string, string];
+  points3: [string, string, string];
+  ctaHref: string;
 };
 
 type ServiceDetails = {
@@ -107,9 +107,7 @@ function DetailsFrame({
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--tone" as any]: toneHex }}
     >
-      {/* FIX: flex-col + min-h-0, чтобы внутренний скролл никогда не “уезжал” под карточку */}
       <div className="h-full px-10 py-8 flex flex-col">
-        {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
             <div className="text-[36px] md:text-[40px] font-extrabold leading-[1.05] text-text">
@@ -155,7 +153,6 @@ function DetailsFrame({
               <ChevronRight className="h-5 w-5" />
             </button>
 
-            {/* CTA в хедере */}
             <a
               href={service.ctaHref}
               target="_blank"
@@ -179,7 +176,6 @@ function DetailsFrame({
           </div>
         </div>
 
-        {/* tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
@@ -204,7 +200,6 @@ function DetailsFrame({
           })}
         </div>
 
-        {/* body */}
         <div ref={bodyRef} className="mt-8 flex-1 min-h-0 overflow-auto pr-2 pb-8">
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
@@ -222,8 +217,6 @@ function DetailsFrame({
               </div>
             ))}
           </div>
-
-          {/* CTA снизу убрали */}
         </div>
       </div>
     </div>
@@ -332,8 +325,6 @@ function ProcessFrame({
               </div>
             ))}
           </div>
-
-          {/* CTA снизу убрали */}
         </div>
       </div>
     </div>
@@ -532,14 +523,10 @@ export function ServicesIntegrations() {
     return "rounded-none";
   };
 
-  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
-
-  // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
-const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
-  if (isActive) return "";
-  if (i === services.length - 1) return "pr-18";
-  return "";
-};
+  const inactiveTitleWrapFor = (i: number) => {
+    if (i < activeIdx) return "mr-auto text-left";
+    return "ml-auto text-right";
+  };
 
   const tabs = useMemo(
     () =>
@@ -606,7 +593,6 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, expandedIdx, canPrev, canNext, services]);
 
   useEffect(() => {
@@ -696,7 +682,6 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
         >
           {mode === "services" ? (
             <>
-              {/* mobile */}
               <div className="md:hidden">
                 {expandedService ? (
                   <div style={{ height: CARD_H }}>
@@ -717,7 +702,7 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
                   </div>
                 ) : (
                   <div className="grid gap-6">
-                    {services.map((s, i) => {
+                    {services.map((s) => {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
@@ -759,9 +744,7 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
                                   <div
                                     className={[
                                       "text-[26px] font-extrabold leading-[1.05]",
-                                      isActive
-                                        ? "text-[color:var(--tone)]"
-                                        : `text-text/20 ${titleAlignForInactive(i)} ${inactiveTitleInsetFor(i, isActive)}`,
+                                      isActive ? "text-[color:var(--tone)]" : "text-text/20",
                                     ].join(" ")}
                                   >
                                     <div className="min-h-[56px]">
@@ -873,7 +856,6 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
                 )}
               </div>
 
-              {/* desktop */}
               <div className="relative hidden md:block">
                 <div className="relative" style={{ height: CARD_H }}>
                   <div
@@ -888,7 +870,6 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
                       const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
                       const bgClass = isActive ? "bg-accent-3" : "bg-bg";
                       const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
-                      const inactiveTitleAlign = titleAlignForInactive(i);
 
                       const shadow = isActive
                         ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
@@ -929,20 +910,27 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
                             >
                               <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
                                 <div className="flex h-full flex-col justify-start">
-                                  <div
-                                    className={
-                                      isActive
-                                        ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
-                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitleInsetFor(i, isActive)}`
-                                    }
-                                  >
-                                    <div className="min-h-[56px]">
-                                      <div className="truncate">{s.title2[0]}</div>
-                                      <div className="truncate">
-                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                                  {isActive ? (
+                                    <div className="text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]">
+                                      <div className="min-h-[56px]">
+                                        <div className="truncate">{s.title2[0]}</div>
+                                        <div className="truncate">
+                                          {s.title2[1] || <span className="opacity-0">.</span>}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <div className={`max-w-[252px] ${inactiveTitleWrapFor(i)}`}>
+                                      <div className="text-[24px] font-extrabold leading-[1.05] text-text/15">
+                                        <div className="min-h-[56px]">
+                                          <div className="truncate">{s.title2[0]}</div>
+                                          <div className="truncate">
+                                            {s.title2[1] || <span className="opacity-0">.</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
 
                                   <div
                                     className={`${CONTENT_MOTION} ${contentState} ${
@@ -1076,10 +1064,7 @@ const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
             </>
           ) : (
             <div className="relative" style={{ height: CARD_H }}>
-              <ProcessFrame
-                toneHex={TONE.red.hex}
-                onClose={() => setMode("services")}
-              />
+              <ProcessFrame toneHex={TONE.red.hex} onClose={() => setMode("services")} />
             </div>
           )}
         </div>
