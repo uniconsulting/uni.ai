@@ -17,14 +17,14 @@ type ServiceId = "consulting" | "custom" | "turnkey";
 
 type Service = {
   id: ServiceId;
-  navTitle: string;
-  title2: [string, string];
+  navTitle: string; // для табов в фрейме
+  title2: [string, string]; // заголовок: 2 строки (вторая может быть пустой, но место сохраняем)
   tone: "blue" | "green" | "red";
-  lead3: [string, string, string];
-  tags: string;
-  brief2: [string, string];
-  points3: [string, string, string];
-  ctaHref: string;
+  lead3: [string, string, string]; // описание: 3 строки
+  tags: string; // 1 строка
+  brief2: [string, string]; // блок “Коротко”: 1 строка + 1 строка
+  points3: [string, string, string]; // 3 пункта, 1 строка каждый
+  ctaHref: string; // Telegram
 };
 
 type ServiceDetails = {
@@ -107,7 +107,9 @@ function DetailsFrame({
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--tone" as any]: toneHex }}
     >
+      {/* FIX: flex-col + min-h-0, чтобы внутренний скролл никогда не “уезжал” под карточку */}
       <div className="h-full px-10 py-8 flex flex-col">
+        {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
             <div className="text-[36px] md:text-[40px] font-extrabold leading-[1.05] text-text">
@@ -153,6 +155,7 @@ function DetailsFrame({
               <ChevronRight className="h-5 w-5" />
             </button>
 
+            {/* CTA в хедере */}
             <a
               href={service.ctaHref}
               target="_blank"
@@ -176,6 +179,7 @@ function DetailsFrame({
           </div>
         </div>
 
+        {/* tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
@@ -200,6 +204,7 @@ function DetailsFrame({
           })}
         </div>
 
+        {/* body */}
         <div ref={bodyRef} className="mt-8 flex-1 min-h-0 overflow-auto pr-2 pb-8">
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
@@ -217,6 +222,8 @@ function DetailsFrame({
               </div>
             ))}
           </div>
+
+          {/* CTA снизу убрали */}
         </div>
       </div>
     </div>
@@ -325,6 +332,8 @@ function ProcessFrame({
               </div>
             ))}
           </div>
+
+          {/* CTA снизу убрали */}
         </div>
       </div>
     </div>
@@ -523,15 +532,14 @@ export function ServicesIntegrations() {
     return "rounded-none";
   };
 
-  const titleAlignForInactive = (i: number) =>
-    i < activeIdx ? "text-left" : "text-right";
+  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
-  const inactiveTitleWrapFor = (i: number) => {
-    if (i < activeIdx) {
-      return "w-full flex justify-start";
-    }
-    return "w-full flex justify-end";
-  };
+  // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
+const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
+  if (isActive) return "";
+  if (i > activeIdx) return "pr-14";
+  return "";
+};
 
   const tabs = useMemo(
     () =>
@@ -598,6 +606,7 @@ export function ServicesIntegrations() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, expandedIdx, canPrev, canNext, services]);
 
   useEffect(() => {
@@ -687,6 +696,7 @@ export function ServicesIntegrations() {
         >
           {mode === "services" ? (
             <>
+              {/* mobile */}
               <div className="md:hidden">
                 {expandedService ? (
                   <div style={{ height: CARD_H }}>
@@ -707,7 +717,7 @@ export function ServicesIntegrations() {
                   </div>
                 ) : (
                   <div className="grid gap-6">
-                    {services.map((s) => {
+                    {services.map((s, i) => {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
@@ -749,12 +759,16 @@ export function ServicesIntegrations() {
                                   <div
                                     className={[
                                       "text-[26px] font-extrabold leading-[1.05]",
-                                      isActive ? "text-[color:var(--tone)]" : "text-text/20",
+                                      isActive
+                                        ? "text-[color:var(--tone)]"
+                                        : `text-text/20 ${titleAlignForInactive(i)} ${inactiveTitleInsetFor(i, isActive)}`,
                                     ].join(" ")}
                                   >
                                     <div className="min-h-[56px]">
-                                      <div>{s.title2[0]}</div>
-                                      <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
+                                      <div className="truncate">{s.title2[0]}</div>
+                                      <div className="truncate">
+                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                                      </div>
                                     </div>
                                   </div>
 
@@ -765,10 +779,12 @@ export function ServicesIntegrations() {
                                   >
                                     <div className="mt-5 space-y-1 text-[14px] font-medium leading-[1.25] text-text/80">
                                       {s.lead3.map((l) => (
-                                        <div key={l}>{l}</div>
+                                        <div key={l} className="truncate">
+                                          {l}
+                                        </div>
                                       ))}
                                     </div>
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55">
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
                                       {s.tags}
                                     </div>
                                   </div>
@@ -781,10 +797,10 @@ export function ServicesIntegrations() {
                                     isActive ? "pointer-events-auto" : "pointer-events-none"
                                   }`}
                                 >
-                                  <div className="text-[16px] font-extrabold text-text">
+                                  <div className="text-[16px] font-extrabold text-text truncate">
                                     {s.brief2[0]}
                                   </div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70">
+                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
                                     {s.brief2[1]}
                                   </div>
                                 </div>
@@ -800,7 +816,7 @@ export function ServicesIntegrations() {
                                     {s.points3.map((it) => (
                                       <li key={it} className="flex gap-3">
                                         <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                        <span className="min-w-0">{it}</span>
+                                        <span className="min-w-0 truncate">{it}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -857,6 +873,7 @@ export function ServicesIntegrations() {
                 )}
               </div>
 
+              {/* desktop */}
               <div className="relative hidden md:block">
                 <div className="relative" style={{ height: CARD_H }}>
                   <div
@@ -868,9 +885,7 @@ export function ServicesIntegrations() {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
-                      const ringClass = isActive
-                        ? "ring-2 ring-[color:var(--tone)]"
-                        : "ring-1 ring-text/15";
+                      const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
                       const bgClass = isActive ? "bg-accent-3" : "bg-bg";
                       const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
                       const inactiveTitleAlign = titleAlignForInactive(i);
@@ -914,30 +929,21 @@ export function ServicesIntegrations() {
                             >
                               <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
                                 <div className="flex h-full flex-col justify-start">
-{isActive ? (
-  <div className="text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]">
-    <div className="min-h-[56px]">
-      <div>{s.title2[0]}</div>
-      <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
-    </div>
-  </div>
-) : (
-  <div className="w-full">
-    <div className={i < activeIdx ? "flex justify-start" : "flex justify-end"}>
-      <div
-        className={[
-          "min-h-[56px]",
-          "w-[286px]", // единая рабочая ширина для обеих неактивных карточек
-          "text-[24px] font-extrabold leading-[1.05] text-text/15",
-          i < activeIdx ? "text-left" : "text-right",
-        ].join(" ")}
-      >
-        <div>{s.title2[0]}</div>
-        <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
-      </div>
-    </div>
-  </div>
-)}
+                                  <div
+                                    className={
+                                      isActive
+                                        ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
+                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitleInsetFor(i, isActive)}`
+                                    }
+                                  >
+                                    <div className="min-h-[56px]">
+                                      <div className="truncate">{s.title2[0]}</div>
+                                      <div className="truncate">
+                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   <div
                                     className={`${CONTENT_MOTION} ${contentState} ${
                                       isActive ? "pointer-events-auto" : "pointer-events-none"
