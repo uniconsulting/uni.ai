@@ -537,8 +537,17 @@ export function ServicesIntegrations() {
   // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
 const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
   if (isActive) return "";
-  if (i > activeIdx) return "pr-14";
-  return "";
+
+  // левые неактивные не трогаем
+  if (i < activeIdx) return "";
+
+  // правая неактивная в середине колоды
+  // (когда active слева, это "Индивидуальная разработка")
+  if (i > activeIdx && i !== services.length - 1) return "pr-8";
+
+  // крайняя правая карточка со скруглением
+  // (когда active слева/по центру, это "Интеграции...")
+  return "pr-14";
 };
 
   const tabs = useMemo(
