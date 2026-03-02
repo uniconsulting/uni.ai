@@ -927,7 +927,7 @@ export function ServicesIntegrations() {
       <div
         className={[
           "min-h-[56px]",
-          "w-[232px]", // единая рабочая ширина для обеих неактивных карточек
+          "w-[244px]", // единая рабочая ширина для обеих неактивных карточек
           "text-[24px] font-extrabold leading-[1.05] text-text/15",
           i < activeIdx ? "text-left" : "text-right",
         ].join(" ")}
