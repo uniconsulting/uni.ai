@@ -537,7 +537,7 @@ export function ServicesIntegrations() {
   // extra inset только для ПРАВОЙ (последней) неактивной карточки, чтобы заголовок не касался скругления
 const inactiveTitleInsetFor = (i: number, isActive: boolean) => {
   if (isActive) return "";
-  if (i > activeIdx) return "pr-14";
+  if (i === services.length - 1) return "pr-6";
   return "";
 };
 
