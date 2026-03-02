@@ -523,13 +523,15 @@ export function ServicesIntegrations() {
     return "rounded-none";
   };
 
-const inactiveTitleWrapFor = (i: number) => {
-  if (i < activeIdx) {
-    return "w-full pr-10 flex justify-start";
-  }
+  const titleAlignForInactive = (i: number) =>
+    i < activeIdx ? "text-left" : "text-right";
 
-  return "w-full pl-10 flex justify-end";
-};
+  const inactiveTitleWrapFor = (i: number) => {
+    if (i < activeIdx) {
+      return "w-full flex justify-start";
+    }
+    return "w-full flex justify-end";
+  };
 
   const tabs = useMemo(
     () =>
@@ -751,10 +753,8 @@ const inactiveTitleWrapFor = (i: number) => {
                                     ].join(" ")}
                                   >
                                     <div className="min-h-[56px]">
-                                      <div className="truncate">{s.title2[0]}</div>
-                                      <div className="truncate">
-                                        {s.title2[1] || <span className="opacity-0">.</span>}
-                                      </div>
+                                      <div>{s.title2[0]}</div>
+                                      <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
                                     </div>
                                   </div>
 
@@ -765,12 +765,10 @@ const inactiveTitleWrapFor = (i: number) => {
                                   >
                                     <div className="mt-5 space-y-1 text-[14px] font-medium leading-[1.25] text-text/80">
                                       {s.lead3.map((l) => (
-                                        <div key={l} className="truncate">
-                                          {l}
-                                        </div>
+                                        <div key={l}>{l}</div>
                                       ))}
                                     </div>
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
+                                    <div className="mt-4 text-[13px] font-semibold text-text/55">
                                       {s.tags}
                                     </div>
                                   </div>
@@ -783,10 +781,10 @@ const inactiveTitleWrapFor = (i: number) => {
                                     isActive ? "pointer-events-auto" : "pointer-events-none"
                                   }`}
                                 >
-                                  <div className="text-[16px] font-extrabold text-text truncate">
+                                  <div className="text-[16px] font-extrabold text-text">
                                     {s.brief2[0]}
                                   </div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
+                                  <div className="mt-3 text-[14px] font-medium text-text/70">
                                     {s.brief2[1]}
                                   </div>
                                 </div>
@@ -802,7 +800,7 @@ const inactiveTitleWrapFor = (i: number) => {
                                     {s.points3.map((it) => (
                                       <li key={it} className="flex gap-3">
                                         <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                        <span className="min-w-0 truncate">{it}</span>
+                                        <span className="min-w-0">{it}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -870,9 +868,12 @@ const inactiveTitleWrapFor = (i: number) => {
                       const isActive = s.id === active;
                       const toneHex = TONE[s.tone].hex;
 
-                      const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
+                      const ringClass = isActive
+                        ? "ring-2 ring-[color:var(--tone)]"
+                        : "ring-1 ring-text/15";
                       const bgClass = isActive ? "bg-accent-3" : "bg-bg";
                       const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                      const inactiveTitleAlign = titleAlignForInactive(i);
 
                       const shadow = isActive
                         ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
@@ -916,30 +917,28 @@ const inactiveTitleWrapFor = (i: number) => {
                                   {isActive ? (
                                     <div className="text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]">
                                       <div className="min-h-[56px]">
-                                        <div className="truncate">{s.title2[0]}</div>
-                                        <div className="truncate">
-                                          {s.title2[1] || <span className="opacity-0">.</span>}
-                                        </div>
+                                        <div>{s.title2[0]}</div>
+                                        <div>{s.title2[1] || <span className="opacity-0">.</span>}</div>
                                       </div>
                                     </div>
                                   ) : (
-<div className={inactiveTitleWrapFor(i)}>
-  <div className="w-[252px]">
-    <div
-      className={[
-        "text-[24px] font-extrabold leading-[1.05] text-text/15",
-        i < activeIdx ? "text-left" : "text-right",
-      ].join(" ")}
-    >
-      <div className="min-h-[56px]">
-        <div className="truncate">{s.title2[0]}</div>
-        <div className="truncate">
-          {s.title2[1] || <span className="opacity-0">.</span>}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                                    <div className={inactiveTitleWrapFor(i)}>
+                                      <div className="w-[320px] max-w-full">
+                                        <div
+                                          className={[
+                                            "text-[24px] font-extrabold leading-[1.05] text-text/15",
+                                            inactiveTitleAlign,
+                                          ].join(" ")}
+                                        >
+                                          <div className="min-h-[56px]">
+                                            <div className="whitespace-nowrap">{s.title2[0]}</div>
+                                            <div className="whitespace-nowrap">
+                                              {s.title2[1] || <span className="opacity-0">.</span>}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
                                   )}
 
                                   <div
@@ -1074,7 +1073,10 @@ const inactiveTitleWrapFor = (i: number) => {
             </>
           ) : (
             <div className="relative" style={{ height: CARD_H }}>
-              <ProcessFrame toneHex={TONE.red.hex} onClose={() => setMode("services")} />
+              <ProcessFrame
+                toneHex={TONE.red.hex}
+                onClose={() => setMode("services")}
+              />
             </div>
           )}
         </div>
