@@ -376,10 +376,10 @@ export function Header() {
                     className="mt-8"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-xl bg-accent-3 px-3 text-[18px] font-normal hover-accent">
+                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-sm bg-accent-3 px-3 text-[18px] font-normal hover-accent">
                         道
                       </span>
-                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-xl bg-accent-3 px-3 text-[18px] font-normal hover-accent">
+                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-sm bg-accent-3 px-3 text-[18px] font-normal hover-accent">
                         改善
                       </span>
 
