@@ -329,19 +329,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
           >
             <div className="h-full overflow-hidden border-t border-text/10 bg-bg">
               <div className="h-full overflow-y-auto px-5 py-5">
-                <div className="mb-4 flex items-center justify-between gap-4">
-                  <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text">
-                    Настройки
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-accent-3 text-text"
-                    aria-label="Закрыть меню"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                <div className="mb-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-text">
+                  Настройки
                 </div>
 
                 <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
@@ -631,8 +620,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 export function DemoChat() {
   const [selectedNiche, setSelectedNiche] = useState<Niche>("Автосервис");
 
-  const mobileRow1 = [PILLS[0], PILLS[2], PILLS[4], PILLS[6]] as const;
-  const mobileRow2 = [PILLS[1], PILLS[3], PILLS[5]] as const;
+  const mobileRow1 = [PILLS[0], PILLS[2], PILLS[4]] as const;
+  const mobileRow2 = [PILLS[1], PILLS[3], PILLS[5], PILLS[6]] as const;
 
   return (
     <section id="demo-chat" className="relative">
