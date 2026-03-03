@@ -33,6 +33,7 @@ function ExtLink({
   className?: string;
 }) {
   const isHttp = href.startsWith("http");
+
   return (
     <a
       href={href}
@@ -72,6 +73,7 @@ function RuBadge() {
           animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
           transition={{ duration: 6.8, ease: "linear", repeat: Infinity }}
         />
+
         <div className="relative inline-flex items-center gap-3 rounded-[24px] bg-accent-3 px-10 py-6">
           <span className="text-[18px] font-semibold text-text">RU</span>
           <span className="text-text/45">•</span>
@@ -114,12 +116,10 @@ export function Footer() {
     <footer
       id="footer"
       className={[
-        "w-full",
-        // если в main остался pb-12 / md:pb-20, это убирает “белый воздух” под футером
+        "relative w-full overflow-x-clip",
         "-mb-12 md:-mb-20",
       ].join(" ")}
     >
-      {/* канвас контента 1440, фоны в нужных местах расширяем full-bleed */}
       <div className="mx-auto w-full lg:w-[1440px]">
         {/* TOP AREA: 620px */}
         <div className="relative w-full lg:h-[620px]">
@@ -134,7 +134,7 @@ export function Footer() {
             <div className="bg-bg text-text">
               <div className="h-full px-10 lg:px-12 pt-[57px] pb-[57px]">
                 <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 shrink-0 rounded-full bg-accent-1 overflow-hidden flex items-center justify-center">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-1">
                     <img
                       src={withBasePath("/brand/uni-logo.svg")}
                       alt="ЮНИ"
@@ -147,14 +147,14 @@ export function Footer() {
                     <div className="hover-accent text-[20px] font-extrabold leading-none">
                       ЮНИ.ai
                     </div>
-                    <div className="hover-accent mt-1 text-[14px] font-medium text-text/70 leading-snug">
+                    <div className="hover-accent mt-1 text-[14px] font-medium leading-snug text-text/70">
                       Системы для SMB с ИИ
                     </div>
                   </div>
                 </div>
 
-                {/* divider #1: уходит влево до края экрана на широких */}
-                <div className="mt-[57px] relative h-px">
+                {/* divider #1 */}
+                <div className="relative mt-[57px] h-px">
                   <div
                     aria-hidden
                     className={[
@@ -180,8 +180,8 @@ export function Footer() {
                   </div>
                 </div>
 
-                {/* divider #2: уходит влево до края экрана на широких */}
-                <div className="mt-[57px] relative h-px">
+                {/* divider #2 */}
+                <div className="relative mt-[57px] h-px">
                   <div
                     aria-hidden
                     className={[
@@ -192,8 +192,8 @@ export function Footer() {
                   />
                 </div>
 
-                {/* RU badge: +4px вниз */}
-                <div className="mt-[57px] relative top-[4px]">
+                {/* RU badge */}
+                <div className="relative mt-[57px] top-[4px]">
                   <RuBadge />
                 </div>
               </div>
@@ -201,21 +201,23 @@ export function Footer() {
 
             {/* RIGHT: 960x620 */}
             <div className="min-w-0">
-              {/* TOP RED: фон расширяем вправо без ограничений */}
+              {/* TOP RED */}
               <div className="relative text-bg lg:h-[470px]">
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-screen bg-accent-1"
+                  className="pointer-events-none absolute inset-y-0 left-0 bg-accent-1"
+                  style={{
+                    right: "min(0px, calc((100vw - 1440px) / -2))",
+                  }}
                 />
 
-                {/* контент 960px + клип watermark внутри */}
                 <div className="relative h-full overflow-hidden">
-                  {/* watermark: 94px и +4px вниз, центр по вертикальной оси 960-зоны */}
+                  {/* watermark */}
                   <div
                     aria-hidden
-                    className="pointer-events-none select-none absolute left-1/2 top-[72%] -translate-x-1/2 -translate-y-1/2"
+                    className="pointer-events-none absolute left-1/2 top-[72%] -translate-x-1/2 -translate-y-1/2 select-none"
                   >
-                    <div className="relative top-[16px] whitespace-nowrap text-bg/18 font-normal leading-none tracking-tight text-[118px]">
+                    <div className="relative top-[16px] whitespace-nowrap text-[118px] font-normal leading-none tracking-tight text-bg/18">
                       衆志、城を成す
                     </div>
                   </div>
@@ -225,7 +227,7 @@ export function Footer() {
                       <div>
                         <ExtLink
                           href={LINKS.blog.tgChannel}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Telegram-канал
                         </ExtLink>
@@ -233,7 +235,7 @@ export function Footer() {
                       <div>
                         <ExtLink
                           href={LINKS.blog.tenchat}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           TenChat
                         </ExtLink>
@@ -241,13 +243,13 @@ export function Footer() {
                     </Col>
 
                     <Col title="Контакты" showDivider>
-                      <div className="text-accent-3 hover:text-text transition-colors duration-300">
+                      <div className="text-accent-3 transition-colors duration-300 hover:text-text">
                         {LINKS.contacts.phone}
                       </div>
                       <div>
                         <ExtLink
                           href={LINKS.contacts.tg}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Telegram
                         </ExtLink>
@@ -255,7 +257,7 @@ export function Footer() {
                       <div>
                         <ExtLink
                           href={LINKS.contacts.email}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           uni.kit@mail.ru
                         </ExtLink>
@@ -263,7 +265,7 @@ export function Footer() {
                       <div>
                         <ExtLink
                           href={LINKS.contacts.issue}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Сообщить о проблеме
                         </ExtLink>
@@ -274,7 +276,7 @@ export function Footer() {
                       <div>
                         <IntLink
                           href={LINKS.docs.privacy}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Политика конфиденциальности
                         </IntLink>
@@ -282,7 +284,7 @@ export function Footer() {
                       <div>
                         <IntLink
                           href={LINKS.docs.opd}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Согласие ОПД клиента
                         </IntLink>
@@ -290,7 +292,7 @@ export function Footer() {
                       <div>
                         <IntLink
                           href={LINKS.docs.offer}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Публичная оферта
                         </IntLink>
@@ -298,7 +300,7 @@ export function Footer() {
                       <div>
                         <IntLink
                           href={LINKS.docs.cookies}
-                          className="text-accent-3 hover:text-text duration-300"
+                          className="text-accent-3 duration-300 hover:text-text"
                         >
                           Политика cookies
                         </IntLink>
@@ -308,21 +310,24 @@ export function Footer() {
                 </div>
               </div>
 
-              {/* BOTTOM DARK: фон расширяем вправо без ограничений */}
+              {/* BOTTOM DARK */}
               <div className="relative text-bg lg:h-[150px]">
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-screen bg-text"
+                  className="pointer-events-none absolute inset-y-0 left-0 bg-text"
+                  style={{
+                    right: "min(0px, calc((100vw - 1440px) / -2))",
+                  }}
                 />
 
                 <div className="relative h-full">
                   <div aria-hidden className="h-px w-full bg-bg/20" />
 
-                  <div className="h-full px-10 lg:px-12 flex items-center">
+                  <div className="flex h-full items-center px-10 lg:px-12">
                     <div className="h-px flex-1 bg-bg/20" />
                     <a
                       href="#cta"
-                      className="ml-10 hover-accent text-[22px] md:text-[26px] lg:text-[30px] font-extrabold tracking-tight whitespace-nowrap"
+                      className="ml-10 whitespace-nowrap text-[22px] font-extrabold tracking-tight hover-accent md:text-[26px] lg:text-[30px]"
                     >
                       начать проект
                     </a>
@@ -332,21 +337,22 @@ export function Footer() {
             </div>
           </div>
 
-          {/* divider перед синей полосой */}
+          {/* divider before blue bar */}
           <div aria-hidden className="h-px w-full bg-text/20" />
         </div>
 
-        {/* BOTTOM BAR (accent-2): фон full-bleed в обе стороны */}
+        {/* BOTTOM BAR */}
         <div className="relative text-bg lg:h-[100px]">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-accent-2"
           />
-          <div className="relative h-full px-10 lg:px-12 flex items-center justify-between">
-            <div className="text-[16px] font-medium text-accent-3 hover:text-text transition-colors duration-300">
+
+          <div className="relative flex h-full items-center justify-between px-10 lg:px-12">
+            <div className="text-[16px] font-medium text-accent-3 transition-colors duration-300 hover:text-text">
               © 2026 (ООО "БЭНИФИТ")
             </div>
-            <div className="text-[16px] font-medium text-accent-3 hover:text-text transition-colors duration-300">
+            <div className="text-[16px] font-medium text-accent-3 transition-colors duration-300 hover:text-text">
               Сделано ЮНИ.ai
             </div>
           </div>
