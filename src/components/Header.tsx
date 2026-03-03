@@ -437,7 +437,7 @@ export function Header() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={closeMenu}
-                      className="btn-lift-outline inline-flex h-11 items-center justify-center rounded-xl border border-accent-1 px-4 text-[14px] font-semibold text-accent-1"
+                      className="btn-lift-outline inline-flex h-16 items-center justify-center rounded-xl border border-accent-1 px-4 text-[14px] font-semibold text-accent-1"
                     >
                       войти
                     </a>
@@ -447,7 +447,7 @@ export function Header() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={closeMenu}
-                      className="btn-lift-accent1 inline-flex h-11 items-center justify-center rounded-xl bg-accent-1 px-5 text-[14px] font-semibold text-bg whitespace-nowrap"
+                      className="btn-lift-accent1 inline-flex h-16 items-center justify-center rounded-xl bg-accent-1 px-5 text-[14px] font-semibold text-bg whitespace-nowrap"
                     >
                       начать бесплатно
                     </a>
