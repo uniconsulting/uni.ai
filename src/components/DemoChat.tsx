@@ -321,16 +321,16 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
       <AnimatePresence>
         {mobileMenuOpen ? (
           <motion.div
-            className="absolute inset-x-0 top-0 z-30 md:hidden"
+            className="absolute inset-x-0 top-0 bottom-0 z-30 md:hidden"
             initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="overflow-hidden rounded-b-[28px] border-b border-text/10 bg-bg shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
-              <div className="max-h-[360px] overflow-y-auto px-5 py-5">
+            <div className="h-full overflow-hidden rounded-b-[28px] border-b border-text/10 bg-bg shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
+              <div className="h-full overflow-y-auto px-5 py-5">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
+                  <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text">
                     Настройки
                   </div>
 
@@ -406,7 +406,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
           <div className="relative">
             <MobileSelectMenu />
 
-            {/* header desktop */}
             <div className="hidden bg-bg px-4 py-3 md:block">
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <div className="justify-self-start">
@@ -433,13 +432,12 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
             </div>
 
-            {/* header mobile */}
             <div className="bg-bg px-4 py-3 md:hidden">
               <div className="grid grid-cols-[40px_1fr_40px] items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((v) => !v)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-3 text-text"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent-3 text-text"
                   aria-label={mobileMenuOpen ? "Закрыть выбор" : "Открыть выбор"}
                   aria-expanded={mobileMenuOpen}
                 >
@@ -454,7 +452,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 </div>
 
                 <div className="justify-self-end">
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-accent-3 ring-1 ring-text/10">
                     <img
                       src={withBasePath("/brand/uni-logo.svg")}
                       alt="ЮНИ"
@@ -467,7 +465,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
             </div>
           </div>
 
-          {/* body */}
           <div className="flex min-h-[520px] flex-col md:min-h-[620px]">
             <div className="relative flex-1">
               {empty ? (
@@ -538,16 +535,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               )}
             </div>
 
-            {/* footer */}
             <div className="bg-bg px-4 pb-4 pt-4 md:px-6 md:pb-6">
-              {/* mobile: one line carousel */}
               <div className="mb-3 md:hidden overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex w-max gap-3 pr-1">
                   {presets.map((t) => (
                     <button
                       key={t}
                       onClick={() => pickPreset(t)}
-                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-3.5 text-[12px] font-semibold text-text"
+                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-4 text-[12px] font-semibold text-text"
                     >
                       {t}
                     </button>
@@ -555,7 +550,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 </div>
               </div>
 
-              {/* desktop presets */}
               <div className="mb-3 hidden flex-wrap gap-3 md:flex">
                 {presets.slice(0, 3).map((t) => (
                   <button
@@ -644,14 +638,12 @@ export function DemoChat() {
         className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10"
       />
 
-      {/* desktop divider only */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 hidden h-[320px] w-px -translate-x-1/2 bg-text/10 md:block lg:h-[340px]"
       />
 
       <Container className="relative z-10 px-6 py-12 md:px-10 md:py-14 lg:px-12">
-        {/* mobile */}
         <div className="md:hidden">
           <div className="text-[18px] font-medium opacity-70 hover-accent">demo-чат</div>
 
@@ -667,7 +659,7 @@ export function DemoChat() {
               {PILLS.map((t) => (
                 <div
                   key={t}
-                  className="btn-lift-outline inline-flex w-fit cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
+                  className="btn-lift-outline inline-flex w-fit self-start cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
                   onClick={() => setSelectedNiche(t)}
                   role="button"
                   tabIndex={0}
@@ -687,7 +679,6 @@ export function DemoChat() {
           </div>
         </div>
 
-        {/* desktop */}
         <div className="hidden md:block">
           <div className="grid gap-10 md:grid-cols-2 md:gap-0">
             <div className="md:pr-12">
