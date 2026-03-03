@@ -86,6 +86,7 @@ function BurgerButton({
 export function Header() {
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const lastYRef = useRef(0);
   const marksRef = useRef<Marks>({
@@ -205,7 +206,7 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuVisible) return;
 
     const prevBody = document.body.style.overflow;
     const prevHtml = document.documentElement.style.overflow;
@@ -217,10 +218,10 @@ export function Header() {
       document.body.style.overflow = prevBody;
       document.documentElement.style.overflow = prevHtml;
     };
-  }, [menuOpen]);
+  }, [menuVisible]);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuVisible) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -231,9 +232,16 @@ export function Header() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [menuOpen]);
+  }, [menuVisible]);
 
-  const closeMenu = () => setMenuOpen(false);
+  const openMenu = () => {
+    setMenuVisible(true);
+    setMenuOpen(true);
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
 
   const panelTransition = reduceMotion
     ? { duration: 0 }
@@ -266,7 +274,7 @@ export function Header() {
       <motion.header
         className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur px-1"
         initial={false}
-        animate={{ y: menuOpen ? 0 : hidden ? -80 : 0 }}
+        animate={{ y: menuVisible ? 0 : hidden ? -80 : 0 }}
         transition={
           reduceMotion
             ? { duration: 0 }
@@ -322,19 +330,30 @@ export function Header() {
                 </a>
               </div>
 
-              <BurgerButton open={menuOpen} onClick={() => setMenuOpen((v) => !v)} />
+              <BurgerButton
+                open={menuOpen}
+                onClick={() => {
+                  if (menuOpen) closeMenu();
+                  else openMenu();
+                }}
+              />
             </div>
           </div>
         </Container>
       </motion.header>
 
-      <AnimatePresence>
-        {menuOpen ? (
+      <AnimatePresence
+        initial={false}
+        onExitComplete={() => {
+          setMenuVisible(false);
+        }}
+      >
+        {menuVisible ? (
           <motion.div
             id="mobile-header-menu"
             className="fixed inset-x-0 top-16 bottom-0 z-40 bg-bg md:hidden"
             initial={{ opacity: 0, y: -18 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : -14 }}
             exit={{ opacity: 0, y: -14 }}
             transition={panelTransition}
           >
@@ -344,7 +363,7 @@ export function Header() {
                   <motion.nav
                     className="grid gap-3"
                     initial="hidden"
-                    animate="show"
+                    animate={menuOpen ? "show" : "exit"}
                     exit="exit"
                   >
                     {NAV.map((item, i) => {
@@ -371,7 +390,7 @@ export function Header() {
                     custom={4}
                     variants={itemVariants}
                     initial="hidden"
-                    animate="show"
+                    animate={menuOpen ? "show" : "exit"}
                     exit="exit"
                     className="mt-8"
                   >
@@ -395,7 +414,7 @@ export function Header() {
                     custom={5}
                     variants={itemVariants}
                     initial="hidden"
-                    animate="show"
+                    animate={menuOpen ? "show" : "exit"}
                     exit="exit"
                     className="mt-8 grid gap-6"
                   >
@@ -428,7 +447,7 @@ export function Header() {
                     custom={6}
                     variants={itemVariants}
                     initial="hidden"
-                    animate="show"
+                    animate={menuOpen ? "show" : "exit"}
                     exit="exit"
                     className="mt-8 grid grid-cols-[108px_minmax(0,1fr)] gap-3"
                   >
@@ -457,7 +476,7 @@ export function Header() {
                     custom={7}
                     variants={itemVariants}
                     initial="hidden"
-                    animate="show"
+                    animate={menuOpen ? "show" : "exit"}
                     exit="exit"
                     className="mt-auto pt-8"
                   >
