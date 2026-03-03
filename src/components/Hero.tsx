@@ -45,10 +45,8 @@ export function Hero() {
 
   const [endScale, setEndScale] = useState(1);
   const [templeVisible, setTempleVisible] = useState(true);
-
-  // sticky включаем только во время лок-анимации (и при схлопывании),
-  // после прыжка на info выключаем, чтобы не было перекрытий
   const [pinEnabled, setPinEnabled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const BASE_W = 420;
   const MAX_W = 1080;
@@ -61,17 +59,29 @@ export function Hero() {
   });
 
   const scale = useTransform(progress, [0, 1], [1, endScale]);
-  const y = useTransform(progress, [0, 1], [0, 0]); // движение по Y запрещено
+  const y = useTransform(progress, [0, 1], [0, 0]);
   const rOuter = useTransform(progress, [0, 1], [28, 14]);
 
-  // blur только внутри hero (кроме вставки)
   const bgBlurPx = useTransform(progress, [0, 1], [0, 12]);
   const bgFilter = useTransform(bgBlurPx, (v) => `blur(${v.toFixed(2)}px)`);
   const bgOpacity = useTransform(progress, [0, 1], [1, 0.75]);
 
   const topPad = useMemo(() => "pt-4 md:pt-8 lg:pt-10", []);
 
+  useEffect(() => {
+    const sync = () => setIsMobile(window.innerWidth < 768);
+    sync();
+
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
   useLayoutEffect(() => {
+    if (isMobile) {
+      setEndScale(1);
+      return;
+    }
+
     const el = measureRef.current;
     if (!el) return;
 
@@ -86,12 +96,19 @@ export function Hero() {
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
+    if (isMobile) {
+      progressRaw.set(0);
+      setPinEnabled(false);
+      delete document.documentElement.dataset.headerHidden;
+      return;
+    }
+
     const LOCK_PX = 760;
     const EPS = 0.001;
-    const STICKY_TOP = 96; // top-24
+    const STICKY_TOP = 96;
 
     const lockYRef = { current: null as number | null };
     const pushedToNextRef = { current: false };
@@ -140,31 +157,24 @@ export function Hero() {
       unlock();
     };
 
-    // ✅ главное: сбрасываем hero только если реально ушли вниз (scrollY изменился),
-    // иначе получаем "микро-сброс" прямо в hero и повторный рост
     const deferResetAfterJump = (targetTop: number) => {
       let tries = 0;
 
       const tick = () => {
         tries += 1;
         const yNow = window.scrollY;
-
-        // если не сдвинулись с места (остались на самом верху) — НЕ сбрасываем
         const moved = yNow > 8;
 
-        // "долетели" до цели (или почти), и реально ушли вниз
         if (moved && yNow >= targetTop - 2) {
           resetHero();
           return;
         }
 
-        // несколько кадров ждём, пока браузер применит scrollTo
         if (tries < 14) {
           requestAnimationFrame(tick);
           return;
         }
 
-        // fallback: если мы всё же ушли вниз, сбросим; если нет — не трогаем
         if (moved) resetHero();
       };
 
@@ -180,30 +190,20 @@ export function Hero() {
 
       jumpingRef.current = true;
       pushedToNextRef.current = true;
-
-      // sticky выключаем заранее, чтобы исключить перекрытия
       setPinEnabled(false);
 
       const infoAbsTop = next.getBoundingClientRect().top + window.scrollY;
       const stageAbsBottom = stage.getBoundingClientRect().bottom + window.scrollY;
 
       const targetH = computeTargetH();
-
-      // хотим поставить info под header
       const desired = infoAbsTop - STICKY_TOP;
-
-      // гарантируем, что область sticky уже "пройдена"
       const releaseY = stageAbsBottom - (STICKY_TOP + targetH) + 2;
-
       const top = Math.max(desired, releaseY);
 
       unlock();
       setHeaderHidden(false);
 
-      // без smooth: иначе ловим "проезд"
       window.scrollTo({ top, behavior: "auto" });
-
-      // ✅ сброс только после того, как реально улетели вниз
       deferResetAfterJump(top);
 
       if (jumpT) window.clearTimeout(jumpT);
@@ -224,7 +224,6 @@ export function Hero() {
       if (deltaY < 0) setHeaderHidden(false);
       if (atStart) setHeaderHidden(false);
 
-      // в процессе анимации держим страницу и включаем sticky
       if (!atEnd) {
         setPinEnabled(true);
         ensureLocked();
@@ -232,17 +231,14 @@ export function Hero() {
         return;
       }
 
-      // дошли до конца
       unlock();
       setHeaderHidden(false);
 
-      // если продолжают вниз, уходим к info (один раз)
       if (deltaY > 0 && !pushedToNextRef.current) {
         pushedToNextRef.current = true;
         requestAnimationFrame(jumpToInfoSafely);
       }
 
-      // если пошли вверх от конца, разрешаем схлопывать (sticky нужен)
       if (deltaY < 0) setPinEnabled(true);
     };
 
@@ -258,17 +254,14 @@ export function Hero() {
       const active = heroActive();
       const top = atPageTop();
 
-      // запуск анимации только с самого верха страницы
       if (!inAnim && !(top && active)) return;
 
-      // если уже на конце и крутят вниз в зоне hero — прыгаем (и блокируем дефолт)
       if (active && atEnd && down) {
         e.preventDefault();
         jumpToInfoSafely();
         return;
       }
 
-      // если в начале и крутят вверх — отдаём странице
       if (active && atStart && up) {
         unlock();
         setHeaderHidden(false);
@@ -327,7 +320,65 @@ export function Hero() {
       window.removeEventListener("touchstart", onTouchStart as any);
       window.removeEventListener("touchmove", onTouchMove as any);
     };
-  }, [progressRaw]);
+  }, [isMobile, progressRaw]);
+
+  if (isMobile) {
+    return (
+      <section id="hero" className="relative overflow-x-clip">
+        <Container className={`relative ${topPad}`}>
+          <div className="px-1">
+            <h1 className="text-focus-in font-extrabold leading-[0.96] tracking-tight text-[30px]">
+              <span className="block">Кабинет твоей</span>
+              <span className="block whitespace-nowrap">
+                <span className="text-accent-1">команды</span>{" "}
+                <span className="inline-block align-baseline">
+                  <RotatingWord />
+                </span>
+              </span>
+            </h1>
+          </div>
+        </Container>
+
+        <Container className="pt-8 pb-10">
+          <div className="px-1">
+            <div className="overflow-hidden rounded-[24px] bg-accent-3">
+              <div className="aspect-video w-full">
+                <video
+                  className="h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                >
+                  <source src={withBasePath("/hero/IMG_6633.mp4")} type="video/mp4" />
+                </video>
+              </div>
+            </div>
+
+            <div className="mt-8 text-[16px] leading-snug hover-accent-2">
+              ЮНИ.ai – интегратор ИИ-решений
+              <br />
+              в бизнес полного цикла. Строим решения,
+              <br />
+              основанные на ответственности перед
+              <br />
+              бизнесом и его клиентами.
+            </div>
+
+            <a
+              href="#cta"
+              className="btn-lift-accent1 mt-8 inline-flex h-16 w-full items-center justify-center rounded-xl bg-accent-1 px-6 text-[18px] font-semibold text-bg"
+            >
+              приступим
+            </a>
+          </div>
+        </Container>
+
+        <div aria-hidden className="h-px w-screen bg-text/10" />
+      </section>
+    );
+  }
 
   return (
     <section id="hero" className="relative overflow-x-clip">
@@ -354,7 +405,6 @@ export function Hero() {
 
       {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
-        {/* 16:9 (НЕ блюрится) */}
         <div className={pinEnabled ? "sticky top-24 z-40" : "relative z-40"}>
           <Container>
             <div className="px-1">
@@ -370,7 +420,6 @@ export function Hero() {
                       transformOrigin: "center center",
                     }}
                   >
-                    {/* VIDEO 16:9 */}
                     <div className="aspect-video w-full">
                       <video
                         className="h-full w-full object-cover"
