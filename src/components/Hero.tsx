@@ -327,7 +327,7 @@ export function Hero() {
       <section id="hero" className="relative overflow-x-clip">
         <Container className={`relative ${topPad}`}>
           <div className="px-1">
-            <h1 className="text-focus-in font-extrabold leading-[0.96] tracking-tight text-[30px]">
+            <h1 className="text-focus-in font-semibold leading-[0.96] tracking-tight text-[30px]">
               <span className="block">Кабинет твоей</span>
               <span className="block text-accent-1">команды</span>
               <span className="block">
@@ -387,7 +387,7 @@ export function Hero() {
               <div className="jp-vertical text-[120px] font-normal leading-none hover-accent-2 opacity-90">精益生產</div>
             </div>
 
-            <h1 className="text-focus-in max-w-[1416px] font-semibold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
+            <h1 className="text-focus-in max-w-[1416px] font-extrabold leading-[0.98] tracking-tight text-[44px] md:text-[60px] lg:text-[72px]">
               <span className="block">Кабинет твоей</span>
               <span className="block whitespace-nowrap">
                 <span className="text-accent-1">команды</span>{" "}
