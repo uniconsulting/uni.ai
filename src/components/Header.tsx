@@ -205,20 +205,32 @@ export function Header() {
     };
   }, []);
 
+  // ВАЖНО: блокируем скролл только пока меню реально открыто
   useEffect(() => {
-    if (!menuVisible) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyTouch = document.body.style.touchAction;
+    const prevHtmlTouch = document.documentElement.style.touchAction;
 
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      document.documentElement.style.touchAction = "none";
+    } else {
+      document.body.style.overflow = prevBodyOverflow || "";
+      document.documentElement.style.overflow = prevHtmlOverflow || "";
+      document.body.style.touchAction = prevBodyTouch || "";
+      document.documentElement.style.touchAction = prevHtmlTouch || "";
+    }
 
     return () => {
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.touchAction = prevBodyTouch;
+      document.documentElement.style.touchAction = prevHtmlTouch;
     };
-  }, [menuVisible]);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!menuVisible) return;
