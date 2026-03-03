@@ -189,6 +189,20 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
+
   const send = (text: string) => {
     const t = text.trim();
     if (!t || typing) return;
@@ -314,7 +328,22 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="overflow-hidden rounded-b-[28px] border-b border-text/10 bg-bg shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
-              <div className="px-5 py-5">
+              <div className="max-h-[360px] overflow-y-auto px-5 py-5">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
+                    Настройки
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-accent-3 text-text"
+                    aria-label="Закрыть меню"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
                 <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
                   Направление
                 </div>
@@ -343,7 +372,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                   Роль
                 </div>
 
-                <div className="mt-3 grid gap-2">
+                <div className="mt-3 grid gap-2 pb-1">
                   {(["sales", "support", "kb"] as const).map((m) => {
                     const active = m === mode;
                     return (
@@ -410,7 +439,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((v) => !v)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-3 text-text ring-1 ring-text/10"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-3 text-text"
                   aria-label={mobileMenuOpen ? "Закрыть выбор" : "Открыть выбор"}
                   aria-expanded={mobileMenuOpen}
                 >
@@ -450,7 +479,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                     </div>
 
                     <div className="mt-2 text-[12px] font-medium text-text/55">
-                      Для быстрого старта используйте сообщения над строкой ввода.
+                      <span className="md:hidden">
+                        Для быстрого старта используйте
+                        <br />
+                        FAQ-кнопки над строкой ввода.
+                      </span>
+                      <span className="hidden md:inline">
+                        Для быстрого старта используйте FAQ-кнопки над строкой ввода.
+                      </span>
                     </div>
 
                     <div className="mt-6 hidden md:inline-flex rounded-2xl bg-bg p-1">
@@ -511,7 +547,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                     <button
                       key={t}
                       onClick={() => pickPreset(t)}
-                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-2.5 text-[12px] font-semibold text-text"
+                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-3.5 text-[12px] font-semibold text-text"
                     >
                       {t}
                     </button>
@@ -631,7 +667,7 @@ export function DemoChat() {
               {PILLS.map((t) => (
                 <div
                   key={t}
-                  className="btn-lift-outline cursor-pointer select-none rounded-sm bg-accent-3 px-5 py-3 text-[12px] font-semibold leading-snug text-text"
+                  className="btn-lift-outline inline-flex w-fit cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
                   onClick={() => setSelectedNiche(t)}
                   role="button"
                   tabIndex={0}
