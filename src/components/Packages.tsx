@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Container } from "@/components/Container";
-import { Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MoveHorizontal,
+} from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type Billing = "monthly" | "yearly";
 type PlanId = "test" | "small" | "mid" | "ent";
@@ -186,7 +193,10 @@ function DetailsFrame({
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.hex }} />
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: t.hex }}
+                />
                 <span>{t.title}</span>
               </button>
             );
@@ -240,20 +250,154 @@ function DetailsFrame({
   );
 }
 
+function MobileDetailsFrame({
+  plan,
+  details,
+  planHex,
+  onClose,
+  onPrev,
+  onNext,
+  canPrev,
+  canNext,
+  ctaHref,
+}: {
+  plan: Plan;
+  details: PlanDetails;
+  planHex: string;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  ctaHref: string;
+}) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const isNeutral = plan.tone === "neutral";
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [plan.id]);
+
+  return (
+    <div
+      className="h-full w-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
+      style={{ ["--plan" as any]: planHex }}
+    >
+      <div className="flex h-full flex-col">
+        <div className="border-b border-text/15 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0">
+              <div
+                className={`text-[24px] font-extrabold leading-none ${
+                  isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                }`}
+              >
+                {plan.title}
+              </div>
+
+              <div className="mt-3 text-[13px] font-medium leading-snug text-text/80">
+                {details.lead}
+              </div>
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-start gap-2">
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={!canPrev}
+                className={[
+                  "inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg/45",
+                  canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
+                ].join(" ")}
+                aria-label="Предыдущий пакет"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!canNext}
+                className={[
+                  "inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg/45",
+                  canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
+                ].join(" ")}
+                aria-label="Следующий пакет"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg/45"
+                aria-label="Закрыть описание"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 text-[11px] font-semibold text-text/50">
+            {details.tags}
+          </div>
+        </div>
+
+        <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto px-5 py-4">
+          <div className="space-y-5">
+            {details.sections.map((s) => (
+              <div key={s.title}>
+                <div className="text-[14px] font-extrabold text-text">
+                  {s.title}
+                </div>
+
+                <ul className="mt-3 space-y-2 text-[13px] font-medium leading-snug text-text/80">
+                  {s.items.map((it) => (
+                    <li key={it} className="flex gap-2">
+                      <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-text/35" />
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-text/15 px-5 py-4">
+          <a
+            href={ctaHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={[
+              "btn-lift-outline block w-full rounded-xl px-5 py-3 text-center text-[15px] font-extrabold",
+              plan.ctaStyle === "fill"
+                ? "bg-[color:var(--plan)] text-bg"
+                : "border-2 border-[color:var(--plan)] text-[color:var(--plan)]",
+            ].join(" ")}
+            style={
+              isNeutral && plan.ctaStyle === "outline"
+                ? { borderColor: "var(--text)", color: "var(--text)" }
+                : undefined
+            }
+          >
+            {plan.cta}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Packages() {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [active, setActive] = useState<PlanId>("test");
   const [expanded, setExpanded] = useState<PlanId | null>(null);
 
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
+  const reduceMotion = useReducedMotion();
 
-  const mobileRailRef = useRef<HTMLDivElement | null>(null);
-  const mobileCardRefs = useRef<Record<PlanId, HTMLButtonElement | null>>({
-    test: null,
-    small: null,
-    mid: null,
-    ent: null,
-  });
+  const touchStartXRef = useRef<number | null>(null);
 
   const openCta = (id: PlanId) => {
     const href = CTA_LINKS[id];
@@ -472,12 +616,13 @@ export function Packages() {
   const closeDetails = () => setExpanded(null);
 
   const CARD_H = 740;
-  const MOBILE_CARD_H = 620;
+  const MOBILE_CARD_H = 560;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
 
   const activeIdx = plans.findIndex((p) => p.id === active);
+  const activePlan = plans[activeIdx] ?? plans[0];
 
   const leftFor = (i: number) => {
     if (i !== activeIdx) return `${i * 25}%`;
@@ -534,36 +679,49 @@ export function Packages() {
   const canPrev = expandedIdx > 0;
   const canNext = expandedIdx >= 0 && expandedIdx < plans.length - 1;
 
+  const setActiveByIndex = (idx: number) => {
+    const next = plans[Math.max(0, Math.min(idx, plans.length - 1))];
+    if (!next) return;
+    setActive(next.id);
+  };
+
   const goPrev = () => {
-    if (!expanded || !canPrev) return;
-    setExpandedTo(plans[expandedIdx - 1].id);
+    if (expanded) {
+      if (!canPrev) return;
+      setExpandedTo(plans[expandedIdx - 1].id);
+      return;
+    }
+    setActiveByIndex(activeIdx - 1);
   };
 
   const goNext = () => {
-    if (!expanded || !canNext) return;
-    setExpandedTo(plans[expandedIdx + 1].id);
+    if (expanded) {
+      if (!canNext) return;
+      setExpandedTo(plans[expandedIdx + 1].id);
+      return;
+    }
+    setActiveByIndex(activeIdx + 1);
   };
 
-  const focusMobileCard = (id: PlanId) => {
-    const rail = mobileRailRef.current;
-    const card = mobileCardRefs.current[id];
-    if (!rail || !card) return;
+  const onMobileTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = e.changedTouches[0]?.clientX ?? null;
+  };
 
-    const idx = plans.findIndex((p) => p.id === id);
-    const max = rail.scrollWidth - rail.clientWidth;
+  const onMobileTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const start = touchStartXRef.current;
+    const end = e.changedTouches[0]?.clientX ?? null;
+    touchStartXRef.current = null;
 
-    if (idx === 0) {
-      rail.scrollTo({ left: 0, behavior: "smooth" });
-      return;
+    if (start == null || end == null) return;
+
+    const delta = end - start;
+    if (Math.abs(delta) < 22) return;
+
+    if (delta < 0) {
+      setActiveByIndex(activeIdx + 1);
+    } else {
+      setActiveByIndex(activeIdx - 1);
     }
-
-    if (idx === plans.length - 1) {
-      rail.scrollTo({ left: max, behavior: "smooth" });
-      return;
-    }
-
-    const target = card.offsetLeft - (rail.clientWidth - card.offsetWidth) / 2;
-    rail.scrollTo({ left: Math.max(0, Math.min(target, max)), behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -598,7 +756,7 @@ export function Packages() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [expanded, expandedIdx, canPrev, canNext, plans]);
+  }, [expanded, expandedIdx, canPrev, canNext, plans, activeIdx]);
 
   return (
     <section
@@ -616,13 +774,12 @@ export function Packages() {
       />
       <div
         aria-hidden
-        className={`pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[200px] lg:h-[240px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 ${
+        className={`pointer-events-none absolute left-1/2 top-0 hidden h-[200px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 md:block lg:h-[240px] ${
           inView ? "opacity-100" : "opacity-0"
         }`}
       />
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
-        {/* mobile header */}
         <div className="md:hidden">
           <div
             className={`${REVEAL_BASE} ${
@@ -680,13 +837,10 @@ export function Packages() {
           </div>
         </div>
 
-        {/* desktop header */}
         <div className="hidden md:grid gap-10 md:grid-cols-2 md:gap-0">
           <div
             className={`${REVEAL_BASE} ${
-              inView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             } md:pr-12`}
           >
             <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">
@@ -701,9 +855,7 @@ export function Packages() {
 
           <div
             className={`${REVEAL_BASE} ${
-              inView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             } md:pl-12`}
             style={{ transitionDelay: "80ms" }}
           >
@@ -762,210 +914,224 @@ export function Packages() {
 
         <div
           className={`${REVEAL_BASE} ${
-            inView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-5"
+            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
           } mt-10 md:mt-12 md:mt-14`}
           style={{ transitionDelay: "140ms" }}
         >
-          {/* mobile */}
           <div className="md:hidden">
-            {expandedPlan ? (
-              <div style={{ height: MOBILE_CARD_H }}>
-                <DetailsFrame
-                  plan={expandedPlan}
-                  details={DETAILS[expandedPlan.id]}
-                  borderClass={expandedBorderClass}
-                  planHex={expandedTone?.hex ?? "#111827"}
-                  tabs={planTabs}
-                  activeId={expandedPlan.id}
-                  onSelectPlan={setExpandedTo}
-                  onPrev={goPrev}
-                  onNext={goNext}
-                  canPrev={canPrev}
-                  canNext={canNext}
-                  onClose={closeDetails}
-                  ctaHref={CTA_LINKS[expandedPlan.id]}
-                />
-              </div>
-            ) : (
-              <div
-                ref={mobileRailRef}
-                className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                <div className="flex w-max gap-4 pr-6">
-                  {plans.map((p) => {
-                    const isActive = p.id === active;
-                    const tone = TONE[p.tone];
-                    const price = priceFor(p);
-                    const isNeutral = p.tone === "neutral";
-
-                    return (
-                      <button
-                        key={p.id}
-                        ref={(el) => {
-                          mobileCardRefs.current[p.id] = el;
-                        }}
-                        type="button"
-                        onClick={() => {
-                          setActive(p.id);
-                          focusMobileCard(p.id);
-                        }}
-                        className="w-[82vw] max-w-[320px] shrink-0 snap-start text-left"
-                        aria-pressed={isActive}
-                      >
-                        <div
-                          className={
-                            isActive
-                              ? "h-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
-                              : "h-full overflow-hidden rounded-[24px] bg-bg ring-1 ring-text/15"
+            <div
+              className="relative"
+              onTouchStart={onMobileTouchStart}
+              onTouchEnd={onMobileTouchEnd}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {expandedPlan ? (
+                  <motion.div
+                    key={`mobile-details-${expandedPlan.id}`}
+                    initial={reduceMotion ? false : { opacity: 0, x: 18, filter: "blur(4px)" }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0, filter: "blur(0px)" }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -18, filter: "blur(4px)" }}
+                    transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ height: MOBILE_CARD_H }}
+                  >
+                    <MobileDetailsFrame
+                      plan={expandedPlan}
+                      details={DETAILS[expandedPlan.id]}
+                      planHex={expandedTone?.hex ?? "#111827"}
+                      onClose={closeDetails}
+                      onPrev={goPrev}
+                      onNext={goNext}
+                      canPrev={canPrev}
+                      canNext={canNext}
+                      ctaHref={CTA_LINKS[expandedPlan.id]}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={`mobile-card-${activePlan.id}`}
+                    initial={reduceMotion ? false : { opacity: 0, x: 24, filter: "blur(4px)" }}
+                    animate={
+                      reduceMotion
+                        ? { opacity: 1 }
+                        : {
+                            opacity: 1,
+                            x: [0, -5, 5, -3, 3, 0],
+                            filter: "blur(0px)",
                           }
-                          style={{
-                            ["--plan" as any]: tone.hex,
-                          }}
-                        >
-                          <div className="grid h-full grid-rows-[170px_110px_145px_155px]">
-                            <div className={`px-6 pt-6 pb-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
-                              <div className="flex h-full flex-col justify-between">
-                                <div
-                                  className={
-                                    isActive
-                                      ? `text-[28px] font-extrabold leading-none ${
-                                          isNeutral ? "text-text" : "text-[color:var(--plan)]"
-                                        }`
-                                      : "text-[24px] font-extrabold leading-none text-text/18"
-                                  }
-                                >
-                                  {p.title}
-                                </div>
+                    }
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -24, filter: "blur(4px)" }}
+                    transition={
+                      reduceMotion
+                        ? { duration: 0 }
+                        : {
+                            opacity: { duration: 0.22 },
+                            filter: { duration: 0.22 },
+                            x: {
+                              duration: 0.7,
+                              times: [0, 0.18, 0.36, 0.54, 0.72, 1],
+                              ease: "easeInOut",
+                            },
+                          }
+                    }
+                    style={{ height: MOBILE_CARD_H }}
+                    className="relative"
+                  >
+                    <div className="pointer-events-none absolute right-4 top-4 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg/65 text-text/55 backdrop-blur">
+                      <MoveHorizontal className="h-4 w-4" />
+                    </div>
 
+                    <button
+                      type="button"
+                      onClick={() => setActive(activePlan.id)}
+                      aria-pressed
+                      className="h-full w-full text-left"
+                    >
+                      <div
+                        className="h-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
+                        style={{ ["--plan" as any]: TONE[activePlan.tone].hex }}
+                      >
+                        <div className="grid h-full grid-rows-[150px_96px_128px_186px]">
+                          <div className="border-b border-text/20 px-6 pt-5 pb-4">
+                            <div className="flex h-full flex-col justify-between">
+                              <div
+                                className={`text-[26px] font-extrabold leading-none ${
+                                  activePlan.tone === "neutral"
+                                    ? "text-text"
+                                    : "text-[color:var(--plan)]"
+                                }`}
+                              >
+                                {activePlan.title}
+                              </div>
+
+                              <div className="space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
+                                {activePlan.desc4.map((l) => (
+                                  <div key={l}>{l}</div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-b border-text/20 px-6 py-4">
+                            <div className="flex h-full flex-col justify-between">
+                              <div className="flex items-baseline gap-2">
                                 <div
-                                  className={`${CONTENT_MOTION} ${
-                                    isActive
-                                      ? "opacity-100 translate-y-0 blur-0"
-                                      : "opacity-0 translate-y-1 blur-[2px]"
+                                  className={`text-[26px] font-extrabold leading-none ${
+                                    activePlan.tone === "neutral"
+                                      ? "text-text"
+                                      : "text-[color:var(--plan)]"
                                   }`}
                                 >
-                                  <div className="space-y-1 text-[14px] font-medium leading-[1.12] text-text/90">
-                                    {p.desc4.map((l) => (
-                                      <div key={l}>{l}</div>
-                                    ))}
-                                  </div>
+                                  {formatRub(priceFor(activePlan))}
+                                </div>
+                                <div className="text-[18px] font-semibold leading-none text-text/35">
+                                  / мес
                                 </div>
                               </div>
-                            </div>
 
-                            <div className={`px-6 py-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
-                              <div
-                                className={`${CONTENT_MOTION} ${
-                                  isActive
-                                    ? "opacity-100 translate-y-0 blur-0"
-                                    : "opacity-0 translate-y-1 blur-[2px]"
-                                } flex h-full flex-col justify-between`}
-                              >
-                                <div className="flex items-baseline gap-2">
-                                  <div
-                                    className={`text-[28px] font-extrabold leading-none ${
-                                      isNeutral ? "text-text" : "text-[color:var(--plan)]"
-                                    }`}
-                                  >
-                                    {formatRub(price)}
-                                  </div>
-                                  <div className="text-[20px] font-semibold leading-none text-text/35">
-                                    / мес
-                                  </div>
-                                </div>
-
-                                <div className="text-[11px] font-semibold text-text/45">
-                                  {p.integrations2[0]}
-                                </div>
+                              <div className="text-[11px] font-semibold text-text/45">
+                                {activePlan.integrations2[0]}
                               </div>
                             </div>
+                          </div>
 
-                            <div className={`px-6 py-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
-                              <div
-                                className={`${CONTENT_MOTION} ${
-                                  isActive
-                                    ? "opacity-100 translate-y-0 blur-0"
-                                    : "opacity-0 translate-y-1 blur-[2px]"
-                                } flex h-full flex-col justify-between`}
-                              >
-                                <div className="text-[15px] font-extrabold text-text">
-                                  Ключевые параметры
-                                </div>
+                          <div className="border-b border-text/20 px-6 py-4">
+                            <div className="flex h-full flex-col justify-between">
+                              <div className="text-[14px] font-extrabold text-text">
+                                Ключевые параметры
+                              </div>
 
-                                <div className="space-y-1 text-[14px] font-medium leading-[1.12] text-text/90">
-                                  {p.params3.map((l) => (
-                                    <div key={l}>{l}</div>
-                                  ))}
-                                </div>
+                              <div className="space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
+                                {activePlan.params3.map((l) => (
+                                  <div key={l}>{l}</div>
+                                ))}
                               </div>
                             </div>
+                          </div>
 
-                            <div className="px-6 py-5">
+                          <div className="px-6 py-4">
+                            <div className="flex h-full flex-col justify-between">
                               <div
-                                className={`${CONTENT_MOTION} ${
-                                  isActive
-                                    ? "opacity-100 translate-y-0 blur-0"
-                                    : "opacity-0 translate-y-1 blur-[2px]"
-                                } flex h-full flex-col justify-between`}
+                                className="flex items-center gap-3 text-[14px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  openDetails(activePlan.id);
+                                }}
                               >
-                                <div
-                                  className="flex items-center gap-3 text-[15px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
+                                <span>Изучить возможности</span>
+                                <Eye className="h-5 w-5" />
+                              </div>
+
+                              <div className="flex items-center justify-between gap-3">
+                                <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    openDetails(p.id);
+                                    goPrev();
                                   }}
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg/55"
+                                  aria-label="Предыдущий пакет"
                                 >
-                                  <span>Изучить возможности</span>
-                                  <Eye className="h-5 w-5" />
-                                </div>
+                                  <ChevronLeft className="h-4 w-4" />
+                                </button>
 
                                 <div
                                   role="button"
-                                  tabIndex={isActive ? 0 : -1}
-                                  aria-label={`CTA: ${p.cta}`}
+                                  tabIndex={0}
+                                  aria-label={`CTA: ${activePlan.cta}`}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    openCta(p.id);
+                                    openCta(activePlan.id);
                                   }}
                                   onKeyDown={(e) => {
-                                    if (!isActive) return;
                                     if (e.key === "Enter" || e.key === " ") {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      openCta(p.id);
+                                      openCta(activePlan.id);
                                     }
                                   }}
                                   className={[
-                                    isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
-                                    p.ctaStyle === "fill"
-                                      ? "w-full rounded-xl bg-[color:var(--plan)] px-5 py-3 text-center text-[16px] font-extrabold text-bg"
-                                      : "w-full rounded-xl border-2 border-[color:var(--plan)] px-5 py-3 text-center text-[16px] font-extrabold text-[color:var(--plan)]",
+                                    "btn-lift-outline cursor-pointer flex-1",
+                                    activePlan.ctaStyle === "fill"
+                                      ? "rounded-xl bg-[color:var(--plan)] px-5 py-3 text-center text-[15px] font-extrabold text-bg"
+                                      : "rounded-xl border-2 border-[color:var(--plan)] px-5 py-3 text-center text-[15px] font-extrabold text-[color:var(--plan)]",
                                   ].join(" ")}
                                   style={
-                                    isNeutral && p.ctaStyle === "outline"
+                                    activePlan.tone === "neutral" &&
+                                    activePlan.ctaStyle === "outline"
                                       ? { borderColor: "var(--text)", color: "var(--text)" }
                                       : undefined
                                   }
                                 >
-                                  {p.cta}
+                                  {activePlan.cta}
                                 </div>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    goNext();
+                                  }}
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg/55"
+                                  aria-label="Следующий пакет"
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </button>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* desktop */}
           <div className="relative hidden md:block">
             <div className="relative" style={{ height: CARD_H }}>
               <div
@@ -1192,4 +1358,3 @@ export function Packages() {
     </section>
   );
 }
-
