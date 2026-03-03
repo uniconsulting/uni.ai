@@ -49,7 +49,7 @@ function BurgerButton({
       aria-label={open ? "Закрыть меню" : "Открыть меню"}
       aria-expanded={open}
       aria-controls="mobile-header-menu"
-      className="relative inline-flex h-12 w-12 appearance-none items-center justify-center border-0 bg-transparent p-0 text-text md:hidden"
+      className="relative inline-flex appearance-none items-center justify-center border-0 bg-transparent p-0 text-text md:hidden"
     >
       <span className="relative block h-7 w-7">
         <motion.span
