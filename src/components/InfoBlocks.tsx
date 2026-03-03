@@ -62,16 +62,15 @@ export function InfoBlocks() {
   const rightLineBOpacity = useTransform(p, [a.s2, a.t23, 1], [0, 1, 1]);
   const rightLineBX = useTransform(p, [a.s2, a.t23], [-80, 0]);
 
-  // MOBILE
-  // Делаем диапазоны видимости без наложения текстов
-  const m1Opacity = useTransform(p, [0, 0.24, 0.3], [1, 1, 0]);
-  const m1X = useTransform(p, [0, 0.3], [0, -160]);
+// MOBILE
+const m1Opacity = useTransform(p, [0, 0.18, 0.24], [1, 1, 0]);
+const m1X = useTransform(p, [0, 0.24], [0, -160]);
 
-  const m2Opacity = useTransform(p, [0.34, 0.42, 0.58, 0.64], [0, 1, 1, 0]);
-  const m2X = useTransform(p, [0.34, 0.44, 0.58, 0.68], [160, 0, 0, 160]);
+const m2Opacity = useTransform(p, [0.28, 0.36, 0.48, 0.56], [0, 1, 1, 0]);
+const m2X = useTransform(p, [0.28, 0.38, 0.48, 0.58], [160, 0, 0, 160]);
 
-  const m3Opacity = useTransform(p, [0.72, 0.8, 1], [0, 1, 1]);
-  const m3X = useTransform(p, [0.72, 0.82], [-160, 0]);
+const m3Opacity = useTransform(p, [0.6, 0.68, 1], [0, 1, 1]);
+const m3X = useTransform(p, [0.6, 0.7], [-160, 0]);
 
   const mobileMotion =
     "will-change-[opacity,transform] transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
