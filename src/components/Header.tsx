@@ -55,11 +55,7 @@ function BurgerButton({
         <motion.span
           aria-hidden
           className="absolute left-0 top-[4px] h-[2.5px] w-full rounded-full bg-current"
-          animate={
-            open
-              ? { top: "12px", rotate: 45, scaleX: 1 }
-              : { top: "4px", rotate: 0, scaleX: 1 }
-          }
+          animate={open ? { top: "12px", rotate: 45 } : { top: "4px", rotate: 0 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         />
         <motion.span
@@ -71,11 +67,7 @@ function BurgerButton({
         <motion.span
           aria-hidden
           className="absolute left-0 top-[20px] h-[2.5px] w-full rounded-full bg-current"
-          animate={
-            open
-              ? { top: "12px", rotate: -45, scaleX: 1 }
-              : { top: "20px", rotate: 0, scaleX: 1 }
-          }
+          animate={open ? { top: "12px", rotate: -45 } : { top: "20px", rotate: 0 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         />
       </span>
@@ -86,7 +78,7 @@ function BurgerButton({
 export function Header() {
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [scrollLockActive, setScrollLockActive] = useState(false);
 
   const lastYRef = useRef(0);
   const marksRef = useRef<Marks>({
@@ -96,6 +88,7 @@ export function Header() {
     faq: INF,
     footer: INF,
   });
+  const lockedScrollYRef = useRef(0);
 
   const reduceMotion = useReducedMotion();
 
@@ -126,6 +119,12 @@ export function Header() {
 
     const decide = () => {
       raf = 0;
+
+      // Пока меню открыто или ещё идёт его закрытие, хедер всегда видим
+      if (menuOpen || scrollLockActive) {
+        setHiddenSafe(false);
+        return;
+      }
 
       const y = window.scrollY || 0;
       const prevY = lastYRef.current || 0;
@@ -203,37 +202,45 @@ export function Header() {
       if (raf) window.cancelAnimationFrame(raf);
       ro?.disconnect();
     };
-  }, []);
+  }, [menuOpen, scrollLockActive]);
 
-  // ВАЖНО: блокируем скролл только пока меню реально открыто
+  // Блокировка скролла страницы, пока меню открыто или закрывается анимацией
   useEffect(() => {
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    const prevBodyTouch = document.body.style.touchAction;
-    const prevHtmlTouch = document.documentElement.style.touchAction;
+    if (!scrollLockActive) return;
 
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
-      document.documentElement.style.touchAction = "none";
-    } else {
-      document.body.style.overflow = prevBodyOverflow || "";
-      document.documentElement.style.overflow = prevHtmlOverflow || "";
-      document.body.style.touchAction = prevBodyTouch || "";
-      document.documentElement.style.touchAction = prevHtmlTouch || "";
-    }
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    lockedScrollYRef.current = scrollY;
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
 
     return () => {
-      document.body.style.overflow = prevBodyOverflow;
-      document.documentElement.style.overflow = prevHtmlOverflow;
-      document.body.style.touchAction = prevBodyTouch;
-      document.documentElement.style.touchAction = prevHtmlTouch;
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+
+      html.style.overflow = "";
+      html.style.overscrollBehavior = "";
+
+      window.scrollTo(0, lockedScrollYRef.current);
     };
-  }, [menuOpen]);
+  }, [scrollLockActive]);
 
   useEffect(() => {
-    if (!menuVisible) return;
+    if (!menuOpen) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -244,10 +251,10 @@ export function Header() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [menuVisible]);
+  }, [menuOpen]);
 
   const openMenu = () => {
-    setMenuVisible(true);
+    setScrollLockActive(true);
     setMenuOpen(true);
   };
 
@@ -286,12 +293,8 @@ export function Header() {
       <motion.header
         className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur px-1"
         initial={false}
-        animate={{ y: menuVisible ? 0 : hidden ? -80 : 0 }}
-        transition={
-          reduceMotion
-            ? { duration: 0 }
-            : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
-        }
+        animate={{ y: menuOpen || scrollLockActive ? 0 : hidden ? -80 : 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         <Container>
           <div className="flex h-16 items-center">
@@ -357,25 +360,28 @@ export function Header() {
       <AnimatePresence
         initial={false}
         onExitComplete={() => {
-          setMenuVisible(false);
+          setScrollLockActive(false);
         }}
       >
-        {menuVisible ? (
+        {menuOpen ? (
           <motion.div
             id="mobile-header-menu"
             className="fixed inset-x-0 top-16 bottom-0 z-40 bg-bg md:hidden"
             initial={{ opacity: 0, y: -18 }}
-            animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : -14 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -14 }}
             transition={panelTransition}
           >
-            <div className="h-full overflow-y-auto">
+            <div
+              className="h-full overflow-y-auto overscroll-y-contain"
+              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
+            >
               <Container className="h-full px-6">
                 <div className="flex min-h-full flex-col py-6">
                   <motion.nav
                     className="grid gap-3"
                     initial="hidden"
-                    animate={menuOpen ? "show" : "exit"}
+                    animate="show"
                     exit="exit"
                   >
                     {NAV.map((item, i) => {
@@ -402,7 +408,7 @@ export function Header() {
                     custom={4}
                     variants={itemVariants}
                     initial="hidden"
-                    animate={menuOpen ? "show" : "exit"}
+                    animate="show"
                     exit="exit"
                     className="mt-8"
                   >
@@ -426,7 +432,7 @@ export function Header() {
                     custom={5}
                     variants={itemVariants}
                     initial="hidden"
-                    animate={menuOpen ? "show" : "exit"}
+                    animate="show"
                     exit="exit"
                     className="mt-8 grid gap-6"
                   >
@@ -459,7 +465,7 @@ export function Header() {
                     custom={6}
                     variants={itemVariants}
                     initial="hidden"
-                    animate={menuOpen ? "show" : "exit"}
+                    animate="show"
                     exit="exit"
                     className="mt-8 grid grid-cols-[108px_minmax(0,1fr)] gap-3"
                   >
@@ -488,7 +494,7 @@ export function Header() {
                     custom={7}
                     variants={itemVariants}
                     initial="hidden"
-                    animate={menuOpen ? "show" : "exit"}
+                    animate="show"
                     exit="exit"
                     className="mt-auto pt-8"
                   >
