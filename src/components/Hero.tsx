@@ -327,7 +327,7 @@ export function Hero() {
       <section id="hero" className="relative overflow-x-clip">
         <Container className={`relative ${topPad}`}>
           <div className="px-1">
-            <h1 className="text-focus-in font-semibold leading-[0.96] tracking-tight text-[30px]">
+            <h1 className="text-focus-in font-semibold leading-[0.96] tracking-tight text-[36px]">
               <span className="block">Кабинет твоей</span>
               <span className="block text-accent-1">команды</span>
               <span className="block">
