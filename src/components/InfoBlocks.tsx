@@ -41,6 +41,19 @@ export function InfoBlocks() {
   const rightLineBOpacity = useTransform(p, [a.s2, a.t23, 1], [0, 1, 1]);
   const rightLineBX = useTransform(p, [a.s2, a.t23], [-80, 0]);
 
+  // ---- Mobile card transitions (новая логика) ----
+  const m1Opacity = useTransform(p, [0, a.s1, a.t12], [1, 1, 0]);
+  const m1X = useTransform(p, [0, a.t12], [0, -180]);
+
+  const m2Opacity = useTransform(p, [a.s1, a.t12, a.s2, a.t23], [0, 1, 1, 0]);
+  const m2X = useTransform(p, [a.s1, a.t12, a.s2, a.t23], [180, 0, 0, 180]);
+
+  const m3Opacity = useTransform(p, [a.s2, a.t23, 1], [0, 1, 1]);
+  const m3X = useTransform(p, [a.s2, a.t23], [-180, 0]);
+
+  const mobileCardMotion =
+    "will-change-[opacity,transform,filter] transition-[opacity,transform,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+
   return (
     <section id="info" ref={sectionRef} className="relative overflow-x-clip" aria-label="Инфо-блоки">
       <div className="relative h-[300vh]">
@@ -137,14 +150,7 @@ export function InfoBlocks() {
                   {/* CENTER INSERT */}
                   <div className="h-full w-[580px]">
                     <div className="h-full w-full overflow-hidden rounded-[44px] bg-accent-3">
-                      <video
-                        className="h-full w-full object-cover"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                      >
+                      <video className="h-full w-full object-cover" autoPlay muted loop playsInline preload="metadata">
                         <source src={withBasePath("/info/IMG_6634.mp4")} type="video/mp4" />
                       </video>
                     </div>
@@ -154,7 +160,6 @@ export function InfoBlocks() {
                   <div className="relative h-full px-6 lg:px-10">
                     <motion.div style={{ opacity: right2Opacity, x: right2X }} className="absolute inset-0">
                       <div className="flex h-full items-start justify-center">
-                        {/* ВАЖНО: фиксируем “целевую” ширину и центрируем в правой колонке */}
                         <div className="w-full max-w-[360px] text-right">
                           <div className="hover-accent text-[32px] font-extrabold leading-[1.08] tracking-tight">
                             Простые, понятные,
@@ -186,23 +191,87 @@ export function InfoBlocks() {
               </div>
             </div>
 
-            {/* Mobile fallback */}
-            <div className="md:hidden space-y-8">
-              <div className="text-2xl font-extrabold leading-tight">
-                Не знаете,
-                <br />
-                с чего начать?
-              </div>
+            {/* Mobile: scroll-driven cards */}
+            <div className="md:hidden">
+              {/* 1) Отступ от Hero-разделителя до заголовка == от кнопки до разделителя (24px) */}
+              <div className="mt-6" />
 
-              <div className="aspect-video w-full overflow-hidden rounded-[28px] bg-accent-3">
-                <video className="h-full w-full object-cover" autoPlay muted loop playsInline preload="metadata">
-                  <source src={withBasePath("/info/IMG_6634.mp4")} type="video/mp4" />
-                </video>
-              </div>
+              <div className="relative">
+                {/* TITLE area (stacked) */}
+                <div className="relative min-h-[76px] overflow-hidden">
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m1Opacity, x: m1X }}
+                  >
+                    <div className="text-left text-[24px] font-extrabold leading-tight tracking-tight hover-accent">
+                      Не знаете,
+                      <br />
+                      с чего начать?
+                    </div>
+                  </motion.div>
 
-              <div className="text-base leading-snug opacity-85">
-                Представьте, что Вам необходимо составить вакансию - опишите именно те требования, которые для Вас важны.
-                Встроенный помощник составит должностную инструкцию, а далее...
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m2Opacity, x: m2X }}
+                  >
+                    <div className="text-left text-[24px] font-extrabold leading-tight tracking-tight hover-accent">
+                      Простые, понятные,
+                      <br />
+                      бесплатные уроки
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m3Opacity, x: m3X }}
+                  >
+                    <div className="text-left text-[24px] font-extrabold leading-tight tracking-tight hover-accent">
+                      Больше, чем кабинет
+                      <br />
+                      Это - виртуальный офис
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* VIDEO 16:9 всегда max size */}
+                <div className="mt-8 aspect-video w-full overflow-hidden rounded-[28px] bg-accent-3">
+                  <video className="h-full w-full object-cover" autoPlay muted loop playsInline preload="metadata">
+                    <source src={withBasePath("/info/IMG_6634.mp4")} type="video/mp4" />
+                  </video>
+                </div>
+
+                {/* DESCRIPTION area (stacked) */}
+                <div className="relative mt-8 min-h-[120px] overflow-hidden">
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m1Opacity, x: m1X }}
+                  >
+                    <div className="text-left text-[16px] leading-snug text-text/85">
+                      Представьте, что вам нужно составить вакансию. Опишите именно те требования,
+                      которые для вас важны. Встроенный помощник составит должностную инструкцию, а далее...
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m2Opacity, x: m2X }}
+                  >
+                    <div className="text-left text-[16px] leading-snug text-text/85">
+                      Мы сделали обучение простым: материалы и подсказки всегда рядом.
+                      Вы выстраиваете ИИ-команду спокойно, шаг за шагом, без перегруза.
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className={`${mobileCardMotion} absolute inset-0`}
+                    style={{ opacity: m3Opacity, x: m3X }}
+                  >
+                    <div className="text-left text-[16px] leading-snug text-text/85">
+                      Управляйте ботами для Telegram, VK и Avito из одного интерфейса.
+                      Настраивайте поведение, подключайте базы знаний и анализируйте результаты.
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </Container>
