@@ -329,11 +329,9 @@ export function Hero() {
           <div className="px-1">
             <h1 className="text-focus-in font-extrabold leading-[0.96] tracking-tight text-[30px]">
               <span className="block">Кабинет твоей</span>
-              <span className="block whitespace-nowrap">
-                <span className="text-accent-1">команды</span>{" "}
-                <span className="inline-block align-baseline">
-                  <RotatingWord />
-                </span>
+              <span className="block text-accent-1">команды</span>
+              <span className="block">
+                <RotatingWord />
               </span>
             </h1>
           </div>
@@ -382,7 +380,6 @@ export function Hero() {
 
   return (
     <section id="hero" className="relative overflow-x-clip">
-      {/* TOP (блюрится) */}
       <motion.div className="relative will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
         <Container className={`relative ${topPad}`}>
           <div className="relative px-1">
@@ -403,7 +400,6 @@ export function Hero() {
         </Container>
       </motion.div>
 
-      {/* STAGE */}
       <div ref={stageRef} className="relative mt-12">
         <div className={pinEnabled ? "sticky top-24 z-40" : "relative z-40"}>
           <Container>
@@ -439,7 +435,6 @@ export function Hero() {
           </Container>
         </div>
 
-        {/* НИЗ (блюрится) */}
         <motion.div className="relative z-20 will-change-[filter]" style={{ filter: bgFilter, opacity: bgOpacity }}>
           <div className="relative">
             {templeVisible && (
