@@ -145,7 +145,6 @@ function DetailsFrame({
                 canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Предыдущий пакет"
-              title="Предыдущий пакет (←)"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -159,7 +158,6 @@ function DetailsFrame({
                 canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Следующий пакет"
-              title="Следующий пакет (→)"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -169,7 +167,6 @@ function DetailsFrame({
               onClick={onClose}
               className="btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
               aria-label="Закрыть описание"
-              title="Закрыть (Esc)"
             >
               <X className="h-5 w-5" />
             </button>
@@ -278,6 +275,9 @@ function MobileDetailsFrame({
     bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [plan.id]);
 
+  const mobileCta =
+    plan.id === "mid" ? "Подключить" : plan.cta;
+
   return (
     <div
       className="h-full w-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
@@ -286,7 +286,7 @@ function MobileDetailsFrame({
       <div className="flex h-full flex-col">
         <div className="border-b border-text/15 px-5 py-4">
           <div className="flex items-start gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 text-left">
               <div
                 className={`text-[24px] font-extrabold leading-none ${
                   isNeutral ? "text-text" : "text-[color:var(--plan)]"
@@ -295,8 +295,9 @@ function MobileDetailsFrame({
                 {plan.title}
               </div>
 
-              <div className="mt-3 text-[13px] font-medium leading-snug text-text/80">
-                {details.lead}
+              <div className="mt-3 w-full text-[13px] font-medium leading-[1.18] text-text/80">
+                <div>{details.lead.split(" ").slice(0, Math.ceil(details.lead.split(" ").length / 2)).join(" ")}</div>
+                <div>{details.lead.split(" ").slice(Math.ceil(details.lead.split(" ").length / 2)).join(" ")}</div>
               </div>
             </div>
 
@@ -338,15 +339,15 @@ function MobileDetailsFrame({
             </div>
           </div>
 
-          <div className="mt-3 text-[11px] font-semibold text-text/50">
+          <div className="mt-3 text-left text-[11px] font-semibold text-text/50">
             {details.tags}
           </div>
         </div>
 
         <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto px-5 py-4">
-          <div className="space-y-5">
+          <div className="space-y-5 text-left">
             {details.sections.map((s) => (
-              <div key={s.title}>
+              <div key={s.title} className="text-left">
                 <div className="text-[14px] font-extrabold text-text">
                   {s.title}
                 </div>
@@ -355,7 +356,7 @@ function MobileDetailsFrame({
                   {s.items.map((it) => (
                     <li key={it} className="flex gap-2">
                       <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-text/35" />
-                      <span>{it}</span>
+                      <span className="text-left">{it}</span>
                     </li>
                   ))}
                 </ul>
@@ -381,7 +382,7 @@ function MobileDetailsFrame({
                 : undefined
             }
           >
-            {plan.cta}
+            {mobileCta}
           </a>
         </div>
       </div>
@@ -616,7 +617,7 @@ export function Packages() {
   const closeDetails = () => setExpanded(null);
 
   const CARD_H = 740;
-  const MOBILE_CARD_H = 560;
+  const MOBILE_CARD_H = 518;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
@@ -717,11 +718,8 @@ export function Packages() {
     const delta = end - start;
     if (Math.abs(delta) < 22) return;
 
-    if (delta < 0) {
-      setActiveByIndex(activeIdx + 1);
-    } else {
-      setActiveByIndex(activeIdx - 1);
-    }
+    if (delta < 0) setActiveByIndex(activeIdx + 1);
+    else setActiveByIndex(activeIdx - 1);
   };
 
   useEffect(() => {
@@ -757,6 +755,15 @@ export function Packages() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expanded, expandedIdx, canPrev, canNext, plans, activeIdx]);
+
+  const mobileLeadLines = activePlan.desc4.length >= 4
+    ? [
+        `${activePlan.desc4[0]} ${activePlan.desc4[1]}`,
+        `${activePlan.desc4[2]} ${activePlan.desc4[3]}`,
+      ]
+    : [activePlan.desc4.join(" "), ""];
+
+  const mobileCta = activePlan.id === "mid" ? "Подключить" : activePlan.cta;
 
   return (
     <section
@@ -794,7 +801,7 @@ export function Packages() {
               Сделай выбор
             </div>
 
-            <div className="mt-3 text-[16px] font-semibold leading-[1.08] tracking-tight text-text">
+            <div className="mt-3 text-[20px] font-semibold leading-[1.08] tracking-tight text-text">
               Прозрачные условия, никаких скрытых платежей
             </div>
 
@@ -806,8 +813,8 @@ export function Packages() {
                     onClick={() => setBilling("monthly")}
                     className={
                       billing === "monthly"
-                        ? "rounded-[8px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
-                        : "rounded-[8px] px-4 py-2 text-[12px] font-semibold text-bg/90"
+                        ? "rounded-[7px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
+                        : "rounded-[7px] px-4 py-2 text-[12px] font-semibold text-bg/90"
                     }
                     aria-pressed={billing === "monthly"}
                   >
@@ -819,8 +826,8 @@ export function Packages() {
                     onClick={() => setBilling("yearly")}
                     className={
                       billing === "yearly"
-                        ? "rounded-[8px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
-                        : "rounded-[8px] px-4 py-2 text-[12px] font-semibold text-bg/70"
+                        ? "rounded-[7px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
+                        : "rounded-[7px] px-4 py-2 text-[12px] font-semibold text-bg/70"
                     }
                     aria-pressed={billing === "yearly"}
                   >
@@ -990,8 +997,8 @@ export function Packages() {
                         className="h-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
                         style={{ ["--plan" as any]: TONE[activePlan.tone].hex }}
                       >
-                        <div className="grid h-full grid-rows-[150px_96px_128px_186px]">
-                          <div className="border-b border-text/20 px-6 pt-5 pb-4">
+                        <div className="grid h-full grid-rows-[144px_86px_118px_170px]">
+                          <div className="border-b border-text/20 px-6 pt-5 pb-3">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className={`text-[26px] font-extrabold leading-none ${
@@ -1003,15 +1010,14 @@ export function Packages() {
                                 {activePlan.title}
                               </div>
 
-                              <div className="space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
-                                {activePlan.desc4.map((l) => (
-                                  <div key={l}>{l}</div>
-                                ))}
+                              <div className="w-full space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
+                                <div>{mobileLeadLines[0]}</div>
+                                <div>{mobileLeadLines[1]}</div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="border-b border-text/20 px-6 py-4">
+                          <div className="border-b border-text/20 px-6 py-3">
                             <div className="flex h-full flex-col justify-between">
                               <div className="flex items-baseline gap-2">
                                 <div
@@ -1028,13 +1034,13 @@ export function Packages() {
                                 </div>
                               </div>
 
-                              <div className="text-[11px] font-semibold text-text/45">
+                              <div className="mt-1 text-[11px] font-semibold text-text/45">
                                 {activePlan.integrations2[0]}
                               </div>
                             </div>
                           </div>
 
-                          <div className="border-b border-text/20 px-6 py-4">
+                          <div className="border-b border-text/20 px-6 py-3">
                             <div className="flex h-full flex-col justify-between">
                               <div className="text-[14px] font-extrabold text-text">
                                 Ключевые параметры
@@ -1048,7 +1054,7 @@ export function Packages() {
                             </div>
                           </div>
 
-                          <div className="px-6 py-4">
+                          <div className="px-6 py-3">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className="flex items-center gap-3 text-[14px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
@@ -1062,7 +1068,7 @@ export function Packages() {
                                 <Eye className="h-5 w-5" />
                               </div>
 
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="mt-2 flex items-center justify-between gap-3">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1079,7 +1085,7 @@ export function Packages() {
                                 <div
                                   role="button"
                                   tabIndex={0}
-                                  aria-label={`CTA: ${activePlan.cta}`}
+                                  aria-label={`CTA: ${mobileCta}`}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -1105,7 +1111,7 @@ export function Packages() {
                                       : undefined
                                   }
                                 >
-                                  {activePlan.cta}
+                                  {mobileCta}
                                 </div>
 
                                 <button
@@ -1358,4 +1364,3 @@ export function Packages() {
     </section>
   );
 }
-
