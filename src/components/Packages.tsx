@@ -13,7 +13,7 @@ type Plan = {
   tone: "neutral" | "blue" | "green" | "red";
   desc4: [string, string, string, string];
   monthly: number;
-  integrations2: [string, string]; // используем только [0]
+  integrations2: [string, string];
   params3: [string, string, string];
   cta: string;
   ctaStyle: "outline" | "fill";
@@ -113,7 +113,6 @@ function DetailsFrame({
       style={{ ["--plan" as any]: planHex }}
     >
       <div className="h-full px-10 py-8 flex flex-col">
-        {/* top */}
         <div className="flex items-start gap-6">
           <div className="min-w-0">
             <div className="text-[40px] font-extrabold leading-none text-text">
@@ -170,7 +169,6 @@ function DetailsFrame({
           </div>
         </div>
 
-        {/* tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
@@ -195,7 +193,6 @@ function DetailsFrame({
           })}
         </div>
 
-        {/* body */}
         <div ref={bodyRef} className="mt-8 flex-1 overflow-auto pr-2">
           <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
@@ -217,7 +214,6 @@ function DetailsFrame({
           </div>
         </div>
 
-        {/* CTA */}
         <div className="mt-8">
           <a
             href={ctaHref}
@@ -250,6 +246,14 @@ export function Packages() {
   const [expanded, setExpanded] = useState<PlanId | null>(null);
 
   const { ref: sectionRef, inView } = useOnceInView<HTMLElement>();
+
+  const mobileRailRef = useRef<HTMLDivElement | null>(null);
+  const mobileCardRefs = useRef<Record<PlanId, HTMLButtonElement | null>>({
+    test: null,
+    small: null,
+    mid: null,
+    ent: null,
+  });
 
   const openCta = (id: PlanId) => {
     const href = CTA_LINKS[id];
@@ -467,8 +471,8 @@ export function Packages() {
   const openDetails = (id: PlanId) => setExpandedTo(id);
   const closeDetails = () => setExpanded(null);
 
-  // геометрия
   const CARD_H = 740;
+  const MOBILE_CARD_H = 620;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
@@ -506,7 +510,6 @@ export function Packages() {
   const PANEL_MOTION =
     "will-change-[opacity,transform,filter] transition-[opacity,transform,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
-  // выбранный план для панели
   const expandedPlan = expanded ? plans.find((p) => p.id === expanded) : null;
   const expandedTone = expandedPlan ? TONE[expandedPlan.tone] : null;
   const expandedIsNeutral = expandedPlan?.tone === "neutral";
@@ -517,7 +520,6 @@ export function Packages() {
       : "border-[color:var(--plan)]"
     : "border-text/10";
 
-  // tabs для фрейма
   const planTabs = useMemo(
     () =>
       plans.map((p) => ({
@@ -542,7 +544,28 @@ export function Packages() {
     setExpandedTo(plans[expandedIdx + 1].id);
   };
 
-  // клавиатура: ← → и Esc
+  const focusMobileCard = (id: PlanId) => {
+    const rail = mobileRailRef.current;
+    const card = mobileCardRefs.current[id];
+    if (!rail || !card) return;
+
+    const idx = plans.findIndex((p) => p.id === id);
+    const max = rail.scrollWidth - rail.clientWidth;
+
+    if (idx === 0) {
+      rail.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (idx === plans.length - 1) {
+      rail.scrollTo({ left: max, behavior: "smooth" });
+      return;
+    }
+
+    const target = card.offsetLeft - (rail.clientWidth - card.offsetWidth) / 2;
+    rail.scrollTo({ left: Math.max(0, Math.min(target, max)), behavior: "smooth" });
+  };
+
   useEffect(() => {
     if (!expanded) return;
 
@@ -599,7 +622,66 @@ export function Packages() {
       />
 
       <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
-        <div className="grid gap-10 md:grid-cols-2 md:gap-0">
+        {/* mobile header */}
+        <div className="md:hidden">
+          <div
+            className={`${REVEAL_BASE} ${
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+          >
+            <div className="hover-accent text-[18px] font-medium opacity-70">
+              стоимость | пакеты
+            </div>
+
+            <div className="mt-4 text-[26px] font-extrabold leading-[0.98] tracking-tight text-accent-1">
+              Сделай выбор
+            </div>
+
+            <div className="mt-3 text-[16px] font-semibold leading-[1.08] tracking-tight text-text">
+              Прозрачные условия, никаких скрытых платежей
+            </div>
+
+            <div className="mt-6">
+              <div className="inline-block rounded-xl bg-accent-1 p-[2px]">
+                <div className="flex rounded-[10px] bg-accent-1 p-[3px]">
+                  <button
+                    type="button"
+                    onClick={() => setBilling("monthly")}
+                    className={
+                      billing === "monthly"
+                        ? "rounded-[8px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
+                        : "rounded-[8px] px-4 py-2 text-[12px] font-semibold text-bg/90"
+                    }
+                    aria-pressed={billing === "monthly"}
+                  >
+                    Ежемесячно
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBilling("yearly")}
+                    className={
+                      billing === "yearly"
+                        ? "rounded-[8px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
+                        : "rounded-[8px] px-4 py-2 text-[12px] font-semibold text-bg/70"
+                    }
+                    aria-pressed={billing === "yearly"}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span>Годовой</span>
+                      <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>
+                        -20%
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* desktop header */}
+        <div className="hidden md:grid gap-10 md:grid-cols-2 md:gap-0">
           <div
             className={`${REVEAL_BASE} ${
               inView
@@ -683,13 +765,13 @@ export function Packages() {
             inView
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-5"
-          } mt-12 md:mt-14`}
+          } mt-10 md:mt-12 md:mt-14`}
           style={{ transitionDelay: "140ms" }}
         >
           {/* mobile */}
           <div className="md:hidden">
             {expandedPlan ? (
-              <div style={{ height: CARD_H }}>
+              <div style={{ height: MOBILE_CARD_H }}>
                 <DetailsFrame
                   plan={expandedPlan}
                   details={DETAILS[expandedPlan.id]}
@@ -707,183 +789,178 @@ export function Packages() {
                 />
               </div>
             ) : (
-              <div className="grid gap-6">
-                {plans.map((p) => {
-                  const isActive = p.id === active;
-                  const tone = TONE[p.tone];
-                  const price = priceFor(p);
-                  const isNeutral = p.tone === "neutral";
+              <div
+                ref={mobileRailRef}
+                className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                <div className="flex w-max gap-4 pr-6">
+                  {plans.map((p) => {
+                    const isActive = p.id === active;
+                    const tone = TONE[p.tone];
+                    const price = priceFor(p);
+                    const isNeutral = p.tone === "neutral";
 
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setActive(p.id)}
-                      className="text-left"
-                      aria-pressed={isActive}
-                    >
-                      <div
-                        className={
-                          isActive
-                            ? "overflow-hidden rounded-[28px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
-                            : "overflow-hidden rounded-[28px] bg-bg ring-1 ring-text/15"
-                        }
-                        style={{
-                          ["--plan" as any]: tone.hex,
-                          ["--i" as any]: INTERVAL,
+                    return (
+                      <button
+                        key={p.id}
+                        ref={(el) => {
+                          mobileCardRefs.current[p.id] = el;
                         }}
+                        type="button"
+                        onClick={() => {
+                          setActive(p.id);
+                          focusMobileCard(p.id);
+                        }}
+                        className="w-[82vw] max-w-[320px] shrink-0 snap-start text-left"
+                        aria-pressed={isActive}
                       >
                         <div
-                          className={`grid h-full ${ROWS} ${
+                          className={
                             isActive
-                              ? "divide-y divide-text/20"
-                              : "divide-y divide-text/10"
-                          }`}
+                              ? "h-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
+                              : "h-full overflow-hidden rounded-[24px] bg-bg ring-1 ring-text/15"
+                          }
+                          style={{
+                            ["--plan" as any]: tone.hex,
+                          }}
                         >
-                          <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div className="flex h-full flex-col justify-between">
-                              <div
-                                className={
-                                  isActive
-                                    ? `text-[34px] font-extrabold leading-none ${
-                                        isNeutral
-                                          ? "text-text"
-                                          : "text-[color:var(--plan)]"
-                                      }`
-                                    : "text-[28px] font-extrabold leading-none text-text/15"
-                                }
-                              >
-                                {p.title}
-                              </div>
+                          <div className="grid h-full grid-rows-[170px_110px_145px_155px]">
+                            <div className={`px-6 pt-6 pb-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
+                              <div className="flex h-full flex-col justify-between">
+                                <div
+                                  className={
+                                    isActive
+                                      ? `text-[28px] font-extrabold leading-none ${
+                                          isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                                        }`
+                                      : "text-[24px] font-extrabold leading-none text-text/18"
+                                  }
+                                >
+                                  {p.title}
+                                </div>
 
+                                <div
+                                  className={`${CONTENT_MOTION} ${
+                                    isActive
+                                      ? "opacity-100 translate-y-0 blur-0"
+                                      : "opacity-0 translate-y-1 blur-[2px]"
+                                  }`}
+                                >
+                                  <div className="space-y-1 text-[14px] font-medium leading-[1.12] text-text/90">
+                                    {p.desc4.map((l) => (
+                                      <div key={l}>{l}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={`px-6 py-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
                               <div
                                 className={`${CONTENT_MOTION} ${
                                   isActive
                                     ? "opacity-100 translate-y-0 blur-0"
                                     : "opacity-0 translate-y-1 blur-[2px]"
-                                }`}
+                                } flex h-full flex-col justify-between`}
                               >
-                                <div className="space-y-1 text-[16px] font-medium text-text/90">
-                                  {p.desc4.map((l) => (
-                                    <div key={l} className="whitespace-nowrap">
-                                      {l}
-                                    </div>
+                                <div className="flex items-baseline gap-2">
+                                  <div
+                                    className={`text-[28px] font-extrabold leading-none ${
+                                      isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                                    }`}
+                                  >
+                                    {formatRub(price)}
+                                  </div>
+                                  <div className="text-[20px] font-semibold leading-none text-text/35">
+                                    / мес
+                                  </div>
+                                </div>
+
+                                <div className="text-[11px] font-semibold text-text/45">
+                                  {p.integrations2[0]}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={`px-6 py-5 ${isActive ? "border-b border-text/20" : "border-b border-text/10"}`}>
+                              <div
+                                className={`${CONTENT_MOTION} ${
+                                  isActive
+                                    ? "opacity-100 translate-y-0 blur-0"
+                                    : "opacity-0 translate-y-1 blur-[2px]"
+                                } flex h-full flex-col justify-between`}
+                              >
+                                <div className="text-[15px] font-extrabold text-text">
+                                  Ключевые параметры
+                                </div>
+
+                                <div className="space-y-1 text-[14px] font-medium leading-[1.12] text-text/90">
+                                  {p.params3.map((l) => (
+                                    <div key={l}>{l}</div>
                                   ))}
                                 </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${
-                                isActive
-                                  ? "opacity-100 translate-y-0 blur-0"
-                                  : "opacity-0 translate-y-1 blur-[2px]"
-                              } flex h-full flex-col justify-between`}
-                            >
-                              <div className="flex items-baseline gap-3">
-                                <div
-                                  className={`text-[36px] font-extrabold leading-none ${
-                                    isNeutral
-                                      ? "text-text"
-                                      : "text-[color:var(--plan)]"
-                                  }`}
-                                >
-                                  {formatRub(price)}
-                                </div>
-                                <div className="text-[28px] font-semibold leading-none text-text/35">
-                                  / мес
-                                </div>
-                              </div>
-
-                              <div className="text-[13px] font-semibold text-text/45">
-                                {p.integrations2[0]}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${
-                                isActive
-                                  ? "opacity-100 translate-y-0 blur-0"
-                                  : "opacity-0 translate-y-1 blur-[2px]"
-                              } flex h-full flex-col justify-between`}
-                            >
-                              <div className="text-[18px] font-extrabold text-text">
-                                Ключевые параметры
-                              </div>
-
-                              <div className="space-y-1 text-[16px] font-medium text-text/90">
-                                {p.params3.map((l) => (
-                                  <div key={l} className="whitespace-nowrap">
-                                    {l}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="px-8 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${
-                                isActive
-                                  ? "opacity-100 translate-y-0 blur-0"
-                                  : "opacity-0 translate-y-1 blur-[2px]"
-                              } flex h-full flex-col justify-between`}
-                            >
+                            <div className="px-6 py-5">
                               <div
-                                className="flex items-center gap-3 text-[18px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openDetails(p.id);
-                                }}
+                                className={`${CONTENT_MOTION} ${
+                                  isActive
+                                    ? "opacity-100 translate-y-0 blur-0"
+                                    : "opacity-0 translate-y-1 blur-[2px]"
+                                } flex h-full flex-col justify-between`}
                               >
-                                <span>Изучить возможности</span>
-                                <Eye className="h-6 w-6" />
-                              </div>
+                                <div
+                                  className="flex items-center gap-3 text-[15px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openDetails(p.id);
+                                  }}
+                                >
+                                  <span>Изучить возможности</span>
+                                  <Eye className="h-5 w-5" />
+                                </div>
 
-                              {/* CTA (active) */}
-                              <div
-                                role="button"
-                                tabIndex={isActive ? 0 : -1}
-                                aria-label={`CTA: ${p.cta}`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openCta(p.id);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (!isActive) return;
-                                  if (e.key === "Enter" || e.key === " ") {
+                                <div
+                                  role="button"
+                                  tabIndex={isActive ? 0 : -1}
+                                  aria-label={`CTA: ${p.cta}`}
+                                  onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     openCta(p.id);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (!isActive) return;
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      openCta(p.id);
+                                    }
+                                  }}
+                                  className={[
+                                    isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
+                                    p.ctaStyle === "fill"
+                                      ? "w-full rounded-xl bg-[color:var(--plan)] px-5 py-3 text-center text-[16px] font-extrabold text-bg"
+                                      : "w-full rounded-xl border-2 border-[color:var(--plan)] px-5 py-3 text-center text-[16px] font-extrabold text-[color:var(--plan)]",
+                                  ].join(" ")}
+                                  style={
+                                    isNeutral && p.ctaStyle === "outline"
+                                      ? { borderColor: "var(--text)", color: "var(--text)" }
+                                      : undefined
                                   }
-                                }}
-                                className={[
-                                  isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
-                                  p.ctaStyle === "fill"
-                                    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-bg"
-                                    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[20px] font-extrabold text-[color:var(--plan)]",
-                                ].join(" ")}
-                                style={
-                                  isNeutral && p.ctaStyle === "outline"
-                                    ? { borderColor: "var(--text)", color: "var(--text)" }
-                                    : undefined
-                                }
-                              >
-                                {p.cta}
+                                >
+                                  {p.cta}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -891,7 +968,6 @@ export function Packages() {
           {/* desktop */}
           <div className="relative hidden md:block">
             <div className="relative" style={{ height: CARD_H }}>
-              {/* DECK */}
               <div
                 className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
                   expanded
@@ -1044,7 +1120,6 @@ export function Packages() {
                                 <Eye className="h-7 w-7" />
                               </div>
 
-                              {/* CTA (active) */}
                               <div
                                 role="button"
                                 tabIndex={isActive ? 0 : -1}
@@ -1085,7 +1160,6 @@ export function Packages() {
                 })}
               </div>
 
-              {/* PANEL */}
               <div
                 className={`absolute inset-0 ${PANEL_MOTION} ${
                   expandedPlan
