@@ -321,13 +321,13 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
       <AnimatePresence>
         {mobileMenuOpen ? (
           <motion.div
-            className="absolute inset-x-0 top-0 bottom-0 z-30 md:hidden"
+            className="absolute inset-x-0 top-[64px] bottom-0 z-30 md:hidden"
             initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="h-full overflow-hidden rounded-b-[28px] border-b border-text/10 bg-bg shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
+            <div className="h-full overflow-hidden border-t border-text/10 bg-bg">
               <div className="h-full overflow-y-auto px-5 py-5">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text">
@@ -372,7 +372,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                   Роль
                 </div>
 
-                <div className="mt-3 grid gap-2 pb-1">
+                <div className="mt-3 grid gap-2 pb-2">
                   {(["sales", "support", "kb"] as const).map((m) => {
                     const active = m === mode;
                     return (
@@ -402,8 +402,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   return (
     <div className="w-full">
       <div className="rounded-[33px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
-        <div className="overflow-hidden rounded-3xl bg-accent-3">
-          <div className="relative">
+        <div className="relative overflow-hidden rounded-3xl bg-accent-3">
+          <div className="flex h-[520px] flex-col md:h-[620px]">
             <MobileSelectMenu />
 
             <div className="hidden bg-bg px-4 py-3 md:block">
@@ -463,30 +463,143 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex min-h-[520px] flex-col md:min-h-[620px]">
-            <div className="relative flex-1">
-              {empty ? (
-                <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                  <div>
-                    <div className="text-[14px] font-semibold text-text">
-                      Выберите направление и роль,
-                      <br className="md:hidden" /> затем задайте вопрос
+            <div className="flex flex-1 min-h-0 flex-col">
+              <div className="relative flex-1 min-h-0 overflow-hidden">
+                {empty ? (
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                    <div>
+                      <div className="text-[14px] font-semibold text-text">
+                        Выберите направление и роль,
+                        <br className="md:hidden" /> затем задайте вопрос
+                      </div>
+
+                      <div className="mt-2 text-[12px] font-medium text-text/55">
+                        <span className="md:hidden">
+                          Для быстрого старта используйте
+                          <br />
+                          FAQ-кнопки над строкой ввода.
+                        </span>
+                        <span className="hidden md:inline">
+                          Для быстрого старта используйте FAQ-кнопки над строкой ввода.
+                        </span>
+                      </div>
+
+                      <div className="mt-6 hidden md:inline-flex rounded-2xl bg-bg p-1">
+                        {(["sales", "support", "kb"] as const).map((m) => {
+                          const active = m === mode;
+                          return (
+                            <button
+                              key={m}
+                              onClick={() => setMode(m)}
+                              className={
+                                active
+                                  ? "rounded-2xl bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
+                                  : "rounded-2xl px-5 py-2 text-[12px] font-semibold text-text/70"
+                              }
+                            >
+                              {MODE_LABEL[m]}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+                  </div>
+                ) : (
+                  <div ref={listRef} className="h-full overflow-y-auto px-6 py-7">
+                    <div className="space-y-3">
+                      {msgs.map((m) => (
+                        <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                          <div
+                            className={
+                              m.role === "user"
+                                ? "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
+                                : "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
+                            }
+                          >
+                            {m.text}
+                          </div>
+                        </div>
+                      ))}
 
-                    <div className="mt-2 text-[12px] font-medium text-text/55">
-                      <span className="md:hidden">
-                        Для быстрого старта используйте
-                        <br />
-                        FAQ-кнопки над строкой ввода.
-                      </span>
-                      <span className="hidden md:inline">
-                        Для быстрого старта используйте FAQ-кнопки над строкой ввода.
-                      </span>
+                      {typing && (
+                        <div className="flex justify-start">
+                          <div className="rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
+                            ...печатает
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  </div>
+                )}
+              </div>
 
-                    <div className="mt-6 hidden md:inline-flex rounded-2xl bg-bg p-1">
+              <div className="bg-bg px-4 pb-4 pt-4 md:px-6 md:pb-6">
+                <div className="mb-3 md:hidden overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max gap-3 pr-1">
+                    {presets.map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => pickPreset(t)}
+                        className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-4 text-[12px] font-semibold text-text"
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-3 hidden flex-wrap gap-3 md:flex">
+                  {presets.slice(0, 3).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => pickPreset(t)}
+                      className="rounded-2xl bg-accent-3 px-5 py-3 text-[12px] font-semibold text-text"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 p-2 pl-4">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Сообщение"
+                    className="h-10 min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        send(input);
+                      }
+                    }}
+                  />
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg"
+                      aria-label="Записать голосовое"
+                      onClick={() => inputRef.current?.focus()}
+                    >
+                      <Mic className="h-4 w-4 text-text/60" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 items-center justify-center rounded-sm bg-accent-1"
+                      aria-label="Отправить"
+                      onClick={() => send(input)}
+                    >
+                      <SendHorizontal className="h-4 w-4 text-bg" />
+                    </button>
+                  </div>
+                </div>
+
+                {!empty && (
+                  <div className="mt-4 hidden justify-center md:flex">
+                    <div className="inline-flex rounded-2xl bg-accent-3 p-1">
                       {(["sales", "support", "kb"] as const).map((m) => {
                         const active = m === mode;
                         return (
@@ -495,8 +608,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                             onClick={() => setMode(m)}
                             className={
                               active
-                                ? "rounded-2xl bg-accent-1 px-5 py-2 text-[12px] font-semibold text-bg"
-                                : "rounded-2xl px-5 py-2 text-[12px] font-semibold text-text/70"
+                                ? "rounded-2xl bg-accent-1 px-4 py-2 text-[11px] font-semibold text-bg"
+                                : "rounded-2xl px-4 py-2 text-[11px] font-semibold text-text/70"
                             }
                           >
                             {MODE_LABEL[m]}
@@ -505,121 +618,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                       })}
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div ref={listRef} className="h-full overflow-auto px-6 py-7">
-                  <div className="space-y-3">
-                    {msgs.map((m) => (
-                      <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                        <div
-                          className={
-                            m.role === "user"
-                              ? "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
-                              : "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
-                          }
-                        >
-                          {m.text}
-                        </div>
-                      </div>
-                    ))}
-
-                    {typing && (
-                      <div className="flex justify-start">
-                        <div className="rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text/60">
-                          ...печатает
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-bg px-4 pb-4 pt-4 md:px-6 md:pb-6">
-              <div className="mb-3 md:hidden overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex w-max gap-3 pr-1">
-                  {presets.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => pickPreset(t)}
-                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-4 text-[12px] font-semibold text-text"
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+                )}
               </div>
-
-              <div className="mb-3 hidden flex-wrap gap-3 md:flex">
-                {presets.slice(0, 3).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => pickPreset(t)}
-                    className="rounded-2xl bg-accent-3 px-5 py-3 text-[12px] font-semibold text-text"
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 p-2 pl-4">
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Сообщение"
-                  className="h-10 min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      send(input);
-                    }
-                  }}
-                />
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg"
-                    aria-label="Записать голосовое"
-                    onClick={() => inputRef.current?.focus()}
-                  >
-                    <Mic className="h-4 w-4 text-text/60" />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-sm bg-accent-1"
-                    aria-label="Отправить"
-                    onClick={() => send(input)}
-                  >
-                    <SendHorizontal className="h-4 w-4 text-bg" />
-                  </button>
-                </div>
-              </div>
-
-              {!empty && (
-                <div className="mt-4 hidden justify-center md:flex">
-                  <div className="inline-flex rounded-2xl bg-accent-3 p-1">
-                    {(["sales", "support", "kb"] as const).map((m) => {
-                      const active = m === mode;
-                      return (
-                        <button
-                          key={m}
-                          onClick={() => setMode(m)}
-                          className={
-                            active
-                              ? "rounded-2xl bg-accent-1 px-4 py-2 text-[11px] font-semibold text-bg"
-                              : "rounded-2xl px-4 py-2 text-[11px] font-semibold text-text/70"
-                          }
-                        >
-                          {MODE_LABEL[m]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -630,6 +630,9 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
 
 export function DemoChat() {
   const [selectedNiche, setSelectedNiche] = useState<Niche>("Автосервис");
+
+  const mobileRow1 = [PILLS[0], PILLS[2], PILLS[4], PILLS[6]] as const;
+  const mobileRow2 = [PILLS[1], PILLS[3], PILLS[5]] as const;
 
   return (
     <section id="demo-chat" className="relative">
@@ -655,22 +658,42 @@ export function DemoChat() {
           </div>
 
           <div className="mt-6 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="grid w-max grid-flow-col grid-rows-2 gap-x-3 gap-y-3 pr-1">
-              {PILLS.map((t) => (
-                <div
-                  key={t}
-                  className="btn-lift-outline inline-flex w-fit self-start cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
-                  onClick={() => setSelectedNiche(t)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setSelectedNiche(t);
-                  }}
-                  aria-label={`Выбрать нишу: ${t}`}
-                >
-                  {t}
-                </div>
-              ))}
+            <div className="w-max pr-1">
+              <div className="flex gap-3">
+                {mobileRow1.map((t) => (
+                  <div
+                    key={t}
+                    className="btn-lift-outline inline-flex cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
+                    onClick={() => setSelectedNiche(t)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setSelectedNiche(t);
+                    }}
+                    aria-label={`Выбрать нишу: ${t}`}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 flex gap-3">
+                {mobileRow2.map((t) => (
+                  <div
+                    key={t}
+                    className="btn-lift-outline inline-flex cursor-pointer select-none rounded-sm bg-accent-3 px-4 py-3 text-[12px] font-semibold leading-snug text-text"
+                    onClick={() => setSelectedNiche(t)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setSelectedNiche(t);
+                    }}
+                    aria-label={`Выбрать нишу: ${t}`}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
