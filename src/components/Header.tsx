@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Menu, X } from "lucide-react";
 import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
 const NAV = [
-  { href: "#product", label: "продукт" }, // DemoChat
-  { href: "#pricing", label: "стоимость" }, // Packages
-  { href: "https://t.me/uni_smb", label: "обновления" }, // external
-  { href: "#about", label: "о нас" }, // ServicesIntegrations
+  { href: "#product", label: "продукт" },
+  { href: "#pricing", label: "стоимость" },
+  { href: "https://t.me/uni_smb", label: "обновления" },
+  { href: "#integrations", label: "о нас" },
 ] as const;
 
 type Marks = {
@@ -33,16 +34,25 @@ function isExternal(href: string) {
 
 export function Header() {
   const [hidden, setHidden] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const lastYRef = useRef(0);
-  const marksRef = useRef<Marks>({ hero: 0, info: INF, pricing: INF, faq: INF, footer: INF });
+  const marksRef = useRef<Marks>({
+    hero: 0,
+    info: INF,
+    pricing: INF,
+    faq: INF,
+    footer: INF,
+  });
+
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const HEADER_H = 64;
 
     const elHero = document.getElementById("hero");
-    const elInfo = document.getElementById("info"); // InfoBlocks (точка появления)
-    const elPricing = document.getElementById("pricing"); // Packages
+    const elInfo = document.getElementById("info");
+    const elPricing = document.getElementById("pricing");
     const elFaq = document.getElementById("faq");
     const elFooter = document.getElementById("footer");
 
@@ -114,6 +124,10 @@ export function Header() {
     const onResize = () => {
       recalc();
       onScroll();
+
+      if (window.innerWidth >= 768) {
+        setMenuOpen(false);
+      }
     };
 
     recalc();
@@ -139,53 +153,284 @@ export function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const panelTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.42, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 14, filter: "blur(6px)" },
+    show: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: reduceMotion
+        ? { duration: 0 }
+        : {
+            duration: 0.38,
+            delay: 0.06 + i * 0.045,
+            ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+          },
+    }),
+    exit: {
+      opacity: 0,
+      y: 8,
+      filter: "blur(4px)",
+      transition: reduceMotion ? { duration: 0 } : { duration: 0.2 },
+    },
+  };
+
   return (
-    <motion.header
-      className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur px-1"
-      initial={false}
-      animate={{ y: hidden ? -80 : 0 }}
-      transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Container>
-        <div className="flex h-16 items-center">
-          <Link href="#hero" className="flex items-center">
-            <img src={withBasePath("/brand/logo.svg")} alt="ЮНИ.ai" className="block h-9 w-auto" />
-          </Link>
+    <>
+      <motion.header
+        className="sticky top-0 z-50 border-b border-text/10 bg-bg/90 backdrop-blur px-1"
+        initial={false}
+        animate={{ y: menuOpen ? 0 : hidden ? -80 : 0 }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
+        }
+      >
+        <Container>
+          <div className="flex h-16 items-center">
+            <Link href="#hero" className="flex items-center" onClick={closeMenu}>
+              <img
+                src={withBasePath("/brand/logo.svg")}
+                alt="ЮНИ.ai"
+                className="block h-9 w-auto"
+              />
+            </Link>
 
-          <div className="ml-auto flex items-center justify-end gap-6">
-            <nav className="hidden items-center gap-6 md:flex">
-              {NAV.map((item) => {
-                const ext = isExternal(item.href);
-                return (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    target={ext ? "_blank" : undefined}
-                    rel={ext ? "noreferrer" : undefined}
-                    className="text-sm opacity-70 hover-accent"
-                  >
-                    {item.label}
-                  </a>
-                );
-              })}
-            </nav>
+            <div className="ml-auto flex items-center justify-end gap-6">
+              <nav className="hidden items-center gap-6 md:flex">
+                {NAV.map((item) => {
+                  const ext = isExternal(item.href);
 
-            <a
-              href="https://uni-ai.online/login"
-              className="btn-lift-outline rounded-sm border border-accent-1 px-4 py-2 text-sm font-semibold text-accent-1"
-            >
-              войти
-            </a>
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target={ext ? "_blank" : undefined}
+                      rel={ext ? "noreferrer" : undefined}
+                      className="text-sm opacity-70 hover-accent"
+                    >
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </nav>
 
-            <a
-              href="https://uni-ai.online/"
-              className="btn-lift-accent1 rounded-sm bg-accent-1 px-4 py-2 text-sm font-semibold text-bg"
-            >
-              начать бесплатно
-            </a>
+              <div className="hidden items-center gap-3 md:flex">
+                <a
+                  href="https://uni-ai.online/login"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-lift-outline rounded-sm border border-accent-1 px-4 py-2 text-sm font-semibold text-accent-1"
+                >
+                  войти
+                </a>
+
+                <a
+                  href="https://uni-ai.online/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-lift-accent1 rounded-sm bg-accent-1 px-4 py-2 text-sm font-semibold text-bg"
+                >
+                  начать бесплатно
+                </a>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="btn-lift-outline inline-flex h-11 w-11 items-center justify-center rounded-xl border border-text/10 bg-bg/60 md:hidden"
+                aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-header-menu"
+              >
+                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
-        </div>
-      </Container>
-    </motion.header>
+        </Container>
+      </motion.header>
+
+      <AnimatePresence>
+        {menuOpen ? (
+          <motion.div
+            id="mobile-header-menu"
+            className="fixed inset-x-0 top-16 bottom-0 z-40 bg-bg md:hidden"
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -14 }}
+            transition={panelTransition}
+          >
+            <div className="h-full overflow-y-auto">
+              <Container className="h-full px-6">
+                <div className="flex min-h-full flex-col py-6">
+                  <motion.nav
+                    className="grid gap-3"
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                  >
+                    {NAV.map((item, i) => {
+                      const ext = isExternal(item.href);
+
+                      return (
+                        <motion.a
+                          key={item.href}
+                          custom={i}
+                          variants={itemVariants}
+                          href={item.href}
+                          target={ext ? "_blank" : undefined}
+                          rel={ext ? "noreferrer" : undefined}
+                          onClick={closeMenu}
+                          className="btn-lift-outline rounded-2xl border border-text/10 bg-accent-3 px-5 py-4 text-[16px] font-semibold text-text"
+                        >
+                          {item.label}
+                        </motion.a>
+                      );
+                    })}
+                  </motion.nav>
+
+                  <motion.div
+                    custom={4}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                    className="mt-8"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-accent-3 px-5 text-[22px] font-normal hover-accent">
+                        道
+                      </span>
+                      <span className="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-accent-3 px-5 text-[22px] font-normal hover-accent">
+                        改善
+                      </span>
+                    </div>
+
+                    <div className="mt-3 text-[14px] font-medium leading-snug text-text/65">
+                      наши продукты
+                      <br />
+                      японского качества
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    custom={5}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                    className="mt-8 grid gap-5"
+                  >
+                    <div>
+                      <div className="text-[13px] font-medium text-text/45">наш telegram</div>
+                      <a
+                        href="https://t.me/uni_smb"
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={closeMenu}
+                        className="mt-1 block text-[18px] font-semibold hover-accent"
+                      >
+                        @uni_smb
+                      </a>
+                    </div>
+
+                    <div>
+                      <div className="text-[13px] font-medium text-text/45">email для связи</div>
+                      <a
+                        href="mailto:uni.kit@mail.ru"
+                        onClick={closeMenu}
+                        className="mt-1 block text-[18px] font-semibold hover-accent"
+                      >
+                        uni.kit@mail.ru
+                      </a>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    custom={6}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                    className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
+                  >
+                    <a
+                      href="https://uni-ai.online/login"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={closeMenu}
+                      className="btn-lift-outline inline-flex items-center justify-center rounded-xl border border-accent-1 px-5 py-3 text-[15px] font-semibold text-accent-1"
+                    >
+                      войти
+                    </a>
+
+                    <a
+                      href="https://uni-ai.online/"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={closeMenu}
+                      className="btn-lift-accent1 inline-flex items-center justify-center rounded-xl bg-accent-1 px-5 py-3 text-[15px] font-semibold text-bg"
+                    >
+                      начать бесплатно
+                    </a>
+                  </motion.div>
+
+                  <motion.div
+                    custom={7}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                    className="mt-auto pt-8"
+                  >
+                    <div className="h-px w-screen -translate-x-6 bg-text/10" />
+                    <div className="flex items-center justify-between gap-4 pt-5 text-[12px] font-medium text-text/55">
+                      <span>© 2026 (ООО "БЭНИФИТ")</span>
+                      <span>Сделано ЮНИ.ai</span>
+                    </div>
+                  </motion.div>
+                </div>
+              </Container>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </>
   );
 }
