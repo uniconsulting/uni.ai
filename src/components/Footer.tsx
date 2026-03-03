@@ -345,14 +345,14 @@ export function Footer() {
         <div className="relative text-bg lg:h-[100px]">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-accent-2"
+            className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-accent-3"
           />
 
           <div className="relative flex h-full items-center justify-between px-10 lg:px-12">
-            <div className="text-[16px] font-medium text-accent-3 transition-colors duration-300 hover:text-text">
+            <div className="text-[16px] font-medium text-text transition-colors duration-300 hover-accent">
               © 2026 (ООО "БЭНИФИТ")
             </div>
-            <div className="text-[16px] font-medium text-accent-3 transition-colors duration-300 hover:text-text">
+            <div className="text-[16px] font-medium text-text transition-colors duration-300 hover-accent">
               Сделано ЮНИ.ai
             </div>
           </div>
