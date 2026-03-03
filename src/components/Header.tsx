@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Menu, X } from "lucide-react";
 import { Container } from "@/components/Container";
 import { withBasePath } from "@/lib/basePath";
 
@@ -30,6 +29,58 @@ function topOf(el: HTMLElement | null) {
 
 function isExternal(href: string) {
   return /^https?:\/\//.test(href);
+}
+
+function toMenuLabel(label: string) {
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function BurgerButton({
+  open,
+  onClick,
+}: {
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={open ? "Закрыть меню" : "Открыть меню"}
+      aria-expanded={open}
+      aria-controls="mobile-header-menu"
+      className="relative inline-flex h-12 w-12 appearance-none items-center justify-center border-0 bg-transparent p-0 text-text md:hidden"
+    >
+      <span className="relative block h-7 w-7">
+        <motion.span
+          aria-hidden
+          className="absolute left-0 top-[4px] h-[2.5px] w-full rounded-full bg-current"
+          animate={
+            open
+              ? { top: "12px", rotate: 45, scaleX: 1 }
+              : { top: "4px", rotate: 0, scaleX: 1 }
+          }
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        />
+        <motion.span
+          aria-hidden
+          className="absolute left-0 top-[12px] h-[2.5px] w-full rounded-full bg-current"
+          animate={open ? { opacity: 0, scaleX: 0.65 } : { opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        />
+        <motion.span
+          aria-hidden
+          className="absolute left-0 top-[20px] h-[2.5px] w-full rounded-full bg-current"
+          animate={
+            open
+              ? { top: "12px", rotate: -45, scaleX: 1 }
+              : { top: "20px", rotate: 0, scaleX: 1 }
+          }
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </span>
+    </button>
+  );
 }
 
 export function Header() {
@@ -271,16 +322,7 @@ export function Header() {
                 </a>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                className="btn-lift-outline inline-flex h-11 w-11 items-center justify-center rounded-xl border border-text/10 bg-bg/60 md:hidden"
-                aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"}
-                aria-expanded={menuOpen}
-                aria-controls="mobile-header-menu"
-              >
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
+              <BurgerButton open={menuOpen} onClick={() => setMenuOpen((v) => !v)} />
             </div>
           </div>
         </Container>
@@ -317,9 +359,9 @@ export function Header() {
                           target={ext ? "_blank" : undefined}
                           rel={ext ? "noreferrer" : undefined}
                           onClick={closeMenu}
-                          className="btn-lift-outline rounded-2xl border border-text/10 bg-accent-3 px-5 py-4 text-[16px] font-semibold text-text"
+                          className="block py-1 text-[32px] font-semibold leading-[0.95] tracking-tight text-text hover-accent"
                         >
-                          {item.label}
+                          {toMenuLabel(item.label)}
                         </motion.a>
                       );
                     })}
@@ -333,19 +375,19 @@ export function Header() {
                     exit="exit"
                     className="mt-8"
                   >
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-accent-3 px-5 text-[22px] font-normal hover-accent">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-xl bg-accent-3 px-3 text-[18px] font-normal hover-accent">
                         道
                       </span>
-                      <span className="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-accent-3 px-5 text-[22px] font-normal hover-accent">
+                      <span className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-xl bg-accent-3 px-3 text-[18px] font-normal hover-accent">
                         改善
                       </span>
-                    </div>
 
-                    <div className="mt-3 text-[14px] font-medium leading-snug text-text/65">
-                      наши продукты
-                      <br />
-                      японского качества
+                      <div className="text-[14px] font-medium leading-snug text-text/65">
+                        наши продукты
+                        <br />
+                        японского качества
+                      </div>
                     </div>
                   </motion.div>
 
@@ -355,7 +397,7 @@ export function Header() {
                     initial="hidden"
                     animate="show"
                     exit="exit"
-                    className="mt-8 grid gap-5"
+                    className="mt-8 grid gap-6"
                   >
                     <div>
                       <div className="text-[13px] font-medium text-text/45">наш telegram</div>
@@ -364,7 +406,7 @@ export function Header() {
                         target="_blank"
                         rel="noreferrer"
                         onClick={closeMenu}
-                        className="mt-1 block text-[18px] font-semibold hover-accent"
+                        className="mt-2 block text-[32px] font-semibold leading-[0.95] hover-accent"
                       >
                         @uni_smb
                       </a>
@@ -375,7 +417,7 @@ export function Header() {
                       <a
                         href="mailto:uni.kit@mail.ru"
                         onClick={closeMenu}
-                        className="mt-1 block text-[18px] font-semibold hover-accent"
+                        className="mt-2 block break-all text-[32px] font-semibold leading-[0.95] hover-accent"
                       >
                         uni.kit@mail.ru
                       </a>
@@ -388,14 +430,14 @@ export function Header() {
                     initial="hidden"
                     animate="show"
                     exit="exit"
-                    className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
+                    className="mt-8 grid grid-cols-[108px_minmax(0,1fr)] gap-3"
                   >
                     <a
                       href="https://uni-ai.online/login"
                       target="_blank"
                       rel="noreferrer"
                       onClick={closeMenu}
-                      className="btn-lift-outline inline-flex items-center justify-center rounded-xl border border-accent-1 px-5 py-3 text-[15px] font-semibold text-accent-1"
+                      className="btn-lift-outline inline-flex h-11 items-center justify-center rounded-xl border border-accent-1 px-4 text-[14px] font-semibold text-accent-1"
                     >
                       войти
                     </a>
@@ -405,7 +447,7 @@ export function Header() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={closeMenu}
-                      className="btn-lift-accent1 inline-flex items-center justify-center rounded-xl bg-accent-1 px-5 py-3 text-[15px] font-semibold text-bg"
+                      className="btn-lift-accent1 inline-flex h-11 items-center justify-center rounded-xl bg-accent-1 px-5 text-[14px] font-semibold text-bg whitespace-nowrap"
                     >
                       начать бесплатно
                     </a>
