@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Container } from "@/components/Container";
-import { ChevronDown, Mic, SendHorizontal, Settings } from "lucide-react";
+import { ChevronDown, Menu, Mic, SendHorizontal, X } from "lucide-react";
 import { withBasePath } from "@/lib/basePath";
 
 const PILLS = [
@@ -150,6 +151,7 @@ function stubAnswer(mode: Mode, niche: string, text: string) {
       : mode === "support"
         ? "Ок, помогу как тех-поддержка."
         : "Ок, отвечу как справочник.";
+
   return `${head}\n\nНиша: ${niche}.\nВопрос: ${text}\n\n(Демо-ответ. Позже тут будет ответ LLM по API.)`;
 }
 
@@ -159,6 +161,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -176,6 +179,15 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [msgs.length, typing, empty]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const send = (text: string) => {
     const t = text.trim();
@@ -201,7 +213,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
 
-    // 2) ширина по самому длинному тексту
     const longest = useMemo(() => PILLS.reduce((a, b) => (a.length >= b.length ? a : b)), []);
     const measureRef = useRef<HTMLSpanElement | null>(null);
     const [w, setW] = useState<number | undefined>(undefined);
@@ -211,7 +222,6 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
       if (!el) return;
 
       const textW = el.getBoundingClientRect().width;
-      // px-4 + px-4 + gap-2 + chevron(16px)
       const extra = 16 + 16 + 8 + 16;
       setW(Math.ceil(textW + extra));
     }, [longest]);
@@ -222,12 +232,14 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
         if (!root) return;
         if (!root.contains(e.target as Node)) setOpen(false);
       };
+
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") setOpen(false);
       };
 
       window.addEventListener("pointerdown", onDown);
       window.addEventListener("keydown", onKey);
+
       return () => {
         window.removeEventListener("pointerdown", onDown);
         window.removeEventListener("keydown", onKey);
@@ -290,34 +302,138 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     );
   }
 
+  function MobileSelectMenu() {
+    return (
+      <AnimatePresence>
+        {mobileMenuOpen ? (
+          <motion.div
+            className="absolute inset-x-0 top-0 z-30 md:hidden"
+            initial={{ opacity: 0, y: -14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="overflow-hidden rounded-b-[28px] border-b border-text/10 bg-bg shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
+              <div className="px-5 py-5">
+                <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
+                  Направление
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {PILLS.map((item) => {
+                    const active = item === niche;
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setNiche(item)}
+                        className={
+                          active
+                            ? "rounded-2xl bg-accent-3 px-4 py-3 text-left text-[13px] font-semibold text-text"
+                            : "rounded-2xl bg-bg px-4 py-3 text-left text-[13px] font-semibold text-text/65 ring-1 ring-text/10"
+                        }
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 text-[12px] font-semibold uppercase tracking-[0.08em] text-text/45">
+                  Роль
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {(["sales", "support", "kb"] as const).map((m) => {
+                    const active = m === mode;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMode(m)}
+                        className={
+                          active
+                            ? "rounded-2xl bg-accent-1 px-4 py-3 text-left text-[13px] font-semibold text-bg"
+                            : "rounded-2xl bg-bg px-4 py-3 text-left text-[13px] font-semibold text-text/65 ring-1 ring-text/10"
+                        }
+                      >
+                        {MODE_LABEL[m]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    );
+  }
+
   return (
     <div className="w-full">
       <div className="rounded-[33px] bg-gradient-to-r from-accent-1 to-accent-2 p-[1px]">
         <div className="overflow-hidden rounded-3xl bg-accent-3">
-          {/* header */}
-          <div className="bg-bg px-4 py-3">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              <div className="justify-self-start">
-                <NicheDropdown />
-              </div>
+          <div className="relative">
+            <MobileSelectMenu />
 
-              <div className="justify-self-center text-center leading-none">
-                <div className="text-[13px] font-semibold text-text">ЮНИ.ai</div>
-                <div className="mt-1 text-[11px] font-medium text-text/50">
-                  {typing ? "...печатает" : "в сети"}
+            {/* header desktop */}
+            <div className="hidden bg-bg px-4 py-3 md:block">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <div className="justify-self-start">
+                  <NicheDropdown />
+                </div>
+
+                <div className="justify-self-center text-center leading-none">
+                  <div className="text-[13px] font-semibold text-text">ЮНИ.ai</div>
+                  <div className="mt-1 text-[11px] font-medium text-text/50">
+                    {typing ? "...печатает" : "в сети"}
+                  </div>
+                </div>
+
+                <div className="justify-self-end">
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10">
+                    <img
+                      src={withBasePath("/brand/uni-logo.svg")}
+                      alt="ЮНИ"
+                      className="h-[120%] w-[120%] object-contain"
+                      draggable={false}
+                    />
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="justify-self-end">
-                {/* 3) SVG-лого внутри рамки */}
-<div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent-3 ring-1 ring-text/10 overflow-hidden">
-  <img
-    src={withBasePath("/brand/uni-logo.svg")}
-    alt="ЮНИ"
-    className="h-[120%] w-[120%] object-contain"
-    draggable={false}
-  />
-</div>
+            {/* header mobile */}
+            <div className="bg-bg px-4 py-3 md:hidden">
+              <div className="grid grid-cols-[40px_1fr_40px] items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((v) => !v)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-3 text-text ring-1 ring-text/10"
+                  aria-label={mobileMenuOpen ? "Закрыть выбор" : "Открыть выбор"}
+                  aria-expanded={mobileMenuOpen}
+                >
+                  {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                </button>
+
+                <div className="text-center leading-none">
+                  <div className="text-[13px] font-semibold text-text">ЮНИ.ai</div>
+                  <div className="mt-1 text-[11px] font-medium text-text/50">
+                    {typing ? "...печатает" : "в сети"}
+                  </div>
+                </div>
+
+                <div className="justify-self-end">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-accent-3 ring-1 ring-text/10">
+                    <img
+                      src={withBasePath("/brand/uni-logo.svg")}
+                      alt="ЮНИ"
+                      className="h-[120%] w-[120%] object-contain"
+                      draggable={false}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -329,13 +445,15 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                   <div>
                     <div className="text-[14px] font-semibold text-text">
-                      Выберите нишу и роль, затем задайте вопрос
-                    </div>
-                    <div className="mt-2 text-[12px] font-medium text-text/55">
-                      Для быстрого старта используйте FAQ-кнопки над строкой ввода.
+                      Выберите направление и роль,
+                      <br className="md:hidden" /> затем задайте вопрос
                     </div>
 
-                    <div className="mt-6 inline-flex rounded-2xl bg-bg p-1">
+                    <div className="mt-2 text-[12px] font-medium text-text/55">
+                      Для быстрого старта используйте сообщения над строкой ввода.
+                    </div>
+
+                    <div className="mt-6 hidden md:inline-flex rounded-2xl bg-bg p-1">
                       {(["sales", "support", "kb"] as const).map((m) => {
                         const active = m === mode;
                         return (
@@ -363,8 +481,8 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                         <div
                           className={
                             m.role === "user"
-                              ? "max-w-[78%] whitespace-pre-wrap rounded-3xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
-                              : "max-w-[78%] whitespace-pre-wrap rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
+                              ? "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-accent-1 px-4 py-3 text-[12px] font-medium text-bg"
+                              : "max-w-[82%] whitespace-pre-wrap rounded-3xl bg-bg px-4 py-3 text-[12px] font-medium text-text"
                           }
                         >
                           {m.text}
@@ -385,8 +503,24 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
             </div>
 
             {/* footer */}
-            <div className="bg-bg px-6 pb-6 pt-4">
-              <div className="mb-3 flex flex-wrap gap-3">
+            <div className="bg-bg px-4 pb-4 pt-4 md:px-6 md:pb-6">
+              {/* mobile: one line carousel */}
+              <div className="mb-3 md:hidden overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex w-max gap-3 pr-1">
+                  {presets.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => pickPreset(t)}
+                      className="whitespace-nowrap rounded-2xl bg-accent-3 px-4 py-2.5 text-[12px] font-semibold text-text"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* desktop presets */}
+              <div className="mb-3 hidden flex-wrap gap-3 md:flex">
                 {presets.slice(0, 3).map((t) => (
                   <button
                     key={t}
@@ -398,14 +532,13 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                 ))}
               </div>
 
-              {/* 1) input row: одинаковые отступы вокруг send, кнопки "левее" */}
               <div className="flex h-14 items-center gap-3 rounded-xl bg-accent-3 p-2 pl-4">
                 <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Сообщение"
-                  className="h-10 flex-1 min-w-0 bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
+                  className="h-10 min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-text placeholder:text-text/40 outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -436,7 +569,7 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
               </div>
 
               {!empty && (
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 hidden justify-center md:flex">
                   <div className="inline-flex rounded-2xl bg-accent-3 p-1">
                     {(["sales", "support", "kb"] as const).map((m) => {
                       const active = m === mode;
@@ -475,33 +608,30 @@ export function DemoChat() {
         className="pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 bg-text/10"
       />
 
+      {/* desktop divider only */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[160px] md:h-[320px] lg:h-[340px] w-px -translate-x-1/2 bg-text/10"
+        className="pointer-events-none absolute left-1/2 top-0 hidden h-[320px] w-px -translate-x-1/2 bg-text/10 md:block lg:h-[340px]"
       />
 
-      <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
-        {/* === Этап №1 (НЕ ТРОГАЕМ) === */}
-        <div className="grid gap-10 md:grid-cols-2 md:gap-0">
-          <div className="md:pr-12">
-            <div className="flex items-start gap-5">
-              <div className="shrink-0">
-                <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent-1">
-                  <Settings className="h-6 w-6 text-bg" strokeWidth={2.2} />
-                </div>
-              </div>
+      <Container className="relative z-10 px-6 py-12 md:px-10 md:py-14 lg:px-12">
+        {/* mobile */}
+        <div className="md:hidden">
+          <div className="text-[18px] font-medium opacity-70 hover-accent">demo-чат</div>
 
-              <h2 className="font-extrabold leading-[0.95] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
-                <span className="block">Готовые настройки</span>
-                <span className="block">для многих направлений</span>
-              </h2>
-            </div>
+          <div className="mt-4">
+            <h2 className="font-extrabold leading-[0.95] tracking-tight text-[26px]">
+              <span className="block">Готовые настройки</span>
+              <span className="block">для многих направлений</span>
+            </h2>
+          </div>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-6 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid w-max grid-flow-col grid-rows-2 gap-x-3 gap-y-3 pr-1">
               {PILLS.map((t) => (
                 <div
                   key={t}
-                  className="btn-lift-outline rounded-sm bg-accent-3 px-7 py-4 text-[12px] font-semibold leading-snug text-text cursor-pointer select-none"
+                  className="btn-lift-outline cursor-pointer select-none rounded-sm bg-accent-3 px-5 py-3 text-[12px] font-semibold leading-snug text-text"
                   onClick={() => setSelectedNiche(t)}
                   role="button"
                   tabIndex={0}
@@ -516,18 +646,53 @@ export function DemoChat() {
             </div>
           </div>
 
-          <div className="md:pl-12">
-            <div className="flex items-start justify-end">
-              <div className="hover-accent text-[18px] font-medium opacity-70">demo-чат</div>
-            </div>
-
-            <div className="mt-10 min-h-[260px]" />
+          <div className="mt-8">
+            <DemoChatWidget initialNiche={selectedNiche} />
           </div>
         </div>
 
-        {/* === Этап №2 === */}
-        <div className="mt-12 md:mt-14">
-          <DemoChatWidget initialNiche={selectedNiche} />
+        {/* desktop */}
+        <div className="hidden md:block">
+          <div className="grid gap-10 md:grid-cols-2 md:gap-0">
+            <div className="md:pr-12">
+              <div className="flex items-start gap-5">
+                <h2 className="font-extrabold leading-[0.95] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
+                  <span className="block">Готовые настройки</span>
+                  <span className="block">для многих направлений</span>
+                </h2>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                {PILLS.map((t) => (
+                  <div
+                    key={t}
+                    className="btn-lift-outline cursor-pointer select-none rounded-sm bg-accent-3 px-7 py-4 text-[12px] font-semibold leading-snug text-text"
+                    onClick={() => setSelectedNiche(t)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setSelectedNiche(t);
+                    }}
+                    aria-label={`Выбрать нишу: ${t}`}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="md:pl-12">
+              <div className="flex items-start justify-end">
+                <div className="hover-accent text-[18px] font-medium opacity-70">demo-чат</div>
+              </div>
+
+              <div className="mt-10 min-h-[260px]" />
+            </div>
+          </div>
+
+          <div className="mt-12 md:mt-14">
+            <DemoChatWidget initialNiche={selectedNiche} />
+          </div>
         </div>
       </Container>
     </section>
