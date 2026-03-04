@@ -258,7 +258,7 @@ function MobileServiceCard({
                   onClick={onPrev}
                   disabled={!canPrev}
                   className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-full bg-bg/60",
                     canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
                   ].join(" ")}
                   aria-label="Предыдущая услуга"
@@ -281,7 +281,7 @@ function MobileServiceCard({
                   onClick={onNext}
                   disabled={!canNext}
                   className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-full bg-bg/60",
                     canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
                   ].join(" ")}
                   aria-label="Следующая услуга"
