@@ -1081,7 +1081,7 @@ export function Packages() {
               Сделай выбор
             </div>
 
-            <div className="mt-3 text-[18px] font-semibold leading-[1.08] tracking-tight text-text">
+            <div className="mt-3 text-[20px] font-semibold leading-[1.08] tracking-tight text-text">
               Прозрачные условия,
               <br />
               никаких скрытых платежей
@@ -1100,7 +1100,7 @@ export function Packages() {
                     }
                     aria-pressed={billing === "monthly"}
                   >
-                    Ежемесячно
+                    ежемесячно
                   </button>
 
                   <button
@@ -1114,7 +1114,7 @@ export function Packages() {
                     aria-pressed={billing === "yearly"}
                   >
                     <span className="inline-flex items-center gap-2">
-                      <span>Годовой</span>
+                      <span>годовой</span>
                       <span
                         className={
                           billing === "yearly" ? "text-text/55" : "text-bg/70"
@@ -1208,7 +1208,7 @@ export function Packages() {
                         }
                         aria-pressed={billing === "monthly"}
                       >
-                        Ежемесячно
+                        ежемесячно
                       </button>
 
                       <button
@@ -1222,7 +1222,7 @@ export function Packages() {
                         aria-pressed={billing === "yearly"}
                       >
                         <span className="inline-flex items-center gap-3">
-                          <span>Годовой</span>
+                          <span>годовой</span>
                           <span
                             className={
                               billing === "yearly"
