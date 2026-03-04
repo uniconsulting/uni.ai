@@ -1189,9 +1189,6 @@ export function ServicesIntegrations() {
           <span className="leading-none">процесс</span>
         </span>
       </button>
-    </div>
-  </div>
-</div>
                 </div>
               </div>
             </div>
