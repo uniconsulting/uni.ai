@@ -479,15 +479,8 @@ function MobilePlanCard({
 
   return (
     <MobileScaleFrame>
-      <motion.div
+      <div
         className="h-full w-full"
-        animate={{ x: [0, 5, -5, 0] }}
-        transition={{
-          duration: 0.58,
-          ease: [0.16, 1, 0.3, 1],
-          repeat: Infinity,
-          repeatDelay: 2.4,
-        }}
         onTouchStart={(e) => {
           const t = e.touches[0];
           touchStartX.current = t.clientX;
@@ -515,7 +508,6 @@ function MobilePlanCard({
         >
           <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
             <div className="flex items-start justify-between gap-4">
-              {/* title: в тон пакета */}
               <div
                 className="text-[56px] font-extrabold leading-none"
                 style={{ color: isNeutral ? "var(--text)" : planHex }}
@@ -524,7 +516,17 @@ function MobilePlanCard({
               </div>
 
               <div className="inline-flex h-[54px] w-[54px] items-center justify-center rounded-full bg-bg/65">
-                <MoveHorizontal className="h-6 w-6 text-text/55" />
+                <motion.div
+                  animate={{ x: [0, 5, -5, 0] }}
+                  transition={{
+                    duration: 0.58,
+                    ease: [0.16, 1, 0.3, 1],
+                    repeat: Infinity,
+                    repeatDelay: 2.4,
+                  }}
+                >
+                  <MoveHorizontal className="h-6 w-6 text-text/55" />
+                </motion.div>
               </div>
             </div>
 
@@ -534,7 +536,6 @@ function MobilePlanCard({
               <div>{plan.mobileDesc3[2]}</div>
             </div>
 
-            {/* divider #1 */}
             <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <div className="mt-[9px] flex items-baseline gap-3">
@@ -556,7 +557,6 @@ function MobilePlanCard({
               {plan.integrations2[0]}
             </div>
 
-            {/* divider #2 */}
             <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <div className="mt-[30px] text-[24px] font-extrabold leading-none text-text">
@@ -569,7 +569,6 @@ function MobilePlanCard({
               <div>{plan.params3[2]}</div>
             </div>
 
-            {/* divider #3 */}
             <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <button
@@ -634,7 +633,7 @@ function MobilePlanCard({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </MobileScaleFrame>
   );
 }
