@@ -78,6 +78,38 @@ function useOnceInView<T extends HTMLElement>(
   return { ref, inView };
 }
 
+function mobileLeadLinesByPlan(id: PlanId) {
+  switch (id) {
+    case "test":
+      return [
+        "Соберите первых ассистентов",
+        "и оцените интерфейс, аналитику",
+        "и логику работы.",
+      ] as const;
+
+    case "small":
+      return [
+        "Для небольших команд: быстрый запуск",
+        "по инструкциям ЮНИ + лёгкая",
+        "помощь эксперта.",
+      ] as const;
+
+    case "mid":
+      return [
+        "Для масштабирования",
+        "действующих процессов.",
+        "Полноценная интеграция командой ЮНИ.",
+      ] as const;
+
+    case "ent":
+      return [
+        "Для крупных компаний:",
+        "макс. персонализации, SLA и",
+        "постоянное вовлечение команды ЮНИ.",
+      ] as const;
+  }
+}
+
 function DetailsFrame({
   plan,
   details,
@@ -270,13 +302,12 @@ function MobileDetailsFrame({
 }) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const isNeutral = plan.tone === "neutral";
+  const leadLines = mobileLeadLinesByPlan(plan.id);
+  const mobileCta = plan.id === "mid" ? "Подключить" : plan.cta;
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [plan.id]);
-
-  const mobileCta =
-    plan.id === "mid" ? "Подключить" : plan.cta;
 
   return (
     <div
@@ -295,9 +326,10 @@ function MobileDetailsFrame({
                 {plan.title}
               </div>
 
-              <div className="mt-3 w-full text-[13px] font-medium leading-[1.18] text-text/80">
-                <div>{details.lead.split(" ").slice(0, Math.ceil(details.lead.split(" ").length / 2)).join(" ")}</div>
-                <div>{details.lead.split(" ").slice(Math.ceil(details.lead.split(" ").length / 2)).join(" ")}</div>
+              <div className="mt-3 w-full max-w-none space-y-1 text-left text-[13px] font-medium leading-[1.16] text-text/82">
+                {leadLines.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
               </div>
             </div>
 
@@ -352,14 +384,13 @@ function MobileDetailsFrame({
                   {s.title}
                 </div>
 
-                <ul className="mt-3 space-y-2 text-[13px] font-medium leading-snug text-text/80">
+                <div className="mt-3 space-y-2 text-left text-[13px] font-medium leading-snug text-text/80">
                   {s.items.map((it) => (
-                    <li key={it} className="flex gap-2">
-                      <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-text/35" />
-                      <span className="text-left">{it}</span>
-                    </li>
+                    <div key={it} className="text-left">
+                      {it}
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             ))}
           </div>
@@ -433,7 +464,7 @@ export function Packages() {
         id: "mid",
         title: "Средний",
         tone: "green",
-        desc4: ["Для масштабирования", "действующих процессов.", "Полноценная интеграция", "командой ЮНИ."],
+        desc4: ["Для масштабирования", "действующих процессов.", "Полноценная интеграция", "под ключ командой ЮНИ."],
         monthly: 39900,
         integrations2: ["интеграции: от 179 900₽ / разово", ""],
         params3: ["10 кастомных агентов", "+ вся библиотека готовых", "До 30 000 сообщений / мес"],
@@ -617,13 +648,14 @@ export function Packages() {
   const closeDetails = () => setExpanded(null);
 
   const CARD_H = 740;
-  const MOBILE_CARD_H = 518;
+  const MOBILE_CARD_H = 470;
   const W_INACTIVE = "25%";
   const W_ACTIVE = "30%";
   const ACTIVE_SHIFT = "2.5%";
 
   const activeIdx = plans.findIndex((p) => p.id === active);
   const activePlan = plans[activeIdx] ?? plans[0];
+  const mobileLeadLines = mobileLeadLinesByPlan(activePlan.id);
 
   const leftFor = (i: number) => {
     if (i !== activeIdx) return `${i * 25}%`;
@@ -755,13 +787,6 @@ export function Packages() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expanded, expandedIdx, canPrev, canNext, plans, activeIdx]);
-
-  const mobileLeadLines = activePlan.desc4.length >= 4
-    ? [
-        `${activePlan.desc4[0]} ${activePlan.desc4[1]}`,
-        `${activePlan.desc4[2]} ${activePlan.desc4[3]}`,
-      ]
-    : [activePlan.desc4.join(" "), ""];
 
   const mobileCta = activePlan.id === "mid" ? "Подключить" : activePlan.cta;
 
@@ -997,8 +1022,8 @@ export function Packages() {
                         className="h-full overflow-hidden rounded-[24px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
                         style={{ ["--plan" as any]: TONE[activePlan.tone].hex }}
                       >
-                        <div className="grid h-full grid-rows-[144px_86px_118px_170px]">
-                          <div className="border-b border-text/20 px-6 pt-5 pb-3">
+                        <div className="grid h-full grid-rows-[124px_74px_102px_170px]">
+                          <div className="border-b border-text/20 px-6 pt-5 pb-2">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className={`text-[26px] font-extrabold leading-none ${
@@ -1010,14 +1035,15 @@ export function Packages() {
                                 {activePlan.title}
                               </div>
 
-                              <div className="w-full space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
-                                <div>{mobileLeadLines[0]}</div>
-                                <div>{mobileLeadLines[1]}</div>
+                              <div className="w-full space-y-[2px] text-[13px] font-medium leading-[1.12] text-text/90">
+                                {mobileLeadLines.map((line) => (
+                                  <div key={line}>{line}</div>
+                                ))}
                               </div>
                             </div>
                           </div>
 
-                          <div className="border-b border-text/20 px-6 py-3">
+                          <div className="border-b border-text/20 px-6 py-2">
                             <div className="flex h-full flex-col justify-between">
                               <div className="flex items-baseline gap-2">
                                 <div
@@ -1034,19 +1060,19 @@ export function Packages() {
                                 </div>
                               </div>
 
-                              <div className="mt-1 text-[11px] font-semibold text-text/45">
+                              <div className="text-[11px] font-semibold leading-none text-text/45">
                                 {activePlan.integrations2[0]}
                               </div>
                             </div>
                           </div>
 
-                          <div className="border-b border-text/20 px-6 py-3">
+                          <div className="border-b border-text/20 px-6 py-2">
                             <div className="flex h-full flex-col justify-between">
                               <div className="text-[14px] font-extrabold text-text">
                                 Ключевые параметры
                               </div>
 
-                              <div className="space-y-1 text-[13px] font-medium leading-[1.12] text-text/90">
+                              <div className="space-y-[2px] text-[13px] font-medium leading-[1.12] text-text/90">
                                 {activePlan.params3.map((l) => (
                                   <div key={l}>{l}</div>
                                 ))}
@@ -1054,7 +1080,7 @@ export function Packages() {
                             </div>
                           </div>
 
-                          <div className="px-6 py-3">
+                          <div className="px-6 py-2">
                             <div className="flex h-full flex-col justify-between">
                               <div
                                 className="flex items-center gap-3 text-[14px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
@@ -1068,7 +1094,7 @@ export function Packages() {
                                 <Eye className="h-5 w-5" />
                               </div>
 
-                              <div className="mt-2 flex items-center justify-between gap-3">
+                              <div className="mt-1 flex items-center justify-between gap-3">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1364,4 +1390,3 @@ export function Packages() {
     </section>
   );
 }
-
