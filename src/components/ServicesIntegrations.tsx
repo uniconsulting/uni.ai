@@ -22,8 +22,10 @@ type Service = {
   id: ServiceId;
   navTitle: string;
   title2: [string, string];
+  mobileTitle2?: [string, string];
   tone: "blue" | "green" | "red";
   lead3: [string, string, string];
+  mobileLead3?: [string, string, string];
   tags: string;
   brief2: [string, string];
   points3: [string, string, string];
@@ -147,6 +149,9 @@ function MobileServiceCard({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
+  const mobileTitle = service.mobileTitle2 ?? service.title2;
+  const mobileLead = service.mobileLead3 ?? service.lead3;
+
   return (
     <MobileScaleFrame height={760}>
       <div
@@ -182,8 +187,8 @@ function MobileServiceCard({
                 className="text-[48px] font-extrabold leading-[1.02]"
                 style={{ color: toneHex }}
               >
-                <div>{service.title2[0]}</div>
-                <div>{service.title2[1]}</div>
+                <div>{mobileTitle[0]}</div>
+                <div>{mobileTitle[1]}</div>
               </div>
 
               <div className="inline-flex h-[54px] w-[54px] items-center justify-center rounded-full bg-bg/65">
@@ -202,9 +207,9 @@ function MobileServiceCard({
             </div>
 
             <div className="mt-[14px] w-full text-[20px] font-medium leading-[1.24] text-text/88">
-              <div>{service.lead3[0]}</div>
-              <div>{service.lead3[1]}</div>
-              <div>{service.lead3[2]}</div>
+              <div>{mobileLead[0]}</div>
+              <div>{mobileLead[1]}</div>
+              <div>{mobileLead[2]}</div>
             </div>
 
             <div className="mt-[10px] text-[14px] font-semibold leading-[1.22] text-text/55">
@@ -312,6 +317,7 @@ function MobileDetailsCard({
   onClose: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const mobileTitle = service.mobileTitle2 ?? service.title2;
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -330,8 +336,8 @@ function MobileDetailsCard({
                 className="text-[44px] font-extrabold leading-[1.02]"
                 style={{ color: toneHex }}
               >
-                <div>{service.title2[0]}</div>
-                <div>{service.title2[1]}</div>
+                <div>{mobileTitle[0]}</div>
+                <div>{mobileTitle[1]}</div>
               </div>
 
               <div className="mt-[12px] text-[18px] font-medium leading-[1.24] text-text/86">
@@ -866,11 +872,17 @@ export function ServicesIntegrations() {
         id: "turnkey",
         navTitle: "Интеграции под ключ",
         title2: ["Интеграции под Ваши", "задачи и инфраструктуру"],
+        mobileTitle2: ["Интеграции под", "Ваши задачи"],
         tone: "red",
         lead3: [
           "Мы знаем, насколько важно сохранить",
           "удобство пользования инструментами для команды, поэтому",
           "интегрируем наши решения в Вашу экосистему",
+        ],
+        mobileLead3: [
+          "Мы знаем, насколько важно сохранить",
+          "удобство пользования инструментами для команды,",
+          "поэтому интегрируем наши решения в Вашу экосистему",
         ],
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         brief2: ["Интеграции с", "AmoCRM, Битрикс24, 1С, трекеры и ERP и др."],
@@ -1156,8 +1168,8 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "services"}
                   >
-                    <span className="inline-flex items-center gap-1.5 align-middle relative top-0">
-                      <Layers className="h-3 w-3 shrink-0" />
+                    <span className="inline-flex items-center justify-center gap-2 leading-none">
+                      <Layers className="h-[13px] w-[13px] shrink-0" />
                       <span className="leading-none">Услуги</span>
                     </span>
                   </button>
@@ -1172,8 +1184,8 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "process"}
                   >
-                    <span className="inline-flex items-center gap-1.5 align-middle relative top-0">
-                      <Workflow className="h-3 w-3 shrink-0" />
+                    <span className="inline-flex items-center justify-center gap-2 leading-none">
+                      <Workflow className="h-[13px] w-[13px] shrink-0" />
                       <span className="leading-none">Процесс</span>
                     </span>
                   </button>
@@ -1240,9 +1252,9 @@ export function ServicesIntegrations() {
                       }
                       aria-pressed={mode === "services"}
                     >
-                      <span className="relative top-[1px] inline-flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        <span>Услуги</span>
+                      <span className="inline-flex items-center justify-center gap-2 leading-none">
+                        <Layers className="h-[14px] w-[14px] shrink-0" />
+                        <span className="leading-none">Услуги</span>
                       </span>
                     </button>
 
@@ -1256,9 +1268,9 @@ export function ServicesIntegrations() {
                       }
                       aria-pressed={mode === "process"}
                     >
-                      <span className="relative top-[1px] inline-flex items-center gap-2">
-                        <Workflow className="h-4 w-4" />
-                        <span>Процесс интеграции</span>
+                      <span className="inline-flex items-center justify-center gap-2 leading-none">
+                        <Workflow className="h-[14px] w-[14px] shrink-0" />
+                        <span className="leading-none">Процесс интеграции</span>
                       </span>
                     </button>
                   </div>
