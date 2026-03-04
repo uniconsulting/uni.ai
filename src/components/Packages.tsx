@@ -1073,7 +1073,7 @@ export function Packages() {
               inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="text-[16px] font-medium opacity-70 hover-accent">
+            <div className="text-[18px] font-medium opacity-70 hover-accent">
               стоимость | пакеты
             </div>
 
