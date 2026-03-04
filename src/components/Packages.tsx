@@ -79,11 +79,13 @@ function useOnceInView<T extends HTMLElement>(
   return { ref, inView };
 }
 
-function MobileScaleFrame({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * ВАЖНО:
+ * transform: scale() не меняет layout-size элемента.
+ * Поэтому 600px внутри мог “вылезать” и давать горизонтальный вылет/скролл.
+ * Решение: внутренний 600×730 делаем absolute, внешний — overflow-hidden.
+ */
+function MobileScaleFrame({ children }: { children: React.ReactNode }) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
 
@@ -92,7 +94,8 @@ function MobileScaleFrame({
     if (!el) return;
 
     const update = () => {
-      const w = Math.min(el.getBoundingClientRect().width, 600);
+      const cw = el.getBoundingClientRect().width;
+      const w = Math.min(cw, 600);
       setScale(w / 600);
     };
 
@@ -105,10 +108,11 @@ function MobileScaleFrame({
   return (
     <div
       ref={outerRef}
-      className="mx-auto w-full max-w-[600px]"
+      className="relative mx-auto w-full max-w-[600px] overflow-hidden"
       style={{ height: 730 * scale }}
     >
       <div
+        className="absolute left-0 top-0"
         style={{
           width: 600,
           height: 730,
@@ -332,7 +336,11 @@ function MobileDetailsCard({
         <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
           <div className="flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <div className="text-[52px] font-extrabold leading-none text-text">
+              {/* title: в тон пакета */}
+              <div
+                className="text-[52px] font-extrabold leading-none"
+                style={{ color: isNeutral ? "var(--text)" : planHex }}
+              >
                 {plan.title}
               </div>
 
@@ -355,7 +363,7 @@ function MobileDetailsCard({
             </button>
           </div>
 
-          <div className="mt-[24px] h-px w-full bg-text/12" />
+          <div className="mt-[24px] h-px w-full bg-text/20" />
 
           <div
             ref={bodyRef}
@@ -382,6 +390,8 @@ function MobileDetailsCard({
               ))}
             </div>
           </div>
+
+          <div className="mt-[24px] h-px w-full bg-text/20" />
 
           <div className="mt-[24px] flex items-center gap-[14px]">
             <button
@@ -505,7 +515,11 @@ function MobilePlanCard({
         >
           <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
             <div className="flex items-start justify-between gap-4">
-              <div className="text-[56px] font-extrabold leading-none text-text">
+              {/* title: в тон пакета */}
+              <div
+                className="text-[56px] font-extrabold leading-none"
+                style={{ color: isNeutral ? "var(--text)" : planHex }}
+              >
                 {plan.title}
               </div>
 
@@ -520,7 +534,8 @@ function MobilePlanCard({
               <div>{plan.mobileDesc3[2]}</div>
             </div>
 
-            <div className="mt-[30px] h-px w-full bg-text/12" />
+            {/* divider #1 */}
+            <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <div className="mt-[9px] flex items-baseline gap-3">
               <div
@@ -541,7 +556,8 @@ function MobilePlanCard({
               {plan.integrations2[0]}
             </div>
 
-            <div className="mt-[30px] h-px w-full bg-text/12" />
+            {/* divider #2 */}
+            <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <div className="mt-[30px] text-[24px] font-extrabold leading-none text-text">
               Ключевые параметры
@@ -553,7 +569,8 @@ function MobilePlanCard({
               <div>{plan.params3[2]}</div>
             </div>
 
-            <div className="mt-[30px] h-px w-full bg-text/12" />
+            {/* divider #3 */}
+            <div className="mt-[30px] h-px w-full bg-text/20" />
 
             <button
               type="button"
@@ -1150,7 +1167,7 @@ export function Packages() {
           </div>
         </div>
 
-        {/* DESKTOP HEADER + DECK */}
+        {/* DESKTOP */}
         <div className="hidden md:block">
           <div className="grid gap-10 md:grid-cols-2 md:gap-0">
             <div
@@ -1209,7 +1226,9 @@ export function Packages() {
                           <span>Годовой</span>
                           <span
                             className={
-                              billing === "yearly" ? "text-text/60" : "text-bg/70"
+                              billing === "yearly"
+                                ? "text-text/60"
+                                : "text-bg/70"
                             }
                           >
                             -20%
@@ -1232,7 +1251,7 @@ export function Packages() {
             style={{ transitionDelay: "140ms" }}
           >
             <div className="relative">
-              <div className="relative" style={{ height: CARD_H }}>
+              <div className="relative" style={{ height: 740 }}>
                 <div
                   className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
                     expanded
@@ -1276,7 +1295,7 @@ export function Packages() {
                         className={`absolute top-0 h-full text-left ${CARD_MOTION}`}
                         style={{
                           left: leftFor(i),
-                          width: isActive ? W_ACTIVE : W_INACTIVE,
+                          width: isActive ? "30%" : "25%",
                           zIndex: isActive ? 50 : 10 + i,
                           ["--plan" as any]: tone.hex,
                           ["--i" as any]: INTERVAL,
