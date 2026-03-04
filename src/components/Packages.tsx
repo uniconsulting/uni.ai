@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { Container } from "@/components/Container";
-import { Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, X, ChevronLeft, ChevronRight, MoveHorizontal } from "lucide-react";
 
 type Billing = "monthly" | "yearly";
 type PlanId = "test" | "small" | "mid" | "ent";
@@ -42,37 +41,6 @@ const CTA_LINKS: Record<PlanId, string> = {
 
 function formatRub(n: number) {
   return `${new Intl.NumberFormat("ru-RU").format(n)}₽`;
-}
-
-function mobileDescFor(id: PlanId): [string, string, string] {
-  switch (id) {
-    case "test":
-      return [
-        "Соберите первых ассистентов",
-        "и оцените интерфейс, аналитику",
-        "и логику работы.",
-      ];
-    case "small":
-      return [
-        "Для небольших команд: быстрый запуск",
-        "по инструкциям ЮНИ + лёгкая",
-        "помощь эксперта.",
-      ];
-    case "mid":
-      return [
-        "Для масштабирования",
-        "действующих процессов.",
-        "Полноценная интеграция командой ЮНИ.",
-      ];
-    case "ent":
-      return [
-        "Для крупных компаний:",
-        "макс. персонализации, SLA и",
-        "постоянное вовлечение команды ЮНИ.",
-      ];
-    default:
-      return ["", "", ""];
-  }
 }
 
 function useOnceInView<T extends HTMLElement>(
@@ -141,21 +109,21 @@ function DetailsFrame({
 
   return (
     <div
-      className={`h-full w-full overflow-hidden rounded-3xl border-2 bg-accent-3 ${borderClass}`}
+      className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--plan" as any]: planHex }}
     >
-      <div className="flex h-full flex-col px-10 py-8">
-        <div className="flex items-start gap-6">
-          <div className="min-w-0 flex-1">
-            <div className="text-[40px] font-extrabold leading-none text-text">
+      <div className="h-full px-5 py-5 md:px-10 md:py-8 flex flex-col">
+        <div className="flex items-start gap-4 md:gap-6">
+          <div className="min-w-0 w-full">
+            <div className="text-[28px] md:text-[40px] font-extrabold leading-none text-text text-left">
               {plan.title}
             </div>
 
-            <div className="mt-4 text-[18px] font-medium text-text/85">
+            <div className="mt-3 md:mt-4 w-full text-[15px] md:text-[18px] font-medium leading-[1.25] text-text/85 text-left">
               {details.lead}
             </div>
 
-            <div className="mt-4 text-[14px] font-semibold text-text/55">
+            <div className="mt-3 md:mt-4 text-[12px] md:text-[14px] font-semibold text-text/55 text-left">
               {details.tags}
             </div>
           </div>
@@ -166,13 +134,12 @@ function DetailsFrame({
               onClick={onPrev}
               disabled={!canPrev}
               className={[
-                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
-                canPrev ? "opacity-100" : "cursor-not-allowed opacity-35",
+                "btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Предыдущий пакет"
-              title="Предыдущий пакет (←)"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
             </button>
 
             <button
@@ -180,28 +147,26 @@ function DetailsFrame({
               onClick={onNext}
               disabled={!canNext}
               className={[
-                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
-                canNext ? "opacity-100" : "cursor-not-allowed opacity-35",
+                "btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Следующий пакет"
-              title="Следующий пакет (→)"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+              className="btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
               aria-label="Закрыть описание"
-              title="Закрыть (Esc)"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 md:h-5 md:w-5" />
             </button>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-5 md:mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
             return (
@@ -210,10 +175,10 @@ function DetailsFrame({
                 type="button"
                 onClick={() => onSelectPlan(t.id)}
                 className={[
-                  "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
+                  "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-3 py-2 md:px-4 md:py-2 text-[12px] md:text-[13px] font-semibold",
                   isOn
-                    ? "border-2 bg-bg/65"
-                    : "border border-text/10 bg-bg/25 text-text/65 hover:text-text",
+                    ? "bg-bg/65 border-2"
+                    : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
                 ].join(" ")}
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
@@ -225,19 +190,19 @@ function DetailsFrame({
           })}
         </div>
 
-        <div ref={bodyRef} className="mt-8 flex-1 overflow-auto pr-2">
-          <div className="grid gap-8 md:grid-cols-2">
+        <div ref={bodyRef} className="mt-5 md:mt-8 flex-1 overflow-auto pr-1 md:pr-2">
+          <div className="grid gap-6 md:gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
-              <div key={s.title} className="min-w-0">
-                <div className="text-[18px] font-extrabold text-text">
+              <div key={s.title} className="min-w-0 text-left">
+                <div className="text-[16px] md:text-[18px] font-extrabold text-text text-left">
                   {s.title}
                 </div>
 
-                <ul className="mt-4 space-y-2 text-[16px] font-medium text-text/85">
+                <ul className="mt-3 md:mt-4 space-y-2 text-[14px] md:text-[16px] font-medium text-text/85 text-left">
                   {s.items.map((it) => (
-                    <li key={it} className="flex gap-3">
+                    <li key={it} className="flex items-start gap-3">
                       <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                      <span className="min-w-0">{it}</span>
+                      <span className="min-w-0 text-left">{it}</span>
                     </li>
                   ))}
                 </ul>
@@ -246,16 +211,16 @@ function DetailsFrame({
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-5 md:mt-8">
           <a
             href={ctaHref}
             target="_blank"
             rel="noopener noreferrer"
             className={[
-              "btn-lift-outline block w-full rounded-xl px-6 py-4 text-center font-extrabold",
+              "btn-lift-outline block w-full rounded-xl px-5 py-3 md:px-6 md:py-4 text-center font-extrabold",
               plan.ctaStyle === "fill"
-                ? "bg-[color:var(--plan)] text-[18px] text-bg"
-                : "border-2 border-[color:var(--plan)] text-[18px] text-[color:var(--plan)]",
+                ? "bg-[color:var(--plan)] text-bg text-[16px] md:text-[18px]"
+                : "border-2 border-[color:var(--plan)] text-[color:var(--plan)] text-[16px] md:text-[18px]",
             ].join(" ")}
             style={
               isNeutral && plan.ctaStyle === "outline"
@@ -266,6 +231,183 @@ function DetailsFrame({
           >
             {plan.cta}
           </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function mobileLead(planId: PlanId) {
+  switch (planId) {
+    case "test":
+      return [
+        "Соберите первых ассистентов",
+        "и оцените интерфейс, аналитику",
+        "и логику работы.",
+      ];
+    case "small":
+      return [
+        "Для небольших команд: быстрый запуск",
+        "по инструкциям ЮНИ + лёгкая",
+        "помощь эксперта.",
+      ];
+    case "mid":
+      return [
+        "Для масштабирования",
+        "действующих процессов.",
+        "Полноценная интеграция командой ЮНИ.",
+      ];
+    case "ent":
+      return [
+        "Для крупных компаний:",
+        "макс. персонализации, SLA и",
+        "постоянное вовлечение команды ЮНИ.",
+      ];
+  }
+}
+
+function MobilePlanCard({
+  plan,
+  billing,
+  isActive,
+  onOpenDetails,
+  onOpenCta,
+  onPrev,
+  onNext,
+}: {
+  plan: Plan;
+  billing: Billing;
+  isActive: boolean;
+  onOpenDetails: () => void;
+  onOpenCta: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const tone = TONE[plan.tone];
+  const isNeutral = plan.tone === "neutral";
+
+  const price = useMemo(() => {
+    if (plan.monthly === 0) return 0;
+    if (billing === "monthly") return plan.monthly;
+    return Math.round(plan.monthly * 0.8);
+  }, [plan, billing]);
+
+  const ctaLabel = plan.id === "mid" ? "Подключить" : plan.cta;
+
+  return (
+    <div
+      className="relative w-full"
+      style={{ ["--plan" as any]: tone.hex }}
+    >
+      <div
+        className={[
+          "rounded-[28px] bg-accent-3",
+          isNeutral ? "ring-2 ring-text/90" : "ring-2 ring-[color:var(--plan)]",
+        ].join(" ")}
+      >
+        <div className="px-[5%] pt-[5%] pb-[5%]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="text-[7.6vw] max-w-[70%] font-extrabold leading-none text-text sm:text-[42px]">
+              {plan.title}
+            </div>
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg/40">
+              <MoveHorizontal className="h-5 w-5 text-text/45" />
+            </div>
+          </div>
+
+          <div className="mt-[9px] w-full text-left text-[4.3vw] sm:text-[24px] font-medium leading-[1.2] text-text/90">
+            {mobileLead(plan.id).map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+
+          <div className="mt-[30px] h-px w-full bg-text/12" />
+
+          <div className="pt-[9px]">
+            <div className="flex items-baseline gap-2 sm:gap-3">
+              <div
+                className={[
+                  "text-[8vw] sm:text-[46px] font-extrabold leading-none",
+                  isNeutral ? "text-text" : "text-[color:var(--plan)]",
+                ].join(" ")}
+              >
+                {formatRub(price)}
+              </div>
+              <div className="text-[6vw] sm:text-[34px] font-semibold leading-none text-text/30">
+                / мес
+              </div>
+            </div>
+
+            <div className="mt-[9px] text-[3.9vw] sm:text-[22px] font-semibold leading-[1.15] text-text/35">
+              {plan.integrations2[0]}
+            </div>
+          </div>
+
+          <div className="mt-[30px] h-px w-full bg-text/12" />
+
+          <div className="pt-[30px]">
+            <div className="text-[5vw] sm:text-[28px] font-extrabold leading-none text-text">
+              Ключевые параметры
+            </div>
+
+            <div className="mt-[9px] space-y-0 text-[4.4vw] sm:text-[25px] font-medium leading-[1.22] text-text/90">
+              {plan.params3.map((line) => (
+                <div key={line}>{line}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-[30px] h-px w-full bg-text/12" />
+
+          <div className="pt-[30px]">
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              className="flex items-center gap-3 text-left text-[5vw] sm:text-[28px] font-extrabold leading-none text-text"
+            >
+              <span>Изучить возможности</span>
+              <Eye className="h-6 w-6 sm:h-7 sm:w-7" />
+            </button>
+          </div>
+
+          <div className="mt-[60px] flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onPrev}
+              className="flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full bg-bg/40"
+              aria-label="Предыдущая карточка"
+            >
+              <ChevronLeft className="h-6 w-6 text-text" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenCta}
+              className={[
+                "btn-lift-outline flex-1 rounded-[20px] px-5 py-4 text-center text-[5vw] sm:text-[28px] font-extrabold leading-none",
+                plan.ctaStyle === "fill"
+                  ? "bg-[color:var(--plan)] text-bg"
+                  : "border-[3px] border-[color:var(--plan)] text-[color:var(--plan)]",
+              ].join(" ")}
+              style={
+                isNeutral && plan.ctaStyle === "outline"
+                  ? { borderColor: "var(--text)", color: "var(--text)" }
+                  : undefined
+              }
+            >
+              {ctaLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={onNext}
+              className="flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full bg-bg/40"
+              aria-label="Следующая карточка"
+            >
+              <ChevronRight className="h-6 w-6 text-text" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -481,12 +623,6 @@ export function Packages() {
     [],
   );
 
-  const priceFor = (p: Plan) => {
-    if (p.monthly === 0) return 0;
-    if (billing === "monthly") return p.monthly;
-    return Math.round(p.monthly * 0.8);
-  };
-
   const setExpandedTo = (id: PlanId) => {
     setActive(id);
     setExpanded(id);
@@ -518,8 +654,7 @@ export function Packages() {
     return "rounded-none";
   };
 
-  const titleAlignForInactive = (i: number) =>
-    i < activeIdx ? "text-left" : "text-right";
+  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
 
   const CARD_MOTION =
     "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
@@ -558,11 +693,21 @@ export function Packages() {
   const canNext = expandedIdx >= 0 && expandedIdx < plans.length - 1;
 
   const goPrev = () => {
+    const nextIdx = activeIdx <= 0 ? plans.length - 1 : activeIdx - 1;
+    setActive(plans[nextIdx].id);
+  };
+
+  const goNext = () => {
+    const nextIdx = activeIdx >= plans.length - 1 ? 0 : activeIdx + 1;
+    setActive(plans[nextIdx].id);
+  };
+
+  const goPrevExpanded = () => {
     if (!expanded || !canPrev) return;
     setExpandedTo(plans[expandedIdx - 1].id);
   };
 
-  const goNext = () => {
+  const goNextExpanded = () => {
     if (!expanded || !canNext) return;
     setExpandedTo(plans[expandedIdx + 1].id);
   };
@@ -588,12 +733,12 @@ export function Packages() {
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        goPrev();
+        goPrevExpanded();
       }
 
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        goNext();
+        goNextExpanded();
       }
     };
 
@@ -614,27 +759,22 @@ export function Packages() {
         }`}
       />
 
-      <Container className="relative z-10 px-6 py-12 md:px-10 md:py-14 lg:px-12">
-        {/* mobile header */}
+      <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
         <div className="md:hidden">
           <div
             className={`${REVEAL_BASE} ${
-              inView ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="text-[16px] font-medium opacity-70 hover-accent">
-              стоимость | пакеты
-            </div>
+            <div className="text-[14px] font-medium opacity-70 hover-accent">стоимость | пакеты</div>
 
-            <div className="mt-3 text-[28px] font-extrabold leading-[0.95] tracking-tight text-accent-1">
+            <div className="mt-3 text-[26px] font-extrabold leading-[0.95] tracking-tight text-accent-1">
               Сделай выбор
             </div>
 
-            <div className="mt-3 text-[18px] font-semibold leading-[1.05] text-text">
-              Прозрачные условия,
-              <br />
-              никаких скрытых платежей
-            </div>
+            <h2 className="mt-3 text-[16px] font-semibold leading-[1.15] tracking-tight text-text">
+              Прозрачные условия, никаких скрытых платежей
+            </h2>
 
             <div className="mt-6">
               <div className="inline-flex rounded-[16px] bg-accent-1 p-[2px]">
@@ -664,487 +804,248 @@ export function Packages() {
                   >
                     <span className="inline-flex items-center gap-2">
                       <span>Годовой</span>
-                      <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>
-                        -20%
-                      </span>
+                      <span className={billing === "yearly" ? "text-text/55" : "text-bg/75"}>-20%</span>
                     </span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* desktop header */}
-        <div className="hidden md:grid md:grid-cols-2 md:gap-0">
-          <div
-            className={`${REVEAL_BASE} ${
-              inView ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            } md:pr-12`}
-          >
-            <div className="text-[22px] font-extrabold text-accent-1 md:text-[26px] lg:text-[34px]">
-              Сделай выбор
-            </div>
-
-            <h2 className="mt-3 text-[22px] font-semibold leading-[1.05] tracking-tight md:text-[26px] lg:text-[28px]">
-              <span className="block">Прозрачные условия,</span>
-              <span className="block">никаких скрытых платежей.</span>
-            </h2>
-          </div>
 
           <div
             className={`${REVEAL_BASE} ${
-              inView ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            } md:pl-12`}
-            style={{ transitionDelay: "80ms" }}
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
+            } mt-8`}
+            style={{ transitionDelay: "120ms" }}
           >
-            <div className="flex flex-col items-start md:items-end">
-              <div className="text-[18px] font-medium opacity-70 hover-accent">
-                стоимость | пакеты
-              </div>
-
-              <div className="mt-6">
-                <div className="rounded-2xl bg-accent-1 p-[3px]">
-                  <div className="flex rounded-2xl bg-accent-1 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setBilling("monthly")}
-                      className={
-                        billing === "monthly"
-                          ? "rounded-xl bg-accent-3 px-8 py-4 text-[16px] font-semibold text-text"
-                          : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/90"
-                      }
-                      aria-pressed={billing === "monthly"}
-                    >
-                      Ежемесячно
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBilling("yearly")}
-                      className={
-                        billing === "yearly"
-                          ? "rounded-xl bg-accent-3 px-8 py-4 text-[16px] font-semibold text-text"
-                          : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/70"
-                      }
-                      aria-pressed={billing === "yearly"}
-                    >
-                      <span className="inline-flex items-center gap-3">
-                        <span>Годовой</span>
-                        <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>
-                          -20%
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10 min-h-[40px] w-full" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`${REVEAL_BASE} ${
-            inView ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
-          } mt-10 md:mt-12`}
-          style={{ transitionDelay: "140ms" }}
-        >
-          {/* mobile */}
-          <div className="md:hidden">
             {expandedPlan ? (
-              <div
-                className="w-full max-w-none"
-                style={{ height: "min(calc((100vw - 48px) * 1.2167), 730px)" }}
-              >
-                <div
-                  className="h-full overflow-hidden rounded-[28px] bg-accent-3 ring-2 ring-[color:var(--plan)]"
-                  style={{ ["--plan" as any]: expandedTone?.hex ?? "#111827" }}
-                >
-                  <div className="flex h-full flex-col px-5 pt-5 pb-5">
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-left text-[28px] font-extrabold leading-none text-text">
-                          {expandedPlan.title}
-                        </div>
-
-                        <div className="mt-[9px] w-full text-left text-[15px] font-medium leading-[1.3] text-text/85">
-                          {mobileDescFor(expandedPlan.id).map((line) => (
-                            <div key={line}>{line}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={closeDetails}
-                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg/60 text-text/55"
-                        aria-label="Закрыть описание"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    <div className="mt-[30px] h-px w-full bg-text/10" />
-
-                    <div className="mt-[18px] min-h-0 flex-1 overflow-y-auto pr-1">
-                      <div className="space-y-6">
-                        {DETAILS[expandedPlan.id].sections.map((s) => (
-                          <div key={s.title} className="text-left">
-                            <div className="text-[17px] font-extrabold text-text">
-                              {s.title}
-                            </div>
-
-                            <ul className="mt-[9px] space-y-2 text-[14px] font-medium leading-[1.35] text-text/85">
-                              {s.items.map((it) => (
-                                <li key={it} className="flex items-start gap-3">
-                                  <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                  <span className="min-w-0 text-left">{it}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={goPrev}
-                        disabled={!canPrev}
-                        className={[
-                          "inline-flex h-12 w-12 items-center justify-center rounded-full bg-bg/60",
-                          canPrev ? "opacity-100" : "opacity-35",
-                        ].join(" ")}
-                        aria-label="Предыдущий пакет"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-
-                      <a
-                        href={CTA_LINKS[expandedPlan.id]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={[
-                          "flex-1 rounded-[20px] px-6 py-4 text-center text-[16px] font-extrabold",
-                          expandedPlan.ctaStyle === "fill"
-                            ? "bg-[color:var(--plan)] text-bg"
-                            : "border-2 border-[color:var(--plan)] text-[color:var(--plan)]",
-                        ].join(" ")}
-                        style={
-                          expandedPlan.tone === "neutral" && expandedPlan.ctaStyle === "outline"
-                            ? { borderColor: "var(--text)", color: "var(--text)" }
-                            : undefined
-                        }
-                      >
-                        {expandedPlan.id === "mid" ? "Подключить" : expandedPlan.cta}
-                      </a>
-
-                      <button
-                        type="button"
-                        onClick={goNext}
-                        disabled={!canNext}
-                        className={[
-                          "inline-flex h-12 w-12 items-center justify-center rounded-full bg-bg/60",
-                          canNext ? "opacity-100" : "opacity-35",
-                        ].join(" ")}
-                        aria-label="Следующий пакет"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div className="h-[76vh] min-h-[620px] max-h-[760px]">
+                <DetailsFrame
+                  plan={expandedPlan}
+                  details={DETAILS[expandedPlan.id]}
+                  borderClass={expandedBorderClass}
+                  planHex={expandedTone?.hex ?? "#111827"}
+                  tabs={planTabs}
+                  activeId={expandedPlan.id}
+                  onSelectPlan={setExpandedTo}
+                  onPrev={goPrevExpanded}
+                  onNext={goNextExpanded}
+                  canPrev={canPrev}
+                  canNext={canNext}
+                  onClose={closeDetails}
+                  ctaHref={CTA_LINKS[expandedPlan.id]}
+                />
               </div>
             ) : (
-              <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex snap-x snap-mandatory gap-4 pr-6">
-                  {plans.map((p) => {
+              <div className="overflow-hidden">
+                <div className="w-full">
+                  <MobilePlanCard
+                    plan={plans[activeIdx]}
+                    billing={billing}
+                    isActive
+                    onOpenDetails={() => openDetails(plans[activeIdx].id)}
+                    onOpenCta={() => openCta(plans[activeIdx].id)}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="hidden md:block">
+          <div className="grid gap-10 md:grid-cols-2 md:gap-0">
+            <div
+              className={`${REVEAL_BASE} ${
+                inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              } md:pr-12`}
+            >
+              <div className="text-[22px] md:text-[26px] lg:text-[34px] font-extrabold text-accent-1">
+                Сделай выбор
+              </div>
+
+              <h2 className="mt-3 font-semibold leading-[1.05] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
+                <span className="block">Прозрачные условия,</span>
+                <span className="block">никаких скрытых платежей.</span>
+              </h2>
+            </div>
+
+            <div
+              className={`${REVEAL_BASE} ${
+                inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              } md:pl-12`}
+              style={{ transitionDelay: "80ms" }}
+            >
+              <div className="flex flex-col items-start md:items-end">
+                <div className="hover-accent text-[18px] font-medium opacity-70">
+                  стоимость | пакеты
+                </div>
+
+                <div className="mt-6">
+                  <div className="rounded-2xl bg-accent-1 p-[3px]">
+                    <div className="flex rounded-2xl bg-accent-1 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setBilling("monthly")}
+                        className={
+                          billing === "monthly"
+                            ? "rounded-xl bg-accent-3 px-8 py-4 text-[16px] font-semibold text-text"
+                            : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/90"
+                        }
+                        aria-pressed={billing === "monthly"}
+                      >
+                        Ежемесячно
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBilling("yearly")}
+                        className={
+                          billing === "yearly"
+                            ? "rounded-xl bg-accent-3 px-8 py-4 text-[16px] font-semibold text-text"
+                            : "rounded-xl px-8 py-4 text-[16px] font-semibold text-bg/70"
+                        }
+                        aria-pressed={billing === "yearly"}
+                      >
+                        <span className="inline-flex items-center gap-3">
+                          <span>Годовой</span>
+                          <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>-20%</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-10 min-h-[40px] w-full" />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`${REVEAL_BASE} ${
+              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
+            } mt-12 md:mt-14`}
+            style={{ transitionDelay: "140ms" }}
+          >
+            <div className="relative">
+              <div className="relative" style={{ height: CARD_H }}>
+                <div
+                  className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
+                    expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
+                  }`}
+                >
+                  {plans.map((p, i) => {
                     const isActive = p.id === active;
                     const tone = TONE[p.tone];
-                    const price = priceFor(p);
+                    const price =
+                      p.monthly === 0
+                        ? 0
+                        : billing === "monthly"
+                          ? p.monthly
+                          : Math.round(p.monthly * 0.8);
                     const isNeutral = p.tone === "neutral";
-                    const mobileDesc = mobileDescFor(p.id);
+
+                    const ringClass = isActive
+                      ? isNeutral
+                        ? "ring-2 ring-text/60"
+                        : "ring-2 ring-[color:var(--plan)]"
+                      : "ring-1 ring-text/15";
+
+                    const bgClass = isActive ? "bg-accent-3" : "bg-bg";
+                    const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                    const inactiveTitleAlign = titleAlignForInactive(i);
+
+                    const shadow = isActive
+                      ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
+                      : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
+
+                    const contentState = isActive
+                      ? "opacity-100 translate-y-0 blur-0"
+                      : "opacity-0 translate-y-1 blur-[2px]";
+                    const contentDelay = isActive ? "140ms" : "0ms";
 
                     return (
-                      <div
+                      <button
                         key={p.id}
-                        className="shrink-0 snap-center first:snap-start last:snap-end"
-                        style={{ width: "min(calc(100vw - 48px), 600px)" }}
+                        type="button"
+                        onClick={() => setActive(p.id)}
+                        aria-pressed={isActive}
+                        className={`absolute top-0 h-full text-left ${CARD_MOTION}`}
+                        style={{
+                          left: leftFor(i),
+                          width: isActive ? W_ACTIVE : W_INACTIVE,
+                          zIndex: isActive ? 50 : 10 + i,
+                          ["--plan" as any]: tone.hex,
+                          ["--i" as any]: INTERVAL,
+                        }}
                       >
-                        <button
-                          type="button"
-                          onClick={() => setActive(p.id)}
-                          className="block w-full text-left"
-                          aria-pressed={isActive}
-                        >
+                        <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
                           <div
-                            className={[
-                              "relative overflow-hidden rounded-[28px] bg-accent-3",
-                              isActive
-                                ? isNeutral
-                                  ? "ring-2 ring-text/70"
-                                  : "ring-2 ring-[color:var(--plan)]"
-                                : "ring-1 ring-text/15",
-                            ].join(" ")}
-                            style={{
-                              ["--plan" as any]: tone.hex,
-                              height: "min(calc((100vw - 48px) * 1.2167), 730px)",
-                            }}
+                            className={`grid h-full ${ROWS} ${
+                              isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
+                            }`}
                           >
-                            <div className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg/55 text-text/45">
-                              <ChevronLeft className="-mr-1 h-4 w-4" />
-                              <ChevronRight className="-ml-1 h-4 w-4" />
-                            </div>
-
-                            {isActive ? (
-                              <motion.div
-                                className="absolute inset-0"
-                                animate={{ x: [0, -5, 5, -3, 3, 0] }}
-                                transition={{ duration: 1.15, repeat: Infinity, repeatDelay: 2.2 }}
-                              />
-                            ) : null}
-
-                            <div className="relative z-10 flex h-full flex-col px-5">
-                              <div className="pt-[30px]">
+                            <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                              <div className="flex h-full flex-col justify-between">
                                 <div
-                                  className={`text-[28px] font-extrabold leading-none ${
+                                  className={
                                     isActive
-                                      ? isNeutral
-                                        ? "text-text"
-                                        : "text-[color:var(--plan)]"
-                                      : "text-text/20"
-                                  }`}
+                                      ? `text-[44px] font-extrabold leading-none ${
+                                          isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                                        }`
+                                      : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
+                                  }
                                 >
                                   {p.title}
                                 </div>
 
                                 <div
-                                  className={`${CONTENT_MOTION} mt-[9px] w-full text-[15px] font-medium leading-[1.28] ${
-                                    isActive
-                                      ? "translate-y-0 text-text/88 opacity-100 blur-0"
-                                      : "translate-y-0 text-text/35 opacity-25 blur-0"
-                                  }`}
+                                  className={`${CONTENT_MOTION} ${contentState}`}
+                                  style={{ transitionDelay: contentDelay }}
                                 >
-                                  {mobileDesc.map((line) => (
-                                    <div key={line}>{line}</div>
-                                  ))}
+                                  <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
+                                    {p.desc4.map((l) => (
+                                      <div key={l} className="whitespace-nowrap">
+                                        {l}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-
-                                <div className="mt-[30px] h-px w-full bg-text/10" />
                               </div>
+                            </div>
 
-                              <div className={`${CONTENT_MOTION} pt-[9px] ${isActive ? "opacity-100" : "opacity-25"}`}>
-                                <div className="flex items-baseline gap-2">
+                            <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
+                              <div
+                                className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
+                                style={{ transitionDelay: contentDelay }}
+                              >
+                                <div className="flex items-baseline gap-4">
                                   <div
-                                    className={`text-[32px] font-extrabold leading-none ${
-                                      isActive
-                                        ? isNeutral
-                                          ? "text-text"
-                                          : "text-[color:var(--plan)]"
-                                        : "text-text/35"
-                                    }`}
+                                    className={
+                                      isNeutral
+                                        ? "text-[44px] font-extrabold leading-none text-text"
+                                        : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
+                                    }
                                   >
                                     {formatRub(price)}
                                   </div>
-                                  <div className="text-[24px] font-semibold leading-none text-text/28">
-                                    / мес
-                                  </div>
+                                  <div className="text-[34px] font-semibold leading-none text-text/35">/ мес</div>
                                 </div>
 
-                                <div className="mt-[9px] text-[12px] font-semibold text-text/38">
-                                  {p.integrations2[0]}
-                                </div>
-
-                                <div className="mt-[30px] h-px w-full bg-text/10" />
-                              </div>
-
-                              <div className={`${CONTENT_MOTION} pt-[30px] ${isActive ? "opacity-100" : "opacity-25"}`}>
-                                <div className="text-[16px] font-extrabold text-text">
-                                  Ключевые параметры
-                                </div>
-
-                                <div className="mt-[9px] space-y-0 text-[15px] font-medium leading-[1.3] text-text/88">
-                                  {p.params3.map((l) => (
-                                    <div key={l}>{l}</div>
-                                  ))}
-                                </div>
-
-                                <div className="mt-[30px] h-px w-full bg-text/10" />
-                              </div>
-
-                              <div className="flex flex-1 flex-col pt-[30px]">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    openDetails(p.id);
-                                  }}
-                                  className="flex items-center gap-3 text-[16px] font-extrabold text-text"
-                                >
-                                  <span>Изучить возможности</span>
-                                  <Eye className="h-5 w-5" />
-                                </button>
-
-                                <div className="mt-[60px] flex items-center gap-3">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      const idx = plans.findIndex((x) => x.id === p.id);
-                                      const next =
-                                        idx > 0
-                                          ? plans[idx - 1].id
-                                          : plans[Math.min(idx + 1, plans.length - 1)].id;
-                                      setActive(next);
-                                    }}
-                                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg/55 text-text"
-                                    aria-label="Предыдущая карточка"
-                                  >
-                                    <ChevronLeft className="h-5 w-5" />
-                                  </button>
-
-                                  <div
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label={`CTA: ${p.cta}`}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      openCta(p.id);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        openCta(p.id);
-                                      }
-                                    }}
-                                    className={[
-                                      "flex-1 rounded-[20px] px-6 py-4 text-center text-[16px] font-extrabold",
-                                      p.ctaStyle === "fill"
-                                        ? "bg-[color:var(--plan)] text-bg"
-                                        : "border-2 border-[color:var(--plan)] text-[color:var(--plan)]",
-                                    ].join(" ")}
-                                    style={
-                                      isNeutral && p.ctaStyle === "outline"
-                                        ? { borderColor: "var(--text)", color: "var(--text)" }
-                                        : undefined
-                                    }
-                                  >
-                                    {p.id === "mid" ? "Подключить" : p.cta}
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      const idx = plans.findIndex((x) => x.id === p.id);
-                                      const next =
-                                        idx < plans.length - 1
-                                          ? plans[idx + 1].id
-                                          : plans[Math.max(idx - 1, 0)].id;
-                                      setActive(next);
-                                    }}
-                                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg/55 text-text"
-                                    aria-label="Следующая карточка"
-                                  >
-                                    <ChevronRight className="h-5 w-5" />
-                                  </button>
-                                </div>
-
-                                <div className="h-[30px]" />
+                                <div className="text-[14px] font-semibold text-text/45">{p.integrations2[0]}</div>
                               </div>
                             </div>
-                          </div>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* desktop */}
-          <div className="relative hidden md:block">
-            <div className="relative" style={{ height: CARD_H }}>
-              <div
-                className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
-                  expanded ? "pointer-events-none opacity-0 blur-[1px]" : "opacity-100 blur-0"
-                }`}
-              >
-                {plans.map((p, i) => {
-                  const isActive = p.id === active;
-                  const tone = TONE[p.tone];
-                  const price = priceFor(p);
-                  const isNeutral = p.tone === "neutral";
-
-                  const ringClass = isActive
-                    ? isNeutral
-                      ? "ring-2 ring-text/60"
-                      : "ring-2 ring-[color:var(--plan)]"
-                    : "ring-1 ring-text/15";
-
-                  const bgClass = isActive ? "bg-accent-3" : "bg-bg";
-                  const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
-                  const inactiveTitleAlign = titleAlignForInactive(i);
-
-                  const shadow = isActive
-                    ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
-                    : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
-
-                  const contentState = isActive
-                    ? "opacity-100 translate-y-0 blur-0"
-                    : "opacity-0 translate-y-1 blur-[2px]";
-                  const contentDelay = isActive ? "140ms" : "0ms";
-
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setActive(p.id)}
-                      aria-pressed={isActive}
-                      className={`absolute top-0 h-full text-left ${CARD_MOTION}`}
-                      style={{
-                        left: leftFor(i),
-                        width: isActive ? W_ACTIVE : W_INACTIVE,
-                        zIndex: isActive ? 50 : 10 + i,
-                        ["--plan" as any]: tone.hex,
-                        ["--i" as any]: INTERVAL,
-                      }}
-                    >
-                      <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
-                        <div
-                          className={`grid h-full ${ROWS} ${
-                            isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
-                          }`}
-                        >
-                          <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div className="flex h-full flex-col justify-between">
+                            <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                               <div
-                                className={
-                                  isActive
-                                    ? `text-[44px] font-extrabold leading-none ${
-                                        isNeutral ? "text-text" : "text-[color:var(--plan)]"
-                                      }`
-                                    : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
-                                }
-                              >
-                                {p.title}
-                              </div>
-
-                              <div
-                                className={`${CONTENT_MOTION} ${contentState}`}
+                                className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
                                 style={{ transitionDelay: contentDelay }}
                               >
+                                <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
+
                                 <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
-                                  {p.desc4.map((l) => (
+                                  {p.params3.map((l) => (
                                     <div key={l} className="whitespace-nowrap">
                                       {l}
                                     </div>
@@ -1152,134 +1053,89 @@ export function Packages() {
                                 </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
-                              style={{ transitionDelay: contentDelay }}
-                            >
-                              <div className="flex items-baseline gap-4">
-                                <div
-                                  className={
-                                    isNeutral
-                                      ? "text-[44px] font-extrabold leading-none text-text"
-                                      : "text-[44px] font-extrabold leading-none text-[color:var(--plan)]"
-                                  }
-                                >
-                                  {formatRub(price)}
-                                </div>
-                                <div className="text-[34px] font-semibold leading-none text-text/35">
-                                  / мес
-                                </div>
-                              </div>
-
-                              <div className="text-[14px] font-semibold text-text/45">
-                                {p.integrations2[0]}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
-                              style={{ transitionDelay: contentDelay }}
-                            >
-                              <div className="text-[20px] font-extrabold text-text">
-                                Ключевые параметры
-                              </div>
-
-                              <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
-                                {p.params3.map((l) => (
-                                  <div key={l} className="whitespace-nowrap">
-                                    {l}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                            <div
-                              className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
-                              style={{ transitionDelay: contentDelay }}
-                            >
+                            <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                               <div
-                                className="flex cursor-pointer select-none items-center gap-4 text-[20px] font-extrabold text-text hover:opacity-80"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openDetails(p.id);
-                                }}
+                                className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
+                                style={{ transitionDelay: contentDelay }}
                               >
-                                <span>Изучить возможности</span>
-                                <Eye className="h-7 w-7" />
-                              </div>
+                                <div
+                                  className="flex items-center gap-4 text-[20px] font-extrabold text-text cursor-pointer select-none hover:opacity-80"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openDetails(p.id);
+                                  }}
+                                >
+                                  <span>Изучить возможности</span>
+                                  <Eye className="h-7 w-7" />
+                                </div>
 
-                              <div
-                                role="button"
-                                tabIndex={isActive ? 0 : -1}
-                                aria-label={`CTA: ${p.cta}`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openCta(p.id);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (!isActive) return;
-                                  if (e.key === "Enter" || e.key === " ") {
+                                <div
+                                  role="button"
+                                  tabIndex={isActive ? 0 : -1}
+                                  aria-label={`CTA: ${p.cta}`}
+                                  onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     openCta(p.id);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (!isActive) return;
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      openCta(p.id);
+                                    }
+                                  }}
+                                  className={[
+                                    isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
+                                    p.ctaStyle === "fill"
+                                      ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
+                                      : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]",
+                                  ].join(" ")}
+                                  style={
+                                    isNeutral && p.ctaStyle === "outline"
+                                      ? { borderColor: "var(--text)", color: "var(--text)" }
+                                      : undefined
                                   }
-                                }}
-                                className={[
-                                  isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
-                                  p.ctaStyle === "fill"
-                                    ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
-                                    : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]",
-                                ].join(" ")}
-                                style={
-                                  isNeutral && p.ctaStyle === "outline"
-                                    ? { borderColor: "var(--text)", color: "var(--text)" }
-                                    : undefined
-                                }
-                              >
-                                {p.cta}
+                                >
+                                  {p.cta}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              <div
-                className={`absolute inset-0 ${PANEL_MOTION} ${
-                  expandedPlan
-                    ? "pointer-events-auto translate-y-0 opacity-100 blur-0"
-                    : "pointer-events-none translate-y-2 opacity-0 blur-[2px]"
-                }`}
-              >
-                {expandedPlan ? (
-                  <DetailsFrame
-                    plan={expandedPlan}
-                    details={DETAILS[expandedPlan.id]}
-                    borderClass={expandedBorderClass}
-                    planHex={expandedTone?.hex ?? "#111827"}
-                    tabs={planTabs}
-                    activeId={expandedPlan.id}
-                    onSelectPlan={setExpandedTo}
-                    onPrev={goPrev}
-                    onNext={goNext}
-                    canPrev={canPrev}
-                    canNext={canNext}
-                    onClose={closeDetails}
-                    ctaHref={CTA_LINKS[expandedPlan.id]}
-                  />
-                ) : null}
+                <div
+                  className={`absolute inset-0 ${PANEL_MOTION} ${
+                    expandedPlan
+                      ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
+                      : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
+                  }`}
+                >
+                  {expandedPlan ? (
+                    <DetailsFrame
+                      plan={expandedPlan}
+                      details={DETAILS[expandedPlan.id]}
+                      borderClass={expandedBorderClass}
+                      planHex={expandedTone?.hex ?? "#111827"}
+                      tabs={planTabs}
+                      activeId={expandedPlan.id}
+                      onSelectPlan={setExpandedTo}
+                      onPrev={goPrevExpanded}
+                      onNext={goNextExpanded}
+                      canPrev={canPrev}
+                      canNext={canNext}
+                      onClose={closeDetails}
+                      ctaHref={CTA_LINKS[expandedPlan.id]}
+                    />
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
