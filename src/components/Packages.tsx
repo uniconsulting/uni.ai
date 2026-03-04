@@ -587,7 +587,7 @@ function MobilePlanCard({
                   onClick={onPrev}
                   disabled={!canPrev}
                   className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-[24px] bg-bg/60",
                     canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
                   ].join(" ")}
                   aria-label="Предыдущий пакет"
@@ -622,7 +622,7 @@ function MobilePlanCard({
                   onClick={onNext}
                   disabled={!canNext}
                   className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-[24px] bg-bg/60",
                     canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
                   ].join(" ")}
                   aria-label="Следующий пакет"
