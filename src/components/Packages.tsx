@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MoveHorizontal,
+} from "lucide-react";
 import { Container } from "@/components/Container";
-import { Eye, X, ChevronLeft, ChevronRight, MoveHorizontal } from "lucide-react";
 
 type Billing = "monthly" | "yearly";
 type PlanId = "test" | "small" | "mid" | "ent";
@@ -12,6 +19,7 @@ type Plan = {
   title: string;
   tone: "neutral" | "blue" | "green" | "red";
   desc4: [string, string, string, string];
+  mobileDesc3: [string, string, string];
   monthly: number;
   integrations2: [string, string];
   params3: [string, string, string];
@@ -71,7 +79,50 @@ function useOnceInView<T extends HTMLElement>(
   return { ref, inView };
 }
 
-function DetailsFrame({
+function MobileScaleFrame({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const outerRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const el = outerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const w = Math.min(el.getBoundingClientRect().width, 600);
+      setScale(w / 600);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={outerRef}
+      className="mx-auto w-full max-w-[600px]"
+      style={{ height: 730 * scale }}
+    >
+      <div
+        style={{
+          width: 600,
+          height: 730,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DesktopDetailsFrame({
   plan,
   details,
   borderClass,
@@ -112,18 +163,18 @@ function DetailsFrame({
       className={`h-full w-full overflow-hidden rounded-3xl bg-accent-3 border-2 ${borderClass}`}
       style={{ ["--plan" as any]: planHex }}
     >
-      <div className="h-full px-5 py-5 md:px-10 md:py-8 flex flex-col">
-        <div className="flex items-start gap-4 md:gap-6">
-          <div className="min-w-0 w-full">
-            <div className="text-[28px] md:text-[40px] font-extrabold leading-none text-text text-left">
+      <div className="h-full px-10 py-8 flex flex-col">
+        <div className="flex items-start gap-6">
+          <div className="min-w-0">
+            <div className="text-[40px] font-extrabold leading-none text-text">
               {plan.title}
             </div>
 
-            <div className="mt-3 md:mt-4 w-full text-[15px] md:text-[18px] font-medium leading-[1.25] text-text/85 text-left">
+            <div className="mt-4 text-[18px] font-medium text-text/85">
               {details.lead}
             </div>
 
-            <div className="mt-3 md:mt-4 text-[12px] md:text-[14px] font-semibold text-text/55 text-left">
+            <div className="mt-4 text-[14px] font-semibold text-text/55">
               {details.tags}
             </div>
           </div>
@@ -134,12 +185,13 @@ function DetailsFrame({
               onClick={onPrev}
               disabled={!canPrev}
               className={[
-                "btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
                 canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Предыдущий пакет"
+              title="Предыдущий пакет (←)"
             >
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
 
             <button
@@ -147,26 +199,28 @@ function DetailsFrame({
               onClick={onNext}
               disabled={!canNext}
               className={[
-                "btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
                 canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Следующий пакет"
+              title="Следующий пакет (→)"
             >
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+              <ChevronRight className="h-5 w-5" />
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="btn-lift-outline inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
+              className="btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur"
               aria-label="Закрыть описание"
+              title="Закрыть (Esc)"
             >
-              <X className="h-4 w-4 md:h-5 md:w-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        <div className="mt-5 md:mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-wrap gap-2">
           {tabs.map((t) => {
             const isOn = t.id === activeId;
             return (
@@ -175,7 +229,7 @@ function DetailsFrame({
                 type="button"
                 onClick={() => onSelectPlan(t.id)}
                 className={[
-                  "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-3 py-2 md:px-4 md:py-2 text-[12px] md:text-[13px] font-semibold",
+                  "btn-lift-outline inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold",
                   isOn
                     ? "bg-bg/65 border-2"
                     : "bg-bg/25 border border-text/10 text-text/65 hover:text-text",
@@ -183,26 +237,29 @@ function DetailsFrame({
                 style={isOn ? { borderColor: t.hex } : undefined}
                 aria-pressed={isOn}
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.hex }} />
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: t.hex }}
+                />
                 <span>{t.title}</span>
               </button>
             );
           })}
         </div>
 
-        <div ref={bodyRef} className="mt-5 md:mt-8 flex-1 overflow-auto pr-1 md:pr-2">
-          <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+        <div ref={bodyRef} className="mt-8 flex-1 overflow-auto pr-2">
+          <div className="grid gap-8 md:grid-cols-2">
             {details.sections.map((s) => (
-              <div key={s.title} className="min-w-0 text-left">
-                <div className="text-[16px] md:text-[18px] font-extrabold text-text text-left">
+              <div key={s.title} className="min-w-0">
+                <div className="text-[18px] font-extrabold text-text">
                   {s.title}
                 </div>
 
-                <ul className="mt-3 md:mt-4 space-y-2 text-[14px] md:text-[16px] font-medium text-text/85 text-left">
+                <ul className="mt-4 space-y-2 text-[16px] font-medium text-text/85">
                   {s.items.map((it) => (
-                    <li key={it} className="flex items-start gap-3">
+                    <li key={it} className="flex gap-3">
                       <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                      <span className="min-w-0 text-left">{it}</span>
+                      <span className="min-w-0">{it}</span>
                     </li>
                   ))}
                 </ul>
@@ -211,16 +268,16 @@ function DetailsFrame({
           </div>
         </div>
 
-        <div className="mt-5 md:mt-8">
+        <div className="mt-8">
           <a
             href={ctaHref}
             target="_blank"
             rel="noopener noreferrer"
             className={[
-              "btn-lift-outline block w-full rounded-xl px-5 py-3 md:px-6 md:py-4 text-center font-extrabold",
+              "btn-lift-outline block w-full rounded-xl px-6 py-4 text-center font-extrabold",
               plan.ctaStyle === "fill"
-                ? "bg-[color:var(--plan)] text-bg text-[16px] md:text-[18px]"
-                : "border-2 border-[color:var(--plan)] text-[color:var(--plan)] text-[16px] md:text-[18px]",
+                ? "bg-[color:var(--plan)] text-bg text-[18px]"
+                : "border-2 border-[color:var(--plan)] text-[color:var(--plan)] text-[18px]",
             ].join(" ")}
             style={
               isNeutral && plan.ctaStyle === "outline"
@@ -237,180 +294,331 @@ function DetailsFrame({
   );
 }
 
-function mobileLead(planId: PlanId) {
-  switch (planId) {
-    case "test":
-      return [
-        "Соберите первых ассистентов",
-        "и оцените интерфейс, аналитику",
-        "и логику работы.",
-      ];
-    case "small":
-      return [
-        "Для небольших команд: быстрый запуск",
-        "по инструкциям ЮНИ + лёгкая",
-        "помощь эксперта.",
-      ];
-    case "mid":
-      return [
-        "Для масштабирования",
-        "действующих процессов.",
-        "Полноценная интеграция командой ЮНИ.",
-      ];
-    case "ent":
-      return [
-        "Для крупных компаний:",
-        "макс. персонализации, SLA и",
-        "постоянное вовлечение команды ЮНИ.",
-      ];
-  }
-}
-
-function MobilePlanCard({
+function MobileDetailsCard({
   plan,
-  billing,
-  isActive,
-  onOpenDetails,
-  onOpenCta,
+  details,
+  planHex,
   onPrev,
   onNext,
+  canPrev,
+  canNext,
+  onClose,
+  ctaHref,
 }: {
   plan: Plan;
-  billing: Billing;
-  isActive: boolean;
-  onOpenDetails: () => void;
-  onOpenCta: () => void;
+  details: PlanDetails;
+  planHex: string;
   onPrev: () => void;
   onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  onClose: () => void;
+  ctaHref: string;
 }) {
-  const tone = TONE[plan.tone];
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const isNeutral = plan.tone === "neutral";
+  const mobileCta = plan.id === "mid" ? "Подключить" : plan.cta;
 
-  const price = useMemo(() => {
-    if (plan.monthly === 0) return 0;
-    if (billing === "monthly") return plan.monthly;
-    return Math.round(plan.monthly * 0.8);
-  }, [plan, billing]);
-
-  const ctaLabel = plan.id === "mid" ? "Подключить" : plan.cta;
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [plan.id]);
 
   return (
-    <div
-      className="relative w-full"
-      style={{ ["--plan" as any]: tone.hex }}
-    >
+    <MobileScaleFrame>
       <div
-        className={[
-          "rounded-[28px] bg-accent-3",
-          isNeutral ? "ring-2 ring-text/90" : "ring-2 ring-[color:var(--plan)]",
-        ].join(" ")}
+        className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
+        style={{ borderColor: isNeutral ? "#111827" : planHex }}
       >
-        <div className="px-[5%] pt-[5%] pb-[5%]">
-          <div className="flex items-start justify-between gap-4">
-            <div className="text-[7.6vw] max-w-[70%] font-extrabold leading-none text-text sm:text-[42px]">
-              {plan.title}
-            </div>
-
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg/40">
-              <MoveHorizontal className="h-5 w-5 text-text/45" />
-            </div>
-          </div>
-
-          <div className="mt-[9px] w-full text-left text-[4.3vw] sm:text-[24px] font-medium leading-[1.2] text-text/90">
-            {mobileLead(plan.id).map((line) => (
-              <div key={line}>{line}</div>
-            ))}
-          </div>
-
-          <div className="mt-[30px] h-px w-full bg-text/12" />
-
-          <div className="pt-[9px]">
-            <div className="flex items-baseline gap-2 sm:gap-3">
-              <div
-                className={[
-                  "text-[8vw] sm:text-[46px] font-extrabold leading-none",
-                  isNeutral ? "text-text" : "text-[color:var(--plan)]",
-                ].join(" ")}
-              >
-                {formatRub(price)}
+        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
+          <div className="flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="text-[52px] font-extrabold leading-none text-text">
+                {plan.title}
               </div>
-              <div className="text-[6vw] sm:text-[34px] font-semibold leading-none text-text/30">
-                / мес
+
+              <div className="mt-[9px] w-full text-[20px] font-medium leading-[1.24] text-text/88">
+                {details.lead}
+              </div>
+
+              <div className="mt-[9px] text-[14px] font-semibold leading-[1.25] text-text/55">
+                {details.tags}
               </div>
             </div>
 
-            <div className="mt-[9px] text-[3.9vw] sm:text-[22px] font-semibold leading-[1.15] text-text/35">
-              {plan.integrations2[0]}
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-lift-outline inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-bg/65"
+              aria-label="Закрыть описание"
+            >
+              <X className="h-6 w-6 text-text" />
+            </button>
           </div>
 
-          <div className="mt-[30px] h-px w-full bg-text/12" />
+          <div className="mt-[24px] h-px w-full bg-text/12" />
 
-          <div className="pt-[30px]">
-            <div className="text-[5vw] sm:text-[28px] font-extrabold leading-none text-text">
-              Ключевые параметры
-            </div>
+          <div
+            ref={bodyRef}
+            className="mt-[24px] min-h-0 flex-1 overflow-auto pr-2"
+          >
+            <div className="space-y-[22px]">
+              {details.sections.map((section) => (
+                <div key={section.title} className="w-full">
+                  <div className="text-left text-[24px] font-extrabold leading-none text-text">
+                    {section.title}
+                  </div>
 
-            <div className="mt-[9px] space-y-0 text-[4.4vw] sm:text-[25px] font-medium leading-[1.22] text-text/90">
-              {plan.params3.map((line) => (
-                <div key={line}>{line}</div>
+                  <div className="mt-[9px] space-y-[8px]">
+                    {section.items.map((item) => (
+                      <div
+                        key={item}
+                        className="text-left text-[18px] font-medium leading-[1.24] text-text/84"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-[30px] h-px w-full bg-text/12" />
-
-          <div className="pt-[30px]">
-            <button
-              type="button"
-              onClick={onOpenDetails}
-              className="flex items-center gap-3 text-left text-[5vw] sm:text-[28px] font-extrabold leading-none text-text"
-            >
-              <span>Изучить возможности</span>
-              <Eye className="h-6 w-6 sm:h-7 sm:w-7" />
-            </button>
-          </div>
-
-          <div className="mt-[60px] flex items-center gap-4">
+          <div className="mt-[24px] flex items-center gap-[14px]">
             <button
               type="button"
               onClick={onPrev}
-              className="flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full bg-bg/40"
-              aria-label="Предыдущая карточка"
+              disabled={!canPrev}
+              className={[
+                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Предыдущий пакет"
             >
-              <ChevronLeft className="h-6 w-6 text-text" />
+              <ChevronLeft className="h-7 w-7 text-text" />
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenCta}
+            <a
+              href={ctaHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className={[
-                "btn-lift-outline flex-1 rounded-[20px] px-5 py-4 text-center text-[5vw] sm:text-[28px] font-extrabold leading-none",
+                "btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] text-center text-[28px] font-extrabold",
                 plan.ctaStyle === "fill"
                   ? "bg-[color:var(--plan)] text-bg"
-                  : "border-[3px] border-[color:var(--plan)] text-[color:var(--plan)]",
+                  : "border-[3px] text-[color:var(--plan)]",
               ].join(" ")}
               style={
-                isNeutral && plan.ctaStyle === "outline"
-                  ? { borderColor: "var(--text)", color: "var(--text)" }
-                  : undefined
+                plan.ctaStyle === "fill"
+                  ? { ["--plan" as any]: planHex }
+                  : {
+                      ["--plan" as any]: planHex,
+                      borderColor: isNeutral ? "#111827" : planHex,
+                      color: isNeutral ? "#111827" : planHex,
+                    }
               }
             >
-              {ctaLabel}
-            </button>
+              {mobileCta}
+            </a>
 
             <button
               type="button"
               onClick={onNext}
-              className="flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full bg-bg/40"
-              aria-label="Следующая карточка"
+              disabled={!canNext}
+              className={[
+                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Следующий пакет"
             >
-              <ChevronRight className="h-6 w-6 text-text" />
+              <ChevronRight className="h-7 w-7 text-text" />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </MobileScaleFrame>
+  );
+}
+
+function MobilePlanCard({
+  plan,
+  price,
+  onOpenDetails,
+  onOpenCta,
+  onPrev,
+  onNext,
+  canPrev,
+  canNext,
+  onSwipe,
+}: {
+  plan: Plan;
+  price: number;
+  onOpenDetails: () => void;
+  onOpenCta: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  onSwipe: (dir: "left" | "right") => void;
+}) {
+  const isNeutral = plan.tone === "neutral";
+  const planHex = TONE[plan.tone].hex;
+  const mobileCta = plan.id === "mid" ? "Подключить" : plan.cta;
+
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  return (
+    <MobileScaleFrame>
+      <motion.div
+        className="h-full w-full"
+        animate={{ x: [0, 5, -5, 0] }}
+        transition={{
+          duration: 0.58,
+          ease: [0.16, 1, 0.3, 1],
+          repeat: Infinity,
+          repeatDelay: 2.4,
+        }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          touchStartX.current = t.clientX;
+          touchStartY.current = t.clientY;
+        }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current == null || touchStartY.current == null) return;
+
+          const t = e.changedTouches[0];
+          const dx = t.clientX - touchStartX.current;
+          const dy = t.clientY - touchStartY.current;
+
+          touchStartX.current = null;
+          touchStartY.current = null;
+
+          if (Math.abs(dx) < 26) return;
+          if (Math.abs(dx) < Math.abs(dy)) return;
+
+          onSwipe(dx < 0 ? "left" : "right");
+        }}
+      >
+        <div
+          className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
+          style={{ borderColor: isNeutral ? "#111827" : planHex }}
+        >
+          <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="text-[56px] font-extrabold leading-none text-text">
+                {plan.title}
+              </div>
+
+              <div className="inline-flex h-[54px] w-[54px] items-center justify-center rounded-full bg-bg/65">
+                <MoveHorizontal className="h-6 w-6 text-text/55" />
+              </div>
+            </div>
+
+            <div className="mt-[9px] w-full text-[20px] font-medium leading-[1.25] text-text/88">
+              <div>{plan.mobileDesc3[0]}</div>
+              <div>{plan.mobileDesc3[1]}</div>
+              <div>{plan.mobileDesc3[2]}</div>
+            </div>
+
+            <div className="mt-[30px] h-px w-full bg-text/12" />
+
+            <div className="mt-[9px] flex items-baseline gap-3">
+              <div
+                className={`text-[56px] font-extrabold leading-none ${
+                  isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                }`}
+                style={{ ["--plan" as any]: planHex }}
+              >
+                {formatRub(price)}
+              </div>
+
+              <div className="text-[34px] font-semibold leading-none text-text/32">
+                / мес
+              </div>
+            </div>
+
+            <div className="mt-[9px] text-[16px] font-semibold leading-[1.2] text-text/38">
+              {plan.integrations2[0]}
+            </div>
+
+            <div className="mt-[30px] h-px w-full bg-text/12" />
+
+            <div className="mt-[30px] text-[24px] font-extrabold leading-none text-text">
+              Ключевые параметры
+            </div>
+
+            <div className="mt-[9px] space-y-[4px] text-[22px] font-medium leading-[1.24] text-text/90">
+              <div>{plan.params3[0]}</div>
+              <div>{plan.params3[1]}</div>
+              <div>{plan.params3[2]}</div>
+            </div>
+
+            <div className="mt-[30px] h-px w-full bg-text/12" />
+
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              className="mt-[30px] inline-flex items-center gap-3 text-left text-[24px] font-extrabold leading-none text-text"
+            >
+              <span>Изучить возможности</span>
+              <Eye className="h-7 w-7" />
+            </button>
+
+            <div className="mt-auto pt-[60px]">
+              <div className="flex items-center gap-[14px]">
+                <button
+                  type="button"
+                  onClick={onPrev}
+                  disabled={!canPrev}
+                  className={[
+                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
+                  ].join(" ")}
+                  aria-label="Предыдущий пакет"
+                >
+                  <ChevronLeft className="h-7 w-7 text-text" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onOpenCta}
+                  className={[
+                    "btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] text-center text-[28px] font-extrabold",
+                    plan.ctaStyle === "fill"
+                      ? "bg-[color:var(--plan)] text-bg"
+                      : "border-[3px] text-[color:var(--plan)]",
+                  ].join(" ")}
+                  style={
+                    plan.ctaStyle === "fill"
+                      ? { ["--plan" as any]: planHex }
+                      : {
+                          ["--plan" as any]: planHex,
+                          borderColor: isNeutral ? "#111827" : planHex,
+                          color: isNeutral ? "#111827" : planHex,
+                        }
+                  }
+                >
+                  {mobileCta}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onNext}
+                  disabled={!canNext}
+                  className={[
+                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                    canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
+                  ].join(" ")}
+                  aria-label="Следующий пакет"
+                >
+                  <ChevronRight className="h-7 w-7 text-text" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </MobileScaleFrame>
   );
 }
 
@@ -432,10 +640,24 @@ export function Packages() {
         id: "test",
         title: "Тестовый",
         tone: "neutral",
-        desc4: ["Соберите первых", "ассистентов и оцените", "интерфейс, аналитику", "и логику работы."],
+        desc4: [
+          "Соберите первых",
+          "ассистентов и оцените",
+          "интерфейс, аналитику",
+          "и логику работы.",
+        ],
+        mobileDesc3: [
+          "Соберите первых ассистентов",
+          "и оцените интерфейс, аналитику",
+          "и логику работы.",
+        ],
         monthly: 0,
         integrations2: ["нет интеграции от ЮНИ", ""],
-        params3: ["2 кастомных агента", "2 готовых агента", "До 1 000 сообщений / мес"],
+        params3: [
+          "2 кастомных агента",
+          "2 готовых агента",
+          "До 1 000 сообщений / мес",
+        ],
         cta: "Попробовать",
         ctaStyle: "outline",
       },
@@ -443,10 +665,24 @@ export function Packages() {
         id: "small",
         title: "Малый",
         tone: "blue",
-        desc4: ["Для небольших команд:", "быстрый запуск по", "инструкциям ЮНИ + лёгкая", "помощь эксперта."],
+        desc4: [
+          "Для небольших команд:",
+          "быстрый запуск по",
+          "инструкциям ЮНИ + лёгкая",
+          "помощь эксперта.",
+        ],
+        mobileDesc3: [
+          "Для небольших команд: быстрый запуск",
+          "по инструкциям ЮНИ + лёгкая",
+          "помощь эксперта.",
+        ],
         monthly: 9900,
         integrations2: ["интеграции: от 179 900₽ / разово", ""],
-        params3: ["5 кастомных агентов", "+ вся библиотека готовых", "До 5 000 сообщений / мес"],
+        params3: [
+          "5 кастомных агентов",
+          "+ вся библиотека готовых",
+          "До 5 000 сообщений / мес",
+        ],
         cta: "Попробовать",
         ctaStyle: "outline",
       },
@@ -454,10 +690,24 @@ export function Packages() {
         id: "mid",
         title: "Средний",
         tone: "green",
-        desc4: ["Для масштабирования", "действующих процессов.", "Полноценная интеграция", "под ключ командой ЮНИ."],
+        desc4: [
+          "Для масштабирования",
+          "действующих процессов.",
+          "Полноценная интеграция",
+          "под ключ командой ЮНИ.",
+        ],
+        mobileDesc3: [
+          "Для масштабирования",
+          "действующих процессов.",
+          "Полноценная интеграция командой ЮНИ.",
+        ],
         monthly: 39900,
         integrations2: ["интеграции: от 179 900₽ / разово", ""],
-        params3: ["10 кастомных агентов", "+ вся библиотека готовых", "До 30 000 сообщений / мес"],
+        params3: [
+          "10 кастомных агентов",
+          "+ вся библиотека готовых",
+          "До 30 000 сообщений / мес",
+        ],
         cta: "Подключить сейчас",
         ctaStyle: "fill",
       },
@@ -465,10 +715,24 @@ export function Packages() {
         id: "ent",
         title: "Энтерпрайз",
         tone: "red",
-        desc4: ["Для крупных компаний:", "макс. персонализации,", "SLA и постоянное", "вовлечение команды ЮНИ."],
+        desc4: [
+          "Для крупных компаний:",
+          "макс. персонализации,",
+          "SLA и постоянное",
+          "вовлечение команды ЮНИ.",
+        ],
+        mobileDesc3: [
+          "Для крупных компаний:",
+          "макс. персонализации, SLA и",
+          "постоянное вовлечение команды ЮНИ.",
+        ],
         monthly: 99900,
         integrations2: ["интеграции: от 179 900₽ / разово", ""],
-        params3: ["индивидуальные лимиты", "Максимум персонализации", "Без ограничений"],
+        params3: [
+          "индивидуальные лимиты",
+          "Максимум персонализации",
+          "Без ограничений",
+        ],
         cta: "Заказать звонок",
         ctaStyle: "fill",
       },
@@ -541,7 +805,9 @@ export function Packages() {
           },
           {
             title: "Примечание",
-            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
+            items: [
+              "Стоимость интеграций зависит от состава систем и глубины сценариев.",
+            ],
           },
         ],
       },
@@ -580,7 +846,9 @@ export function Packages() {
           },
           {
             title: "Примечание",
-            items: ["Стоимость интеграций зависит от состава систем и глубины сценариев."],
+            items: [
+              "Стоимость интеграций зависит от состава систем и глубины сценариев.",
+            ],
           },
         ],
       },
@@ -623,6 +891,12 @@ export function Packages() {
     [],
   );
 
+  const priceFor = (p: Plan) => {
+    if (p.monthly === 0) return 0;
+    if (billing === "monthly") return p.monthly;
+    return Math.round(p.monthly * 0.8);
+  };
+
   const setExpandedTo = (id: PlanId) => {
     setActive(id);
     setExpanded(id);
@@ -654,7 +928,8 @@ export function Packages() {
     return "rounded-none";
   };
 
-  const titleAlignForInactive = (i: number) => (i < activeIdx ? "text-left" : "text-right");
+  const titleAlignForInactive = (i: number) =>
+    i < activeIdx ? "text-left" : "text-right";
 
   const CARD_MOTION =
     "will-change-[left,width,box-shadow,border-color,background-color] transition-[left,width,box-shadow,border-color,background-color] duration-[560ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
@@ -693,23 +968,25 @@ export function Packages() {
   const canNext = expandedIdx >= 0 && expandedIdx < plans.length - 1;
 
   const goPrev = () => {
-    const nextIdx = activeIdx <= 0 ? plans.length - 1 : activeIdx - 1;
-    setActive(plans[nextIdx].id);
-  };
-
-  const goNext = () => {
-    const nextIdx = activeIdx >= plans.length - 1 ? 0 : activeIdx + 1;
-    setActive(plans[nextIdx].id);
-  };
-
-  const goPrevExpanded = () => {
     if (!expanded || !canPrev) return;
     setExpandedTo(plans[expandedIdx - 1].id);
   };
 
-  const goNextExpanded = () => {
+  const goNext = () => {
     if (!expanded || !canNext) return;
     setExpandedTo(plans[expandedIdx + 1].id);
+  };
+
+  const goPrevCollapsed = () => {
+    const idx = plans.findIndex((p) => p.id === active);
+    if (idx <= 0) return;
+    setActive(plans[idx - 1].id);
+  };
+
+  const goNextCollapsed = () => {
+    const idx = plans.findIndex((p) => p.id === active);
+    if (idx >= plans.length - 1) return;
+    setActive(plans[idx + 1].id);
   };
 
   useEffect(() => {
@@ -733,12 +1010,12 @@ export function Packages() {
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        goPrevExpanded();
+        goPrev();
       }
 
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        goNextExpanded();
+        goNext();
       }
     };
 
@@ -746,11 +1023,16 @@ export function Packages() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expanded, expandedIdx, canPrev, canNext, plans]);
 
+  const mobileActivePlan = plans.find((p) => p.id === active) ?? plans[0];
+  const mobileActiveIdx = plans.findIndex((p) => p.id === active);
+
   return (
     <section
       ref={sectionRef as any}
       id="pricing"
-      className={`relative ${inView ? "opacity-100" : "opacity-0"} transition-opacity duration-700 ease-out`}
+      className={`relative ${
+        inView ? "opacity-100" : "opacity-0"
+      } transition-opacity duration-700 ease-out`}
     >
       <div
         aria-hidden
@@ -759,33 +1041,46 @@ export function Packages() {
         }`}
       />
 
-      <Container className="relative z-10 py-12 md:py-14 px-6 md:px-10 lg:px-12">
+      {/* vertical divider: desktop only */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute left-1/2 top-0 hidden h-[200px] w-px -translate-x-1/2 bg-text/10 transition-opacity duration-700 md:block lg:h-[240px] ${
+          inView ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
+      <Container className="relative z-10 px-6 py-12 md:px-10 md:py-14 lg:px-12">
+        {/* MOBILE HEADER */}
         <div className="md:hidden">
           <div
             className={`${REVEAL_BASE} ${
               inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="text-[14px] font-medium opacity-70 hover-accent">стоимость | пакеты</div>
+            <div className="text-[16px] font-medium opacity-70 hover-accent">
+              стоимость | пакеты
+            </div>
 
-            <div className="mt-3 text-[26px] font-extrabold leading-[0.95] tracking-tight text-accent-1">
+            <div className="mt-3 text-[30px] font-extrabold leading-[0.96] tracking-tight text-accent-1">
               Сделай выбор
             </div>
 
-            <h2 className="mt-3 text-[16px] font-semibold leading-[1.15] tracking-tight text-text">
-              Прозрачные условия, никаких скрытых платежей
-            </h2>
+            <div className="mt-3 text-[18px] font-semibold leading-[1.08] tracking-tight text-text">
+              Прозрачные условия,
+              <br />
+              никаких скрытых платежей
+            </div>
 
             <div className="mt-6">
               <div className="inline-flex rounded-[16px] bg-accent-1 p-[2px]">
-                <div className="flex rounded-[14px] bg-accent-1 p-[3px]">
+                <div className="flex rounded-[14px] bg-accent-1 p-[2px]">
                   <button
                     type="button"
                     onClick={() => setBilling("monthly")}
                     className={
                       billing === "monthly"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[12px] font-semibold text-bg/90"
+                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
+                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/90"
                     }
                     aria-pressed={billing === "monthly"}
                   >
@@ -797,14 +1092,20 @@ export function Packages() {
                     onClick={() => setBilling("yearly")}
                     className={
                       billing === "yearly"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[12px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[12px] font-semibold text-bg/75"
+                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
+                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/75"
                     }
                     aria-pressed={billing === "yearly"}
                   >
                     <span className="inline-flex items-center gap-2">
                       <span>Годовой</span>
-                      <span className={billing === "yearly" ? "text-text/55" : "text-bg/75"}>-20%</span>
+                      <span
+                        className={
+                          billing === "yearly" ? "text-text/55" : "text-bg/70"
+                        }
+                      >
+                        -20%
+                      </span>
                     </span>
                   </button>
                 </div>
@@ -816,44 +1117,40 @@ export function Packages() {
             className={`${REVEAL_BASE} ${
               inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
             } mt-8`}
-            style={{ transitionDelay: "120ms" }}
+            style={{ transitionDelay: "100ms" }}
           >
             {expandedPlan ? (
-              <div className="h-[76vh] min-h-[620px] max-h-[760px]">
-                <DetailsFrame
-                  plan={expandedPlan}
-                  details={DETAILS[expandedPlan.id]}
-                  borderClass={expandedBorderClass}
-                  planHex={expandedTone?.hex ?? "#111827"}
-                  tabs={planTabs}
-                  activeId={expandedPlan.id}
-                  onSelectPlan={setExpandedTo}
-                  onPrev={goPrevExpanded}
-                  onNext={goNextExpanded}
-                  canPrev={canPrev}
-                  canNext={canNext}
-                  onClose={closeDetails}
-                  ctaHref={CTA_LINKS[expandedPlan.id]}
-                />
-              </div>
+              <MobileDetailsCard
+                plan={expandedPlan}
+                details={DETAILS[expandedPlan.id]}
+                planHex={expandedTone?.hex ?? "#111827"}
+                onPrev={goPrev}
+                onNext={goNext}
+                canPrev={canPrev}
+                canNext={canNext}
+                onClose={closeDetails}
+                ctaHref={CTA_LINKS[expandedPlan.id]}
+              />
             ) : (
-              <div className="overflow-hidden">
-                <div className="w-full">
-                  <MobilePlanCard
-                    plan={plans[activeIdx]}
-                    billing={billing}
-                    isActive
-                    onOpenDetails={() => openDetails(plans[activeIdx].id)}
-                    onOpenCta={() => openCta(plans[activeIdx].id)}
-                    onPrev={goPrev}
-                    onNext={goNext}
-                  />
-                </div>
-              </div>
+              <MobilePlanCard
+                plan={mobileActivePlan}
+                price={priceFor(mobileActivePlan)}
+                onOpenDetails={() => openDetails(mobileActivePlan.id)}
+                onOpenCta={() => openCta(mobileActivePlan.id)}
+                onPrev={goPrevCollapsed}
+                onNext={goNextCollapsed}
+                canPrev={mobileActiveIdx > 0}
+                canNext={mobileActiveIdx < plans.length - 1}
+                onSwipe={(dir) => {
+                  if (dir === "left") goNextCollapsed();
+                  else goPrevCollapsed();
+                }}
+              />
             )}
           </div>
         </div>
 
+        {/* DESKTOP HEADER + DECK */}
         <div className="hidden md:block">
           <div className="grid gap-10 md:grid-cols-2 md:gap-0">
             <div
@@ -910,7 +1207,13 @@ export function Packages() {
                       >
                         <span className="inline-flex items-center gap-3">
                           <span>Годовой</span>
-                          <span className={billing === "yearly" ? "text-text/60" : "text-bg/70"}>-20%</span>
+                          <span
+                            className={
+                              billing === "yearly" ? "text-text/60" : "text-bg/70"
+                            }
+                          >
+                            -20%
+                          </span>
                         </span>
                       </button>
                     </div>
@@ -932,18 +1235,15 @@ export function Packages() {
               <div className="relative" style={{ height: CARD_H }}>
                 <div
                   className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
-                    expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
+                    expanded
+                      ? "opacity-0 blur-[1px] pointer-events-none"
+                      : "opacity-100 blur-0"
                   }`}
                 >
                   {plans.map((p, i) => {
                     const isActive = p.id === active;
                     const tone = TONE[p.tone];
-                    const price =
-                      p.monthly === 0
-                        ? 0
-                        : billing === "monthly"
-                          ? p.monthly
-                          : Math.round(p.monthly * 0.8);
+                    const price = priceFor(p);
                     const isNeutral = p.tone === "neutral";
 
                     const ringClass = isActive
@@ -953,7 +1253,9 @@ export function Packages() {
                       : "ring-1 ring-text/15";
 
                     const bgClass = isActive ? "bg-accent-3" : "bg-bg";
-                    const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                    const radiusClass = isActive
+                      ? "rounded-[30px]"
+                      : radiusForInactive(i);
                     const inactiveTitleAlign = titleAlignForInactive(i);
 
                     const shadow = isActive
@@ -980,10 +1282,14 @@ export function Packages() {
                           ["--i" as any]: INTERVAL,
                         }}
                       >
-                        <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
+                        <div
+                          className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}
+                        >
                           <div
                             className={`grid h-full ${ROWS} ${
-                              isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
+                              isActive
+                                ? "divide-y divide-text/25"
+                                : "divide-y divide-text/10"
                             }`}
                           >
                             <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
@@ -992,7 +1298,9 @@ export function Packages() {
                                   className={
                                     isActive
                                       ? `text-[44px] font-extrabold leading-none ${
-                                          isNeutral ? "text-text" : "text-[color:var(--plan)]"
+                                          isNeutral
+                                            ? "text-text"
+                                            : "text-[color:var(--plan)]"
                                         }`
                                       : `w-full text-[28px] font-extrabold leading-none text-text/15 ${inactiveTitleAlign}`
                                   }
@@ -1030,10 +1338,14 @@ export function Packages() {
                                   >
                                     {formatRub(price)}
                                   </div>
-                                  <div className="text-[34px] font-semibold leading-none text-text/35">/ мес</div>
+                                  <div className="text-[34px] font-semibold leading-none text-text/35">
+                                    / мес
+                                  </div>
                                 </div>
 
-                                <div className="text-[14px] font-semibold text-text/45">{p.integrations2[0]}</div>
+                                <div className="text-[14px] font-semibold text-text/45">
+                                  {p.integrations2[0]}
+                                </div>
                               </div>
                             </div>
 
@@ -1042,7 +1354,9 @@ export function Packages() {
                                 className={`${CONTENT_MOTION} ${contentState} flex h-full flex-col justify-between`}
                                 style={{ transitionDelay: contentDelay }}
                               >
-                                <div className="text-[20px] font-extrabold text-text">Ключевые параметры</div>
+                                <div className="text-[20px] font-extrabold text-text">
+                                  Ключевые параметры
+                                </div>
 
                                 <div className="space-y-1 text-[20px] font-medium leading-[1.15] text-text/90">
                                   {p.params3.map((l) => (
@@ -1089,14 +1403,19 @@ export function Packages() {
                                     }
                                   }}
                                   className={[
-                                    isActive ? "btn-lift-outline cursor-pointer" : "pointer-events-none",
+                                    isActive
+                                      ? "btn-lift-outline cursor-pointer"
+                                      : "pointer-events-none",
                                     p.ctaStyle === "fill"
                                       ? "w-full rounded-xl bg-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-bg"
                                       : "w-full rounded-xl border-2 border-[color:var(--plan)] px-6 py-4 text-center text-[18px] font-extrabold text-[color:var(--plan)]",
                                   ].join(" ")}
                                   style={
                                     isNeutral && p.ctaStyle === "outline"
-                                      ? { borderColor: "var(--text)", color: "var(--text)" }
+                                      ? {
+                                          borderColor: "var(--text)",
+                                          color: "var(--text)",
+                                        }
                                       : undefined
                                   }
                                 >
@@ -1119,7 +1438,7 @@ export function Packages() {
                   }`}
                 >
                   {expandedPlan ? (
-                    <DetailsFrame
+                    <DesktopDetailsFrame
                       plan={expandedPlan}
                       details={DETAILS[expandedPlan.id]}
                       borderClass={expandedBorderClass}
@@ -1127,8 +1446,8 @@ export function Packages() {
                       tabs={planTabs}
                       activeId={expandedPlan.id}
                       onSelectPlan={setExpandedTo}
-                      onPrev={goPrevExpanded}
-                      onNext={goNextExpanded}
+                      onPrev={goPrev}
+                      onNext={goNext}
                       canPrev={canPrev}
                       canNext={canNext}
                       onClose={closeDetails}
