@@ -43,6 +43,7 @@ const TONE: Record<Service["tone"], { hex: string }> = {
 };
 
 const TELEGRAM_HREF = "https://t.me/uni_smb";
+const MOBILE_DIVIDER_FULL = "h-px w-[calc(100%+80px)] -ml-[40px] bg-text/20";
 
 function useOnceInView<T extends HTMLElement>(
   threshold = 0.12,
@@ -74,12 +75,12 @@ function useOnceInView<T extends HTMLElement>(
 
 function MobileScaleFrame({
   children,
-  width = 600,
-  height = 760,
+  baseWidth = 600,
+  baseHeight = 730,
 }: {
   children: ReactNode;
-  width?: number;
-  height?: number;
+  baseWidth?: number;
+  baseHeight?: number;
 }) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
@@ -89,28 +90,26 @@ function MobileScaleFrame({
     if (!el) return;
 
     const update = () => {
-      const w = Math.min(el.getBoundingClientRect().width, width);
-      setScale(w / width);
+      const w = Math.min(el.getBoundingClientRect().width, baseWidth);
+      setScale(w / baseWidth);
     };
 
     update();
-
     const ro = new ResizeObserver(update);
     ro.observe(el);
-
     return () => ro.disconnect();
-  }, [width]);
+  }, [baseWidth]);
 
   return (
     <div
       ref={outerRef}
       className="mx-auto w-full max-w-[600px]"
-      style={{ height: height * scale }}
+      style={{ height: baseHeight * scale }}
     >
       <div
         style={{
-          width,
-          height,
+          width: baseWidth,
+          height: baseHeight,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
         }}
@@ -121,423 +120,9 @@ function MobileScaleFrame({
   );
 }
 
-function MobileServiceCard({
-  service,
-  toneHex,
-  onOpenDetails,
-  onPrev,
-  onNext,
-  canPrev,
-  canNext,
-  onSwipe,
-}: {
-  service: Service;
-  toneHex: string;
-  onOpenDetails: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  canPrev: boolean;
-  canNext: boolean;
-  onSwipe: (dir: "left" | "right") => void;
-}) {
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-
-  return (
-    <MobileScaleFrame height={760}>
-      <div
-        className="h-full w-full"
-        onTouchStart={(e) => {
-          const t = e.touches[0];
-          touchStartX.current = t.clientX;
-          touchStartY.current = t.clientY;
-        }}
-        onTouchEnd={(e) => {
-          if (touchStartX.current == null || touchStartY.current == null) return;
-
-          const t = e.changedTouches[0];
-          const dx = t.clientX - touchStartX.current;
-          const dy = t.clientY - touchStartY.current;
-
-          touchStartX.current = null;
-          touchStartY.current = null;
-
-          if (Math.abs(dx) < 26) return;
-          if (Math.abs(dx) < Math.abs(dy)) return;
-
-          onSwipe(dx < 0 ? "left" : "right");
-        }}
-      >
-        <div
-          className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
-          style={{ borderColor: toneHex }}
-        >
-          <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
-            <div className="flex items-start justify-between gap-4">
-              <div
-                className="text-[48px] font-extrabold leading-[1.02]"
-                style={{ color: toneHex }}
-              >
-                <div>{service.title2[0]}</div>
-                <div>{service.title2[1]}</div>
-              </div>
-
-              <div className="inline-flex h-[54px] w-[54px] items-center justify-center rounded-full bg-bg/65">
-                <motion.div
-                  animate={{ x: [0, 5, -5, 0] }}
-                  transition={{
-                    duration: 0.58,
-                    ease: [0.16, 1, 0.3, 1],
-                    repeat: Infinity,
-                    repeatDelay: 2.4,
-                  }}
-                >
-                  <MoveHorizontal className="h-6 w-6 text-text/55" />
-                </motion.div>
-              </div>
-            </div>
-
-            <div className="mt-[14px] w-full text-[20px] font-medium leading-[1.24] text-text/88">
-              <div>{service.lead3[0]}</div>
-              <div>{service.lead3[1]}</div>
-              <div>{service.lead3[2]}</div>
-            </div>
-
-            <div className="mt-[10px] text-[14px] font-semibold leading-[1.22] text-text/55">
-              {service.tags}
-            </div>
-
-            <div className="mt-[24px] h-px w-full bg-text/20" />
-
-            <div className="mt-[24px] text-[24px] font-extrabold leading-none text-text">
-              {service.brief2[0]}
-            </div>
-
-            <div className="mt-[9px] text-[20px] font-medium leading-[1.24] text-text/78">
-              {service.brief2[1]}
-            </div>
-
-            <div className="mt-[24px] h-px w-full bg-text/20" />
-
-            <div className="mt-[24px] space-y-[6px] text-[20px] font-medium leading-[1.24] text-text/88">
-              <div>{service.points3[0]}</div>
-              <div>{service.points3[1]}</div>
-              <div>{service.points3[2]}</div>
-            </div>
-
-            <div className="mt-[24px] h-px w-full bg-text/20" />
-
-            <button
-              type="button"
-              onClick={onOpenDetails}
-              className="mt-[24px] inline-flex items-center gap-3 text-left text-[24px] font-extrabold leading-none text-text"
-            >
-              <span>Изучить возможности</span>
-              <Eye className="h-7 w-7" />
-            </button>
-
-            <div className="mt-auto pt-[48px]">
-              <div className="flex items-center gap-[14px]">
-                <button
-                  type="button"
-                  onClick={onPrev}
-                  disabled={!canPrev}
-                  className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
-                    canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
-                  ].join(" ")}
-                  aria-label="Предыдущая услуга"
-                >
-                  <ChevronLeft className="h-7 w-7 text-text" />
-                </button>
-
-                <a
-                  href={service.ctaHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] text-center text-[26px] font-extrabold text-bg"
-                  style={{ backgroundColor: toneHex }}
-                >
-                  Написать нам
-                </a>
-
-                <button
-                  type="button"
-                  onClick={onNext}
-                  disabled={!canNext}
-                  className={[
-                    "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
-                    canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
-                  ].join(" ")}
-                  aria-label="Следующая услуга"
-                >
-                  <ChevronRight className="h-7 w-7 text-text" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </MobileScaleFrame>
-  );
-}
-
-function MobileDetailsCard({
-  service,
-  details,
-  toneHex,
-  onPrev,
-  onNext,
-  canPrev,
-  canNext,
-  onClose,
-}: {
-  service: Service;
-  details: ServiceDetails;
-  toneHex: string;
-  onPrev: () => void;
-  onNext: () => void;
-  canPrev: boolean;
-  canNext: boolean;
-  onClose: () => void;
-}) {
-  const bodyRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [service.id]);
-
-  return (
-    <MobileScaleFrame height={760}>
-      <div
-        className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
-        style={{ borderColor: toneHex }}
-      >
-        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
-          <div className="flex items-start gap-4">
-            <div className="min-w-0 flex-1">
-              <div
-                className="text-[44px] font-extrabold leading-[1.02]"
-                style={{ color: toneHex }}
-              >
-                <div>{service.title2[0]}</div>
-                <div>{service.title2[1]}</div>
-              </div>
-
-              <div className="mt-[12px] text-[18px] font-medium leading-[1.24] text-text/86">
-                {details.lead}
-              </div>
-
-              <div className="mt-[10px] text-[14px] font-semibold leading-[1.22] text-text/55">
-                {details.tags}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-lift-outline inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-bg/65"
-              aria-label="Закрыть"
-            >
-              <X className="h-6 w-6 text-text" />
-            </button>
-          </div>
-
-          <div className="mt-[22px] h-px w-full bg-text/20" />
-
-          <div
-            ref={bodyRef}
-            className="mt-[22px] min-h-0 flex-1 overflow-auto pr-2"
-          >
-            <div className="space-y-[20px]">
-              {details.sections.map((section) => (
-                <div key={section.title} className="w-full">
-                  <div className="text-left text-[22px] font-extrabold leading-none text-text">
-                    {section.title}
-                  </div>
-
-                  <div className="mt-[9px] space-y-[7px]">
-                    {section.items.map((item) => (
-                      <div
-                        key={item}
-                        className="text-left text-[18px] font-medium leading-[1.24] text-text/84"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-[22px] flex items-center gap-[14px]">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!canPrev}
-              className={[
-                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
-                canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
-              ].join(" ")}
-              aria-label="Предыдущая услуга"
-            >
-              <ChevronLeft className="h-7 w-7 text-text" />
-            </button>
-
-            <a
-              href={service.ctaHref}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] text-center text-[26px] font-extrabold text-bg"
-              style={{ backgroundColor: toneHex }}
-            >
-              Написать нам
-            </a>
-
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!canNext}
-              className={[
-                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
-                canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
-              ].join(" ")}
-              aria-label="Следующая услуга"
-            >
-              <ChevronRight className="h-7 w-7 text-text" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </MobileScaleFrame>
-  );
-}
-
-function MobileProcessCard({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
-  const bodyRef = useRef<HTMLDivElement | null>(null);
-
-  const steps = [
-    { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
-    { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
-    {
-      title: "Знания и промпты",
-      items: [
-        "Адаптация документов для базы знаний",
-        "Упаковка базы знаний",
-        "Написание промптов",
-      ],
-    },
-    {
-      title: "Сборка и запуск",
-      items: [
-        "Разработка MVP-версии",
-        "Тестирование",
-        "Внесение правок",
-        "Доведение до итоговой версии",
-      ],
-    },
-    {
-      title: "Интеграции",
-      items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"],
-    },
-    {
-      title: "Сопровождение",
-      items: [
-        "Контроль качества",
-        "Улучшения по аналитике и данным",
-        "План развития (roadmap)",
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, []);
-
-  return (
-    <MobileScaleFrame height={760}>
-      <div
-        className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
-        style={{ borderColor: TONE.red.hex }}
-      >
-        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
-          <div className="flex items-start gap-4">
-            <div className="min-w-0 flex-1">
-              <div
-                className="text-[44px] font-extrabold leading-[1.02]"
-                style={{ color: TONE.red.hex }}
-              >
-                Интеграции под ключ
-              </div>
-
-              <div className="mt-[12px] text-[18px] font-medium leading-[1.24] text-text/86">
-                Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
-              </div>
-
-              <div className="mt-[10px] text-[14px] font-semibold leading-[1.22] text-text/55">
-                Примечание: стоимость интеграций зависит от состава систем и глубины сценариев.
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-lift-outline inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-bg/65"
-              aria-label="Закрыть"
-            >
-              <X className="h-6 w-6 text-text" />
-            </button>
-          </div>
-
-          <div className="mt-[22px] h-px w-full bg-text/20" />
-
-          <div
-            ref={bodyRef}
-            className="mt-[22px] min-h-0 flex-1 overflow-auto pr-2"
-          >
-            <div className="space-y-[20px]">
-              {steps.map((step) => (
-                <div key={step.title} className="w-full">
-                  <div className="text-left text-[22px] font-extrabold leading-none text-text">
-                    {step.title}
-                  </div>
-
-                  <div className="mt-[9px] space-y-[7px]">
-                    {step.items.map((item) => (
-                      <div
-                        key={item}
-                        className="text-left text-[18px] font-medium leading-[1.24] text-text/84"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-[22px]">
-            <a
-              href={TELEGRAM_HREF}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-lift-outline inline-flex h-[76px] w-full items-center justify-center rounded-[24px] text-center text-[26px] font-extrabold text-bg"
-              style={{ backgroundColor: TONE.red.hex }}
-            >
-              Написать нам
-            </a>
-          </div>
-        </div>
-      </div>
-    </MobileScaleFrame>
-  );
-}
+/* =========================
+   Desktop expanded details
+========================= */
 
 function DetailsFrame({
   service,
@@ -800,6 +385,398 @@ function ProcessFrame({
     </div>
   );
 }
+
+/* =========================
+   Mobile cards
+========================= */
+
+function MobileServiceCard({
+  service,
+  toneHex,
+  onOpenDetails,
+  onPrev,
+  onNext,
+  canPrev,
+  canNext,
+  onSwipe,
+}: {
+  service: Service;
+  toneHex: string;
+  onOpenDetails: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  onSwipe: (dir: "left" | "right") => void;
+}) {
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  return (
+    <MobileScaleFrame baseWidth={600} baseHeight={730}>
+      <div
+        className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
+        style={{ borderColor: toneHex }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          touchStartX.current = t.clientX;
+          touchStartY.current = t.clientY;
+        }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current == null || touchStartY.current == null) return;
+
+          const t = e.changedTouches[0];
+          const dx = t.clientX - touchStartX.current;
+          const dy = t.clientY - touchStartY.current;
+
+          touchStartX.current = null;
+          touchStartY.current = null;
+
+          if (Math.abs(dx) < 24) return;
+          if (Math.abs(dx) < Math.abs(dy)) return;
+
+          onSwipe(dx < 0 ? "left" : "right");
+        }}
+      >
+        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
+          <div className="flex items-start justify-between gap-4">
+            <div
+              className="min-w-0 text-[52px] font-extrabold leading-[1.02]"
+              style={{ color: toneHex }}
+            >
+              {service.title2[0]}
+              {service.title2[1] ? <div>{service.title2[1]}</div> : null}
+            </div>
+
+            <motion.div
+              className="inline-flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-bg/65"
+              animate={{ x: [0, 4, -4, 0] }}
+              transition={{
+                duration: 0.7,
+                ease: [0.16, 1, 0.3, 1],
+                repeat: Infinity,
+                repeatDelay: 2.1,
+              }}
+            >
+              <MoveHorizontal className="h-6 w-6 text-text/55" />
+            </motion.div>
+          </div>
+
+          <div className="mt-[12px] w-full text-[19px] font-medium leading-[1.24] text-text/88">
+            <div>{service.lead3[0]}</div>
+            <div>{service.lead3[1]}</div>
+            <div>{service.lead3[2]}</div>
+          </div>
+
+          <div className={`mt-[24px] ${MOBILE_DIVIDER_FULL}`} />
+
+          <div className="mt-[24px] text-[24px] font-extrabold leading-none text-text">
+            {service.brief2[0]}
+          </div>
+
+          <div className="mt-[9px] text-[20px] font-medium leading-[1.24] text-text/78">
+            {service.brief2[1]}
+          </div>
+
+          <div className={`mt-[24px] ${MOBILE_DIVIDER_FULL}`} />
+
+          <div className="mt-[24px] space-y-[6px] text-[20px] font-medium leading-[1.24] text-text/88">
+            <div>{service.points3[0]}</div>
+            <div>{service.points3[1]}</div>
+            <div>{service.points3[2]}</div>
+          </div>
+
+          <div className={`mt-[24px] ${MOBILE_DIVIDER_FULL}`} />
+
+          <button
+            type="button"
+            onClick={onOpenDetails}
+            className="mt-[24px] inline-flex items-center gap-3 text-left text-[24px] font-extrabold leading-none text-text"
+          >
+            <span>Изучить возможности</span>
+            <Eye className="h-7 w-7" />
+          </button>
+
+          <div className="mt-auto pt-[60px]">
+            <div className="flex items-center gap-[14px]">
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={!canPrev}
+                className={[
+                  "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                  canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
+                ].join(" ")}
+                aria-label="Предыдущая услуга"
+              >
+                <ChevronLeft className="h-7 w-7 text-text" />
+              </button>
+
+              <a
+                href={service.ctaHref}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] bg-[color:var(--tone)] text-center text-[28px] font-extrabold text-bg"
+                style={{ ["--tone" as any]: toneHex }}
+              >
+                Написать нам
+              </a>
+
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!canNext}
+                className={[
+                  "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                  canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
+                ].join(" ")}
+                aria-label="Следующая услуга"
+              >
+                <ChevronRight className="h-7 w-7 text-text" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </MobileScaleFrame>
+  );
+}
+
+function MobileDetailsCard({
+  service,
+  details,
+  toneHex,
+  onPrev,
+  onNext,
+  canPrev,
+  canNext,
+  onClose,
+}: {
+  service: Service;
+  details: ServiceDetails;
+  toneHex: string;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  onClose: () => void;
+}) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [service.id]);
+
+  return (
+    <MobileScaleFrame baseWidth={600} baseHeight={730}>
+      <div
+        className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px]"
+        style={{ borderColor: toneHex }}
+      >
+        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
+          <div className="flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <div
+                className="text-[46px] font-extrabold leading-[1.02]"
+                style={{ color: toneHex }}
+              >
+                {service.title2[0]}
+                {service.title2[1] ? <div>{service.title2[1]}</div> : null}
+              </div>
+
+              <div className="mt-[12px] w-full text-[19px] font-medium leading-[1.24] text-text/88">
+                {details.lead}
+              </div>
+
+              <div className="mt-[9px] text-[14px] font-semibold leading-[1.24] text-text/55">
+                {details.tags}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-lift-outline inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-bg/65"
+              aria-label="Закрыть"
+            >
+              <X className="h-6 w-6 text-text" />
+            </button>
+          </div>
+
+          <div className={`mt-[22px] ${MOBILE_DIVIDER_FULL}`} />
+
+          <div ref={bodyRef} className="mt-[22px] min-h-0 flex-1 overflow-auto pr-2">
+            <div className="space-y-[22px]">
+              {details.sections.map((section) => (
+                <div key={section.title} className="w-full">
+                  <div className="text-left text-[22px] font-extrabold leading-none text-text">
+                    {section.title}
+                  </div>
+
+                  <div className="mt-[9px] space-y-[8px]">
+                    {section.items.map((item) => (
+                      <div
+                        key={item}
+                        className="text-left text-[18px] font-medium leading-[1.24] text-text/84"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-[24px] flex items-center gap-[14px]">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!canPrev}
+              className={[
+                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                canPrev ? "opacity-100" : "opacity-40 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Предыдущая услуга"
+            >
+              <ChevronLeft className="h-7 w-7 text-text" />
+            </button>
+
+            <a
+              href={service.ctaHref}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-lift-outline inline-flex h-[76px] flex-1 items-center justify-center rounded-[24px] bg-[color:var(--tone)] text-center text-[28px] font-extrabold text-bg"
+              style={{ ["--tone" as any]: toneHex }}
+            >
+              Написать нам
+            </a>
+
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!canNext}
+              className={[
+                "btn-lift-outline inline-flex h-[60px] w-[60px] items-center justify-center rounded-full bg-bg/60",
+                canNext ? "opacity-100" : "opacity-40 cursor-not-allowed",
+              ].join(" ")}
+              aria-label="Следующая услуга"
+            >
+              <ChevronRight className="h-7 w-7 text-text" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </MobileScaleFrame>
+  );
+}
+
+function MobileProcessCard() {
+  const steps = [
+    { title: "Диагностика", items: ["Аудит", "Фиксация целей и метрик результата"] },
+    { title: "Проектирование", items: ["Разработка ТЗ", "Декомпозиция сценариев и ролей"] },
+    {
+      title: "Знания и промпты",
+      items: [
+        "Адаптация документов для базы знаний",
+        "Упаковка базы знаний",
+        "Написание промптов",
+      ],
+    },
+    {
+      title: "Сборка и запуск",
+      items: [
+        "Разработка MVP-версии",
+        "Тестирование",
+        "Внесение правок",
+        "Доведение до итоговой версии",
+      ],
+    },
+    { title: "Интеграции", items: ["CRM/ERP/площадки/сервисы", "Права, маршрутизация, события"] },
+    {
+      title: "Сопровождение",
+      items: [
+        "Контроль качества",
+        "Улучшения по аналитике и данным",
+        "План развития (roadmap)",
+      ],
+    },
+  ];
+
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
+  return (
+    <MobileScaleFrame baseWidth={600} baseHeight={730}>
+      <div className="h-full w-full overflow-hidden rounded-[30px] bg-accent-3 border-[3px] border-[#C94444]">
+        <div className="flex h-full flex-col px-[40px] pt-[30px] pb-[30px]">
+          <div className="flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="text-[46px] font-extrabold leading-[1.02] text-[#C94444]">
+                Процесс интеграции
+              </div>
+
+              <div className="mt-[12px] w-full text-[19px] font-medium leading-[1.24] text-text/88">
+                Прозрачный процесс: от аудита и ТЗ до запуска, интеграций и сопровождения.
+              </div>
+
+              <div className="mt-[9px] text-[14px] font-semibold leading-[1.24] text-text/55">
+                Стоимость интеграций зависит от состава систем и глубины сценариев.
+              </div>
+            </div>
+
+            <div className="inline-flex h-[52px] min-w-[110px] items-center justify-center rounded-full bg-bg/65 px-4 text-[14px] font-semibold text-text/75">
+              6 этапов
+            </div>
+          </div>
+
+          <div className={`mt-[22px] ${MOBILE_DIVIDER_FULL}`} />
+
+          <div ref={bodyRef} className="mt-[22px] min-h-0 flex-1 overflow-auto pr-2">
+            <div className="space-y-[20px]">
+              {steps.map((step) => (
+                <div key={step.title}>
+                  <div className="text-left text-[22px] font-extrabold leading-none text-text">
+                    {step.title}
+                  </div>
+
+                  <div className="mt-[9px] space-y-[8px]">
+                    {step.items.map((item) => (
+                      <div
+                        key={item}
+                        className="text-left text-[18px] font-medium leading-[1.24] text-text/84"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-[24px]">
+            <a
+              href={TELEGRAM_HREF}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-lift-outline inline-flex h-[76px] w-full items-center justify-center rounded-[24px] bg-[#C94444] text-center text-[28px] font-extrabold text-bg"
+            >
+              Написать нам
+            </a>
+          </div>
+        </div>
+      </div>
+    </MobileScaleFrame>
+  );
+}
+
+/* =========================
+   Main section
+========================= */
 
 export function ServicesIntegrations() {
   const [mode, setMode] = useState<ViewMode>("services");
@@ -1102,6 +1079,9 @@ export function ServicesIntegrations() {
 
   const ROWS_SERVICES = "grid-rows-[220px_110px_140px_110px]";
 
+  const mobileActiveService = activeService;
+  const mobileActiveIdx = activeIdx;
+
   return (
     <section
       ref={sectionRef as any}
@@ -1125,7 +1105,7 @@ export function ServicesIntegrations() {
               inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="hover-accent text-[18px] font-medium opacity-70">
+            <div className="text-[18px] font-medium opacity-70 hover-accent">
               услуги | интеграции
             </div>
 
@@ -1137,13 +1117,13 @@ export function ServicesIntegrations() {
                     onClick={() => setMode("services")}
                     className={
                       mode === "services"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/90"
+                        ? "inline-flex h-[34px] items-center rounded-[12px] bg-accent-3 px-3.5 text-[13px] font-semibold text-text"
+                        : "inline-flex h-[34px] items-center rounded-[12px] px-3.5 text-[13px] font-semibold text-bg/90"
                     }
                     aria-pressed={mode === "services"}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <Layers className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 leading-none">
+                      <Layers className="h-[13px] w-[13px] shrink-0" />
                       <span>Услуги</span>
                     </span>
                   </button>
@@ -1153,13 +1133,13 @@ export function ServicesIntegrations() {
                     onClick={() => setMode("process")}
                     className={
                       mode === "process"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/75"
+                        ? "inline-flex h-[34px] items-center rounded-[12px] bg-accent-3 px-3.5 text-[13px] font-semibold text-text"
+                        : "inline-flex h-[34px] items-center rounded-[12px] px-3.5 text-[13px] font-semibold text-bg/75"
                     }
                     aria-pressed={mode === "process"}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <Workflow className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 leading-none">
+                      <Workflow className="h-[13px] w-[13px] shrink-0" />
                       <span>Процесс</span>
                     </span>
                   </button>
@@ -1188,13 +1168,13 @@ export function ServicesIntegrations() {
                 />
               ) : (
                 <MobileServiceCard
-                  service={activeService}
-                  toneHex={TONE[activeService.tone].hex}
-                  onOpenDetails={() => openDetails(activeService.id)}
+                  service={mobileActiveService}
+                  toneHex={TONE[mobileActiveService.tone].hex}
+                  onOpenDetails={() => openDetails(mobileActiveService.id)}
                   onPrev={goPrevCollapsed}
                   onNext={goNextCollapsed}
-                  canPrev={activeIdx > 0}
-                  canNext={activeIdx < services.length - 1}
+                  canPrev={mobileActiveIdx > 0}
+                  canNext={mobileActiveIdx < services.length - 1}
                   onSwipe={(dir) => {
                     if (dir === "left") goNextCollapsed();
                     else goPrevCollapsed();
@@ -1202,7 +1182,7 @@ export function ServicesIntegrations() {
                 />
               )
             ) : (
-              <MobileProcessCard onClose={() => setMode("services")} />
+              <MobileProcessCard />
             )}
           </div>
         </div>
@@ -1258,211 +1238,210 @@ export function ServicesIntegrations() {
             style={{ transitionDelay: "80ms" }}
           >
             {mode === "services" ? (
-              <div className="relative">
-                <div className="relative" style={{ height: CARD_H }}>
-                  <div
-                    className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
-                      expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
-                    }`}
-                  >
-                    {services.map((s, i) => {
-                      const isActive = s.id === active;
-                      const toneHex = TONE[s.tone].hex;
+              <>
+                <div className="relative">
+                  <div className="relative" style={{ height: CARD_H }}>
+                    <div
+                      className={`absolute inset-0 transition-[opacity,filter] duration-400 ease-out ${
+                        expanded ? "opacity-0 blur-[1px] pointer-events-none" : "opacity-100 blur-0"
+                      }`}
+                    >
+                      {services.map((s, i) => {
+                        const isActive = s.id === active;
+                        const toneHex = TONE[s.tone].hex;
 
-                      const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
-                      const bgClass = isActive ? "bg-accent-3" : "bg-bg";
-                      const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
-                      const inactiveTitleAlign = titleAlignForInactive(i);
+                        const ringClass = isActive ? "ring-2 ring-[color:var(--tone)]" : "ring-1 ring-text/15";
+                        const bgClass = isActive ? "bg-accent-3" : "bg-bg";
+                        const radiusClass = isActive ? "rounded-[30px]" : radiusForInactive(i);
+                        const inactiveTitleAlign = titleAlignForInactive(i);
 
-                      const shadow = isActive
-                        ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
-                        : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
+                        const shadow = isActive
+                          ? "shadow-[0_22px_70px_rgba(0,0,0,0.10)]"
+                          : "shadow-[0_16px_46px_rgba(0,0,0,0.06)]";
 
-                      const contentState = isActive
-                        ? "opacity-100 translate-y-0 blur-0"
-                        : "opacity-0 translate-y-1 blur-[2px]";
-                      const contentDelay = isActive ? "140ms" : "0ms";
+                        const contentState = isActive
+                          ? "opacity-100 translate-y-0 blur-0"
+                          : "opacity-0 translate-y-1 blur-[2px]";
+                        const contentDelay = isActive ? "140ms" : "0ms";
 
-                      return (
-                        <div
-                          key={s.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-pressed={isActive}
-                          onClick={() => setActive(s.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setActive(s.id);
-                            }
-                          }}
-                          className={`absolute top-0 h-full text-left outline-none ${CARD_MOTION}`}
-                          style={{
-                            left: leftFor(i),
-                            width: isActive ? W_ACTIVE : W_INACTIVE,
-                            zIndex: isActive ? 50 : 10 + i,
-                            ["--tone" as any]: toneHex,
-                            ["--i" as any]: INTERVAL,
-                          }}
-                        >
-                          <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
-                            <div
-                              className={`grid h-full ${ROWS_SERVICES} ${
-                                isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
-                              }`}
-                            >
-                              <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
-                                <div className="flex h-full flex-col justify-start">
-                                  <div
-                                    className={
-                                      isActive
-                                        ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
-                                        : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitleInsetFor(i, isActive)}`
-                                    }
-                                  >
-                                    <div className="min-h-[56px]">
-                                      <div className="truncate">{s.title2[0]}</div>
-                                      <div className="truncate">
-                                        {s.title2[1] || <span className="opacity-0">.</span>}
+                        return (
+                          <div
+                            key={s.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={isActive}
+                            onClick={() => setActive(s.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setActive(s.id);
+                              }
+                            }}
+                            className={`absolute top-0 h-full text-left outline-none ${CARD_MOTION}`}
+                            style={{
+                              left: leftFor(i),
+                              width: isActive ? W_ACTIVE : W_INACTIVE,
+                              zIndex: isActive ? 50 : 10 + i,
+                              ["--tone" as any]: toneHex,
+                              ["--i" as any]: INTERVAL,
+                            }}
+                          >
+                            <div className={`h-full overflow-hidden ${radiusClass} ${bgClass} ${ringClass} ${shadow}`}>
+                              <div
+                                className={`grid h-full ${ROWS_SERVICES} ${
+                                  isActive ? "divide-y divide-text/25" : "divide-y divide-text/10"
+                                }`}
+                              >
+                                <div className="px-10 pt-[var(--i)] pb-[calc(var(--i)+10px)]">
+                                  <div className="flex h-full flex-col justify-start">
+                                    <div
+                                      className={
+                                        isActive
+                                          ? "text-[26px] font-extrabold leading-[1.05] text-[color:var(--tone)]"
+                                          : `w-full text-[24px] font-extrabold leading-[1.05] text-text/15 ${inactiveTitleAlign} ${inactiveTitleInsetFor(i, isActive)}`
+                                      }
+                                    >
+                                      <div className="min-h-[56px]">
+                                        <div className="truncate">{s.title2[0]}</div>
+                                        <div className="truncate">
+                                          {s.title2[1] || <span className="opacity-0">.</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div
+                                      className={`${CONTENT_MOTION} ${contentState} ${
+                                        isActive ? "pointer-events-auto" : "pointer-events-none"
+                                      }`}
+                                      style={{ transitionDelay: contentDelay }}
+                                    >
+                                      <div className="mt-5 space-y-1 text-[15px] font-medium leading-[1.25] text-text/80">
+                                        {s.lead3.map((l) => (
+                                          <div key={l} className="truncate">
+                                            {l}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
+                                        {s.tags}
                                       </div>
                                     </div>
                                   </div>
+                                </div>
 
+                                <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
                                   <div
                                     className={`${CONTENT_MOTION} ${contentState} ${
                                       isActive ? "pointer-events-auto" : "pointer-events-none"
                                     }`}
                                     style={{ transitionDelay: contentDelay }}
                                   >
-                                    <div className="mt-5 space-y-1 text-[15px] font-medium leading-[1.25] text-text/80">
-                                      {s.lead3.map((l) => (
-                                        <div key={l} className="truncate">
-                                          {l}
-                                        </div>
+                                    <div className="text-[18px] font-extrabold text-text truncate">
+                                      {s.brief2[0]}
+                                    </div>
+                                    <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
+                                      {s.brief2[1]}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="px-10 pt-[var(--i)] pb-4">
+                                  <div
+                                    className={`${CONTENT_MOTION} ${contentState} ${
+                                      isActive ? "pointer-events-auto" : "pointer-events-none"
+                                    }`}
+                                    style={{ transitionDelay: contentDelay }}
+                                  >
+                                    <ul className="space-y-2 text-[16px] font-medium text-text/85">
+                                      {s.points3.map((it) => (
+                                        <li key={it} className="flex gap-3">
+                                          <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
+                                          <span className="min-w-0 truncate">{it}</span>
+                                        </li>
                                       ))}
-                                    </div>
-                                    <div className="mt-4 text-[13px] font-semibold text-text/55 truncate">
-                                      {s.tags}
-                                    </div>
+                                    </ul>
                                   </div>
                                 </div>
-                              </div>
 
-                              <div className="px-10 pt-[var(--i)] pb-[var(--i)]">
-                                <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${
-                                    isActive ? "pointer-events-auto" : "pointer-events-none"
-                                  }`}
-                                  style={{ transitionDelay: contentDelay }}
-                                >
-                                  <div className="text-[18px] font-extrabold text-text truncate">
-                                    {s.brief2[0]}
-                                  </div>
-                                  <div className="mt-3 text-[14px] font-medium text-text/70 truncate">
-                                    {s.brief2[1]}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="px-10 pt-[var(--i)] pb-4">
-                                <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${
-                                    isActive ? "pointer-events-auto" : "pointer-events-none"
-                                  }`}
-                                  style={{ transitionDelay: contentDelay }}
-                                >
-                                  <ul className="space-y-2 text-[16px] font-medium text-text/85">
-                                    {s.points3.map((it) => (
-                                      <li key={it} className="flex gap-3">
-                                        <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-text/35" />
-                                        <span className="min-w-0 truncate">{it}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-
-                              <div className="px-10 pt-2 pb-8">
-                                <div
-                                  className={`${CONTENT_MOTION} ${contentState} ${
-                                    isActive ? "pointer-events-auto" : "pointer-events-none"
-                                  } flex h-full items-end`}
-                                  style={{ transitionDelay: contentDelay }}
-                                >
-                                  <div className="flex w-full items-center gap-3">
-                                    <div
-                                      role="button"
-                                      tabIndex={0}
-                                      aria-label="Изучить возможности"
-                                      title="Изучить возможности"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        openDetails(s.id);
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
+                                <div className="px-10 pt-2 pb-8">
+                                  <div
+                                    className={`${CONTENT_MOTION} ${contentState} ${
+                                      isActive ? "pointer-events-auto" : "pointer-events-none"
+                                    } flex h-full items-end`}
+                                    style={{ transitionDelay: contentDelay }}
+                                  >
+                                    <div className="flex w-full items-center gap-3">
+                                      <div
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label="Изучить возможности"
+                                        title="Изучить возможности"
+                                        onClick={(e) => {
                                           e.preventDefault();
                                           e.stopPropagation();
                                           openDetails(s.id);
-                                        }
-                                      }}
-                                      className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/35 text-[color:var(--tone)] backdrop-blur"
-                                    >
-                                      <Eye className="h-5 w-5" />
-                                    </div>
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            openDetails(s.id);
+                                          }
+                                        }}
+                                        className="btn-lift-outline inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[color:var(--tone)] bg-bg/35 text-[color:var(--tone)] backdrop-blur"
+                                      >
+                                        <Eye className="h-5 w-5" />
+                                      </div>
 
-                                    <a
-                                      href={s.ctaHref}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[color:var(--tone)] px-5 text-[16px] font-extrabold text-bg"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      Написать нам
-                                    </a>
+                                      <a
+                                        href={s.ctaHref}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn-lift-outline inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[color:var(--tone)] px-5 text-[16px] font-extrabold text-bg"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        Написать нам
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
 
-                  <div
-                    className={`absolute inset-0 ${PANEL_MOTION} ${
-                      expandedService
-                        ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
-                        : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
-                    }`}
-                  >
-                    {expandedService ? (
-                      <DetailsFrame
-                        service={expandedService}
-                        details={DETAILS[expandedService.id]}
-                        borderClass={expandedBorderClass}
-                        toneHex={expandedToneHex}
-                        tabs={tabs}
-                        activeId={expandedService.id}
-                        onSelect={setExpandedTo}
-                        onPrev={goPrev}
-                        onNext={goNext}
-                        canPrev={canPrev}
-                        canNext={canNext}
-                        onClose={closeDetails}
-                      />
-                    ) : null}
+                    <div
+                      className={`absolute inset-0 ${PANEL_MOTION} ${
+                        expandedService
+                          ? "opacity-100 translate-y-0 blur-0 pointer-events-auto"
+                          : "opacity-0 translate-y-2 blur-[2px] pointer-events-none"
+                      }`}
+                    >
+                      {expandedService ? (
+                        <DetailsFrame
+                          service={expandedService}
+                          details={DETAILS[expandedService.id]}
+                          borderClass={expandedBorderClass}
+                          toneHex={expandedToneHex}
+                          tabs={tabs}
+                          activeId={expandedService.id}
+                          onSelect={setExpandedTo}
+                          onPrev={goPrev}
+                          onNext={goNext}
+                          canPrev={canPrev}
+                          canNext={canNext}
+                          onClose={closeDetails}
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="relative" style={{ height: CARD_H }}>
-                <ProcessFrame
-                  toneHex={TONE.red.hex}
-                  onClose={() => setMode("services")}
-                />
+                <ProcessFrame toneHex={TONE.red.hex} onClose={() => setMode("services")} />
               </div>
             )}
           </div>
