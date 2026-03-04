@@ -620,7 +620,7 @@ function DetailsFrame({
               onClick={onPrev}
               disabled={!canPrev}
               className={[
-                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
                 canPrev ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Предыдущая услуга"
@@ -634,7 +634,7 @@ function DetailsFrame({
               onClick={onNext}
               disabled={!canNext}
               className={[
-                "btn-lift-outline inline-flex h-10 w-10 items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
+                "btn-lift-outline inline-flex h-[76px] w-[76px] items-center justify-center rounded-xl border border-text/15 bg-bg/40 backdrop-blur",
                 canNext ? "opacity-100" : "opacity-35 cursor-not-allowed",
               ].join(" ")}
               aria-label="Следующая услуга"
@@ -882,7 +882,7 @@ export function ServicesIntegrations() {
         mobileLead3: [
           "Мы знаем, насколько важно сохранить",
           "удобство пользования инструментами для команды,",
-          "поэтому интегрируем наши решения в Вашу экосистему",
+          "поэтому интегрируем решения в Вашу экосистему",
         ],
         tags: "Аудит • Подготовка требований • Интеграция • Сопровождение",
         brief2: ["Интеграции с", "AmoCRM, Битрикс24, 1С, трекеры и ERP и др."],
@@ -1168,7 +1168,7 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "services"}
                   >
-                    <span className="inline-flex items-center justify-center gap-2 leading-none">
+                    <span className="inline-flex items-center gap-2 leading-none">
                       <Layers className="h-[13px] w-[13px] shrink-0" />
                       <span className="leading-none">Услуги</span>
                     </span>
@@ -1184,7 +1184,7 @@ export function ServicesIntegrations() {
                     }
                     aria-pressed={mode === "process"}
                   >
-                    <span className="inline-flex items-center justify-center gap-2 leading-none">
+                    <span className="inline-flex items-center gap-2 leading-none">
                       <Workflow className="h-[13px] w-[13px] shrink-0" />
                       <span className="leading-none">Процесс</span>
                     </span>
