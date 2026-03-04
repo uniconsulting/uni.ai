@@ -1158,37 +1158,37 @@ export function ServicesIntegrations() {
             <div className="mt-5">
               <div className="inline-flex rounded-[16px] bg-accent-1 p-[2px]">
                 <div className="flex rounded-[14px] bg-accent-1 p-[2px]">
-                  <button
-                    type="button"
-                    onClick={() => setMode("services")}
-                    className={
-                      mode === "services"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/90"
-                    }
-                    aria-pressed={mode === "services"}
-                  >
-                    <span className="inline-flex items-center gap-2 leading-none">
-                      <Layers className="h-[13px] w-[13px] shrink-0" />
-                      <span className="leading-none">Услуги</span>
-                    </span>
-                  </button>
+<button
+  type="button"
+  onClick={() => setMode("services")}
+  className={
+    mode === "services"
+      ? "inline-flex items-center justify-center rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold leading-none text-text"
+      : "inline-flex items-center justify-center rounded-[12px] px-4 py-2 text-[13px] font-semibold leading-none text-bg/90"
+  }
+  aria-pressed={mode === "services"}
+>
+  <span className="flex items-center justify-center gap-2 leading-none">
+    <Layers className="relative top-px h-[13px] w-[13px] shrink-0" />
+    <span className="leading-none">Услуги</span>
+  </span>
+</button>
 
-                  <button
-                    type="button"
-                    onClick={() => setMode("process")}
-                    className={
-                      mode === "process"
-                        ? "rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold text-text"
-                        : "rounded-[12px] px-4 py-2 text-[13px] font-semibold text-bg/75"
-                    }
-                    aria-pressed={mode === "process"}
-                  >
-                    <span className="inline-flex items-center gap-2 leading-none">
-                      <Workflow className="h-[13px] w-[13px] shrink-0" />
-                      <span className="leading-none">Процесс</span>
-                    </span>
-                  </button>
+<button
+  type="button"
+  onClick={() => setMode("process")}
+  className={
+    mode === "process"
+      ? "inline-flex items-center justify-center rounded-[12px] bg-accent-3 px-4 py-2 text-[13px] font-semibold leading-none text-text"
+      : "inline-flex items-center justify-center rounded-[12px] px-4 py-2 text-[13px] font-semibold leading-none text-bg/75"
+  }
+  aria-pressed={mode === "process"}
+>
+  <span className="flex items-center justify-center gap-2 leading-none">
+    <Workflow className="relative top-px h-[13px] w-[13px] shrink-0" />
+    <span className="leading-none">Процесс</span>
+  </span>
+</button>
                 </div>
               </div>
             </div>
