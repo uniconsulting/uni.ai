@@ -425,7 +425,7 @@ function VoiceWidget() {
             </div>
 
             {/* Центральная зона */}
-            <div className="flex flex-1 flex-col items-center justify-around px-6 py-6">
+            <div className="flex flex-1 flex-col items-center justify-between px-6 py-5">
 
               {/* Переключатель режима */}
               <div className="inline-flex rounded-2xl bg-bg p-1">
@@ -446,67 +446,83 @@ function VoiceWidget() {
                 ))}
               </div>
 
-              {/* Орб + кнопка */}
-              <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
+              {/* Орб + плавающая дымка */}
+              <div className="relative flex items-center justify-center" style={{ width: 280, height: 280 }}>
 
-                {/* Внешнее свечение — большой blur, дышит в idle */}
+                {/* ── Плавающая дымка — 3 независимых облака ── */}
                 <div
-                  className={`absolute rounded-full ${!isActive ? "animate-pulse" : ""}`}
+                  className="absolute rounded-full pointer-events-none"
                   style={{
-                    width: 200 + volNorm * 50,
-                    height: 200 + volNorm * 50,
-                    background: "radial-gradient(circle, var(--color-accent-1) 0%, transparent 65%)",
-                    opacity: isActive ? 0.18 + volNorm * 0.14 : 0.10,
-                    filter: "blur(32px)",
-                    transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 400ms`,
+                    width: 200,
+                    height: 200,
+                    background: "radial-gradient(circle, #c73f40 0%, transparent 70%)",
+                    opacity: isActive ? 0.22 + volNorm * 0.12 : 0.09,
+                    filter: "blur(44px)",
+                    animation: "orb-drift-1 9s ease-in-out infinite",
+                    transition: "opacity 600ms",
+                  }}
+                />
+                <div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    width: 170,
+                    height: 170,
+                    background: "radial-gradient(circle, #5e88bf 0%, transparent 70%)",
+                    opacity: isActive ? 0.28 + volNorm * 0.14 : 0.11,
+                    filter: "blur(36px)",
+                    animation: "orb-drift-2 12s ease-in-out infinite",
+                    transition: "opacity 600ms",
+                  }}
+                />
+                <div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    width: 130,
+                    height: 130,
+                    background: "radial-gradient(circle, #c73f40 0%, #5e88bf 55%, transparent 75%)",
+                    opacity: isActive ? 0.20 + volNorm * 0.18 : 0.08,
+                    filter: "blur(28px)",
+                    animation: "orb-drift-3 7s ease-in-out infinite",
+                    transition: "opacity 600ms",
                   }}
                 />
 
-                {/* Среднее свечение */}
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 138 + volNorm * 30,
-                    height: 138 + volNorm * 30,
-                    background: "radial-gradient(circle, var(--color-accent-2) 0%, var(--color-accent-1) 40%, transparent 70%)",
-                    opacity: isActive ? 0.28 + volNorm * 0.18 : 0.10,
-                    filter: "blur(16px)",
-                    transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 400ms`,
-                  }}
-                />
-
-                {/* Чёткое внутреннее кольцо (только активно) */}
-                {isActive && (
+                {/* ── Реактивные кольца от громкости (только активно) ── */}
+                {isActive && [0, 1].map((i) => (
                   <div
-                    className="absolute rounded-full"
+                    key={i}
+                    className="absolute rounded-full pointer-events-none"
                     style={{
-                      width: 108 + volNorm * 18,
-                      height: 108 + volNorm * 18,
-                      border: "1px solid var(--color-accent-1)",
-                      opacity: 0.25 + volNorm * 0.45,
+                      width: 140 + i * 44 + volNorm * 32,
+                      height: 140 + i * 44 + volNorm * 32,
+                      border: `${1 - i * 0.3}px solid #c73f40`,
+                      opacity: Math.max(0, (0.35 - i * 0.12) + volNorm * 0.4),
                       transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 80ms`,
                     }}
                   />
-                )}
+                ))}
 
-                {/* Кнопка-ядро */}
+                {/* ── Кнопка-ядро ── */}
                 <button
                   type="button"
                   onClick={isActive ? stopSession : startSession}
-                  className="relative z-10 flex h-[84px] w-[84px] items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+                  className="relative z-10 flex items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
                   style={{
-                    background: "linear-gradient(135deg, var(--color-accent-1) 0%, var(--color-accent-2) 100%)",
+                    width: 100,
+                    height: 100,
+                    background: "linear-gradient(135deg, #c73f40 0%, #5e88bf 100%)",
                     boxShadow: isActive
-                      ? `0 0 ${16 + volNorm * 24}px color-mix(in srgb, var(--color-accent-1) 70%, transparent), 0 0 ${32 + volNorm * 48}px color-mix(in srgb, var(--color-accent-1) 30%, transparent)`
-                      : "0 0 16px color-mix(in srgb, var(--color-accent-1) 40%, transparent)",
+                      ? `0 0 ${20 + volNorm * 28}px rgba(199,63,64,0.65), 0 0 ${42 + volNorm * 52}px rgba(94,136,191,0.30)`
+                      : "0 0 20px rgba(199,63,64,0.35), 0 0 40px rgba(94,136,191,0.18)",
                     transition: `box-shadow ${VAD_INTERVAL}ms linear`,
+                    animation: !isActive ? "orb-breathe 3.5s ease-in-out infinite" : undefined,
                   }}
                   aria-label={isActive ? "Завершить разговор" : "Начать разговор"}
                 >
                   {isActive ? (
-                    <Square className="h-6 w-6 fill-white text-white" />
+                    <Square className="h-7 w-7 fill-white text-white" />
                   ) : (
-                    <Mic className="h-7 w-7 text-white" />
+                    <Mic className="h-9 w-9 text-white" />
                   )}
                 </button>
               </div>

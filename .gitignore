@@ -9,6 +9,9 @@ out
 .DS_Store
 *.log
 
-# scripts with API keys — keep local only
+# scripts and env files with API keys — keep local only
 deploy-vps.sh
 cf-worker/scripts/set-secrets.sh
+.env.local
+.env*.local
+proxy-backend/.env
