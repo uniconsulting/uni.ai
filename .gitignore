@@ -9,5 +9,6 @@ out
 .DS_Store
 *.log
 
-# deploy script contains API keys — keep local only
+# scripts with API keys — keep local only
 deploy-vps.sh
+cf-worker/scripts/set-secrets.sh
