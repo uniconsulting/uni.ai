@@ -8,3 +8,6 @@ out
 # misc
 .DS_Store
 *.log
+
+# deploy script contains API keys — keep local only
+deploy-vps.sh
