@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { InfoBlocks } from "@/components/InfoBlocks";
 import { DemoChat } from "@/components/DemoChat";
+import { VoiceAgent } from "@/components/VoiceAgent";
 import { Packages } from "@/components/Packages";
 import { ServicesIntegrations } from "@/components/ServicesIntegrations";
 import { RoiCalculator } from "@/components/RoiCalculator";
@@ -18,6 +19,7 @@ export default function Page() {
         <Hero />
         <InfoBlocks />
         <DemoChat />
+        <VoiceAgent />
         <Packages />
         <ServicesIntegrations />
         <RoiCalculator />

@@ -1,0 +1,15 @@
+{
+  "name": "uni-proxy-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "secrets": "bash scripts/set-secrets.sh"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^3.80.0"
+  }
+}
