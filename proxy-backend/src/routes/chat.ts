@@ -35,7 +35,7 @@ chatRouter.post("/chat", chatLimiter, authMiddleware, async (req, res) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5.4",
       messages: [
         { role: "system", content: systemPrompt },
         ...history.slice(-10),
