@@ -3,8 +3,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Container } from "@/components/Container";
-import { ChevronDown, Menu, Mic, SendHorizontal, X } from "lucide-react";
+import { ChevronDown, Menu, Mic, SendHorizontal, Volume2, X } from "lucide-react";
 import { withBasePath } from "@/lib/basePath";
+import { fetchReply, transcribeAudio, fetchSpeechBlob, type HistoryItem } from "@/lib/chat-api";
 
 const PILLS = [
   "Ремонт коммерческих помещений",
@@ -144,16 +145,6 @@ const PRESETS: Record<Mode, Record<Niche, string[]>> = {
   },
 };
 
-function stubAnswer(mode: Mode, niche: string, text: string) {
-  const head =
-    mode === "sales"
-      ? "Ок, помогу как менеджер."
-      : mode === "support"
-        ? "Ок, помогу как тех-поддержка."
-        : "Ок, отвечу как справочник.";
-
-  return `${head}\n\nНиша: ${niche}.\nВопрос: ${text}\n\n(Демо-ответ. Позже тут будет ответ LLM по API.)`;
-}
 
 function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   const [niche, setNiche] = useState<Niche>(initialNiche ?? "Автосервис");
@@ -162,9 +153,15 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const presets = useMemo(() => PRESETS[mode][niche] ?? [], [mode, niche]);
   const empty = msgs.length === 0;
@@ -172,6 +169,16 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
   useEffect(() => {
     if (initialNiche) setNiche(initialNiche);
   }, [initialNiche]);
+
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setMsgs([]);
+    setError(null);
+  }, [niche, mode]);
 
   useEffect(() => {
     if (empty) return;
@@ -203,19 +210,95 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileMenuOpen]);
 
-  const send = (text: string) => {
+  const playTTS = async (text: string) => {
+    try {
+      const blob = await fetchSpeechBlob(text);
+      const url = URL.createObjectURL(blob);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      await audio.play();
+      audio.onended = () => URL.revokeObjectURL(url);
+    } catch {
+      console.warn("TTS error, continuing without audio");
+    }
+  };
+
+  const send = async (text: string) => {
     const t = text.trim();
     if (!t || typing) return;
+
+    const currentHistory: HistoryItem[] = msgs.slice(-10).map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.text,
+    }));
 
     setMsgs((p) => [...p, { id: uid(), role: "user", text: t }]);
     setInput("");
     setTyping(true);
+    setError(null);
 
-    const delay = 650 + Math.floor(Math.random() * 350);
-    window.setTimeout(() => {
-      setMsgs((p) => [...p, { id: uid(), role: "bot", text: stubAnswer(mode, niche, t) }]);
+    try {
+      const reply = await fetchReply(t, niche, mode, currentHistory);
+      setMsgs((p) => [...p, { id: uid(), role: "bot", text: reply }]);
+      if (voiceEnabled) void playTTS(reply);
+    } catch {
+      setError("Не удалось получить ответ. Попробуйте ещё раз.");
+    } finally {
       setTyping(false);
-    }, delay);
+    }
+  };
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : "audio/webm";
+
+    const recorder = new MediaRecorder(stream, { mimeType });
+    audioChunksRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+    };
+
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      const blob = new Blob(audioChunksRef.current, { type: mimeType });
+      if (blob.size < 1000) return;
+
+      try {
+        setTyping(true);
+        const text = await transcribeAudio(blob);
+        if (text.trim()) send(text.trim());
+        else setTyping(false);
+      } catch {
+        setError("Не удалось распознать речь.");
+        setTyping(false);
+      }
+    };
+
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording().catch(() => setError("Нет доступа к микрофону."));
+    }
   };
 
   const pickPreset = (t: string) => {
@@ -566,13 +649,28 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                   />
 
                   <div className="flex items-center gap-2">
+                    {"mediaDevices" in navigator && (
+                      <button
+                        type="button"
+                        className={`flex h-10 w-10 items-center justify-center rounded-sm ${
+                          isRecording ? "animate-pulse bg-accent-1" : "bg-bg"
+                        }`}
+                        aria-label={isRecording ? "Остановить запись" : "Записать голосовое"}
+                        onClick={toggleRecording}
+                      >
+                        <Mic className={`h-4 w-4 ${isRecording ? "text-bg" : "text-text/60"}`} />
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg"
-                      aria-label="Записать голосовое"
-                      onClick={() => inputRef.current?.focus()}
+                      className={`flex h-10 w-10 items-center justify-center rounded-sm ${
+                        voiceEnabled ? "bg-accent-2" : "bg-bg"
+                      }`}
+                      aria-label={voiceEnabled ? "Выключить голос бота" : "Включить голос бота"}
+                      onClick={() => setVoiceEnabled((v) => !v)}
                     >
-                      <Mic className="h-4 w-4 text-text/60" />
+                      <Volume2 className={`h-4 w-4 ${voiceEnabled ? "text-bg" : "text-text/60"}`} />
                     </button>
 
                     <button
@@ -585,6 +683,10 @@ function DemoChatWidget({ initialNiche }: { initialNiche?: Niche }) {
                     </button>
                   </div>
                 </div>
+
+                {error && (
+                  <p className="mt-2 text-[11px] font-medium text-accent-1">{error}</p>
+                )}
 
                 {!empty && (
                   <div className="mt-4 hidden justify-center md:flex">

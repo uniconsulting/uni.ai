@@ -1,0 +1,12 @@
+name = "uni-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://uni.ai"
+
+# Секреты задаются через wrangler CLI:
+# wrangler secret put OPENAI_API_KEY
+# wrangler secret put ELEVENLABS_API_KEY
+# wrangler secret put ELEVENLABS_VOICE_ID
+# wrangler secret put INTERNAL_API_KEY
