@@ -243,8 +243,8 @@ function VoiceWidget() {
 
       historyRef.current = [
         ...historyRef.current,
-        { role: "user", content: text.trim() },
-        { role: "assistant", content: reply },
+        { role: "user" as const, content: text.trim() },
+        { role: "assistant" as const, content: reply },
       ].slice(-20);
 
       setTurns((t) => [...t.slice(-9), { role: "ai", text: reply }]);
