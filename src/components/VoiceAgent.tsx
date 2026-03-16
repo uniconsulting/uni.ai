@@ -588,11 +588,11 @@ export function VoiceAgent() {
 
         {/* Mobile header */}
         <div className="md:hidden">
-          <div className="text-[18px] font-medium opacity-70 hover-accent">голос</div>
+          <div className="text-[18px] font-medium opacity-70 hover-accent">голосовой агент</div>
           <div className="mt-4">
             <h2 className="font-extrabold leading-[0.95] tracking-tight text-[26px]">
-              <span className="block">Говорите —</span>
-              <span className="block">бот отвечает голосом</span>
+              <span className="block">Не форма и не чат.</span>
+              <span className="block">Живой разговор.</span>
             </h2>
           </div>
           <div className="mt-8">
@@ -605,11 +605,12 @@ export function VoiceAgent() {
           <div className="grid gap-10 md:grid-cols-2 md:gap-0">
             <div className="md:pr-12">
               <h2 className="font-extrabold leading-[0.95] tracking-tight text-[22px] md:text-[26px] lg:text-[28px]">
-                <span className="block">Говорите —</span>
-                <span className="block">бот отвечает голосом</span>
+                <span className="block">Не форма и не чат.</span>
+                <span className="block">Живой разговор.</span>
               </h2>
               <p className="mt-6 max-w-xs text-[14px] font-medium leading-relaxed text-text/55">
-                Голосовой AI-агент с авто-детектом речи. Сказали — он услышал, ответил, продолжает слушать.
+                Клиент произносит вопрос вслух — ЮНИ слышит, отвечает голосом и сразу готов к следующему.
+                Как менеджер, только без зарплаты и выходных.
               </p>
             </div>
             <div className="md:pl-12">
