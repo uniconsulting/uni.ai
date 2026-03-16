@@ -446,53 +446,76 @@ function VoiceWidget() {
                 ))}
               </div>
 
-              {/* Кольца + кнопка */}
-              <div className="relative flex items-center justify-center">
-                {/* Анимированные кольца (только когда активно) */}
-                {isActive && [0, 1, 2].map((i) => {
-                  const base = 96 + i * 40;
-                  const expand = volNorm * 36;
-                  const size = base + expand;
-                  return (
-                    <div
-                      key={i}
-                      className="absolute rounded-full"
-                      style={{
-                        width: size,
-                        height: size,
-                        background: "radial-gradient(circle, var(--color-accent-1) 0%, transparent 70%)",
-                        opacity: Math.max(0, 0.22 - i * 0.06) * (0.35 + volNorm * 0.65),
-                        transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear`,
-                      }}
-                    />
-                  );
-                })}
+              {/* Орб + кнопка */}
+              <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
 
-                {/* Кнопка */}
+                {/* Внешнее свечение — большой blur, дышит в idle */}
+                <div
+                  className={`absolute rounded-full ${!isActive ? "animate-pulse" : ""}`}
+                  style={{
+                    width: 200 + volNorm * 50,
+                    height: 200 + volNorm * 50,
+                    background: "radial-gradient(circle, var(--color-accent-1) 0%, transparent 65%)",
+                    opacity: isActive ? 0.18 + volNorm * 0.14 : 0.10,
+                    filter: "blur(32px)",
+                    transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 400ms`,
+                  }}
+                />
+
+                {/* Среднее свечение */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 138 + volNorm * 30,
+                    height: 138 + volNorm * 30,
+                    background: "radial-gradient(circle, var(--color-accent-2) 0%, var(--color-accent-1) 40%, transparent 70%)",
+                    opacity: isActive ? 0.28 + volNorm * 0.18 : 0.10,
+                    filter: "blur(16px)",
+                    transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 400ms`,
+                  }}
+                />
+
+                {/* Чёткое внутреннее кольцо (только активно) */}
+                {isActive && (
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 108 + volNorm * 18,
+                      height: 108 + volNorm * 18,
+                      border: "1px solid var(--color-accent-1)",
+                      opacity: 0.25 + volNorm * 0.45,
+                      transition: `width ${VAD_INTERVAL}ms linear, height ${VAD_INTERVAL}ms linear, opacity 80ms`,
+                    }}
+                  />
+                )}
+
+                {/* Кнопка-ядро */}
                 <button
                   type="button"
                   onClick={isActive ? stopSession : startSession}
-                  className={`relative z-10 flex h-24 w-24 items-center justify-center rounded-full transition-all duration-200 ${btnColor}`}
+                  className="relative z-10 flex h-[84px] w-[84px] items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, var(--color-accent-1) 0%, var(--color-accent-2) 100%)",
+                    boxShadow: isActive
+                      ? `0 0 ${16 + volNorm * 24}px color-mix(in srgb, var(--color-accent-1) 70%, transparent), 0 0 ${32 + volNorm * 48}px color-mix(in srgb, var(--color-accent-1) 30%, transparent)`
+                      : "0 0 16px color-mix(in srgb, var(--color-accent-1) 40%, transparent)",
+                    transition: `box-shadow ${VAD_INTERVAL}ms linear`,
+                  }}
                   aria-label={isActive ? "Завершить разговор" : "Начать разговор"}
                 >
                   {isActive ? (
-                    <Square className="h-7 w-7 fill-bg text-bg" />
+                    <Square className="h-6 w-6 fill-white text-white" />
                   ) : (
-                    <Mic className="h-8 w-8 text-bg" />
+                    <Mic className="h-7 w-7 text-white" />
                   )}
                 </button>
               </div>
 
               {/* Статус-текст */}
               <div className="text-center">
-                <div className={`text-[13px] font-semibold ${isActive ? "text-text" : "text-text/50"}`}>
+                <div className={`text-[13px] font-semibold tracking-wide ${isActive ? "text-text" : "text-text/40"}`}>
                   {STATUS_LABEL[status]}
                 </div>
-                {!isActive && (
-                  <div className="mt-1 text-[11px] font-medium text-text/35">
-                    Whisper + GPT-4o + ElevenLabs
-                  </div>
-                )}
                 {error && (
                   <div className="mt-2 text-[11px] font-medium text-accent-1">{error}</div>
                 )}
@@ -571,9 +594,6 @@ export function VoiceAgent() {
               </h2>
               <p className="mt-6 max-w-xs text-[14px] font-medium leading-relaxed text-text/55">
                 Голосовой AI-агент с авто-детектом речи. Сказали — он услышал, ответил, продолжает слушать.
-              </p>
-              <p className="mt-3 text-[12px] font-medium text-text/35">
-                Whisper · GPT-4o · ElevenLabs
               </p>
             </div>
             <div className="md:pl-12">
